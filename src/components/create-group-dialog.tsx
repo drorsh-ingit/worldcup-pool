@@ -33,7 +33,7 @@ export function CreateGroupDialog() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="h-9 px-3.5 rounded-xl bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 active:scale-[0.98] transition-all inline-flex items-center gap-1.5"
+        className="h-9 px-4 rounded-xl bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 active:scale-[0.98] transition-all inline-flex items-center gap-1.5"
       >
         <Plus className="w-4 h-4" />
         New group

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { Trophy, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -57,12 +57,13 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full max-w-sm mx-auto">
+      <div className="bg-white border border-neutral-200 rounded-2xl p-8">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-amber-50 mb-3">
-          <Trophy className="w-6 h-6 text-amber-500" />
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg pitch-bg mb-4">
+          <span className="font-display text-white text-sm font-bold">P</span>
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-neutral-900">
           Create your account
         </h1>
         <p className="text-sm text-neutral-500 mt-1">
@@ -88,7 +89,7 @@ export default function SignupPage() {
             required
             autoComplete="name"
             placeholder="Your name"
-            className="w-full h-11 px-3.5 rounded-xl border border-neutral-200 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-300 focus:border-amber-500 focus:ring-0 outline-none bg-white"
+            className="w-full h-11 px-3.5 rounded-xl border border-neutral-200 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-pitch-500 focus:border-transparent bg-white"
           />
         </div>
 
@@ -103,7 +104,7 @@ export default function SignupPage() {
             required
             autoComplete="email"
             placeholder="you@example.com"
-            className="w-full h-11 px-3.5 rounded-xl border border-neutral-200 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-300 focus:border-amber-500 focus:ring-0 outline-none bg-white"
+            className="w-full h-11 px-3.5 rounded-xl border border-neutral-200 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-pitch-500 focus:border-transparent bg-white"
           />
         </div>
 
@@ -119,14 +120,14 @@ export default function SignupPage() {
             minLength={8}
             autoComplete="new-password"
             placeholder="At least 8 characters"
-            className="w-full h-11 px-3.5 rounded-xl border border-neutral-200 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-300 focus:border-amber-500 focus:ring-0 outline-none bg-white"
+            className="w-full h-11 px-3.5 rounded-xl border border-neutral-200 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-pitch-500 focus:border-transparent bg-white"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-11 rounded-xl bg-amber-500 text-white font-medium text-sm hover:bg-amber-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+          className="w-full h-11 rounded-xl bg-pitch-900 text-white font-medium text-sm hover:bg-pitch-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
           {loading ? "Creating account..." : "Create account"}
@@ -139,6 +140,7 @@ export default function SignupPage() {
           Sign in
         </Link>
       </p>
+      </div>
     </div>
   );
 }

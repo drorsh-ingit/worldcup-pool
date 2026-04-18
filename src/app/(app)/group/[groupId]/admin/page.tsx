@@ -119,7 +119,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to group
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Manage group</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-neutral-900">Manage group</h1>
         <p className="text-sm text-neutral-500 mt-1">{group.name}</p>
       </div>
 
@@ -135,7 +135,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
       <section className="p-4 rounded-xl border border-neutral-200 bg-white space-y-3">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-neutral-400" />
-          <h2 className="text-sm font-medium text-neutral-900">Invite code</h2>
+          <h2 className="font-display text-sm font-semibold text-neutral-900">Invite code</h2>
         </div>
         <p className="text-sm text-neutral-500">
           Share this code so friends can request to join your group.
@@ -147,7 +147,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-500" />
-          <h2 className="text-sm font-semibold text-neutral-900">Tournament</h2>
+          <h2 className="font-display text-sm font-semibold text-neutral-900">Tournament</h2>
         </div>
 
         {!tournament ? (
@@ -214,7 +214,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-neutral-500" />
-            <h2 className="text-sm font-semibold text-neutral-900">Bet Types</h2>
+            <h2 className="font-display text-sm font-semibold text-neutral-900">Bet Types</h2>
           </div>
           <p className="text-sm text-neutral-500 -mt-2">
             Open bets so members can place predictions. Lock when bets should close. Resolve with the correct answer to trigger scoring.
