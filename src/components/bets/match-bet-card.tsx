@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { Lock, CheckCircle } from "lucide-react";
 import { placeBet } from "@/lib/actions/bets";
 import { getLiveMatchScore, type LiveScore } from "@/lib/actions/live-scores";
+import { Flag } from "@/components/flag";
+import { cn } from "@/lib/utils";
 
 interface MatchBetCardProps {
   groupId: string;
@@ -32,6 +34,29 @@ interface MatchBetCardProps {
 
 function outcomeFromScore(h: number, a: number): "home" | "draw" | "away" {
   return h > a ? "home" : a > h ? "away" : "draw";
+}
+
+function formatKickoff(date: Date): string {
+  const month = date.toLocaleDateString("en-US", { month: "short" });
+  const day = date.getDate();
+  const hours = date.getHours().toString().padStart(2, "0");
+  const mins = date.getMinutes().toString().padStart(2, "0");
+  return `${month} ${day} · ${hours}:${mins}`;
+}
+
+/** Pill label for match phase/round */
+function phaseLabel(phase: string, groupLetter: string | null): string {
+  if (phase === "GROUP" && groupLetter) return `Group ${groupLetter}`;
+  const labels: Record<string, string> = {
+    GROUP: "Group Stage",
+    R32: "Round of 32",
+    R16: "Round of 16",
+    QF: "Quarter-final",
+    SF: "Semi-final",
+    FINAL: "Final",
+    THIRD: "3rd Place",
+  };
+  return labels[phase] ?? phase;
 }
 
 export function MatchBetCard({
@@ -102,11 +127,17 @@ export function MatchBetCard({
   const hasValidScore = !isNaN(parsedHome) && !isNaN(parsedAway);
   const predictedOutcome = hasValidScore ? outcomeFromScore(parsedHome, parsedAway) : null;
 
-  // Per-outcome pts (always available for display regardless of prediction)
   const homeWinPts = outcomePoints?.["home"];
   const drawPts = outcomePoints?.["draw"];
   const awayWinPts = outcomePoints?.["away"];
   const scorePts = hasValidScore ? scorePointsMap?.[`${parsedHome}-${parsedAway}`] : undefined;
+
+  // Total potential pts for footer
+  const directionPts = predictedOutcome ? outcomePoints?.[predictedOutcome] : undefined;
+  const potentialPts =
+    directionPts != null && scorePts != null
+      ? directionPts + scorePts
+      : directionPts ?? scorePts;
 
   useEffect(() => {
     if (isLocked) return;
@@ -176,37 +207,75 @@ export function MatchBetCard({
     currentCorrectScore?.homeScore === displayHome &&
     currentCorrectScore?.awayScore === displayAway;
 
-  const ptsColor = (outcome: "home" | "draw" | "away") => {
+  const ptsHighlight = (outcome: "home" | "draw" | "away") => {
     if (!hasValidScore) return "text-amber-500";
-    return predictedOutcome === outcome ? "text-amber-500 font-semibold" : "text-neutral-300";
+    return predictedOutcome === outcome
+      ? "text-amber-500 font-semibold"
+      : "text-neutral-300";
   };
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4">
+    <div
+      className={cn(
+        "rounded-2xl border border-neutral-200 bg-white overflow-hidden",
+        !isLocked && "card-hover"
+      )}
+    >
+      {/* Row 1: header bar */}
+      <div className="flex items-center justify-between px-3 py-2 bg-neutral-50 border-b border-neutral-100">
+        <span className="text-[11px] font-medium text-neutral-500 tracking-wide">
+          {phaseLabel(match.phase, match.groupLetter)}
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-neutral-400 tabular-nums">
+            {formatKickoff(kickoff)}
+          </span>
+          {isLocked && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-100 rounded-full px-1.5 py-0.5">
+              <Lock className="w-2.5 h-2.5" />
+              {effectivelyFinished ? "Played" : "Locked"}
+            </span>
+          )}
+        </div>
+      </div>
 
-      {/* Teams + score/inputs row */}
-      <div className="flex items-center gap-2">
+      {/* Row 2: teams + score */}
+      <div className="flex items-center gap-3 px-4 py-4">
 
         {/* Home team */}
-        <div className="flex-1 flex flex-col items-end gap-0.5">
-          <span className="text-base font-semibold text-neutral-900">{match.homeTeamCode}</span>
+        <div className="flex-1 flex flex-col items-center gap-1.5">
+          <div className="rounded-full bg-white shadow-sm p-0.5 border border-neutral-100">
+            <Flag code={match.homeTeamCode} size="md" />
+          </div>
+          <span className="text-xs font-medium text-neutral-700 text-center leading-tight max-w-[72px] truncate">
+            {match.homeTeamName || match.homeTeamCode}
+          </span>
           {!isLocked && homeWinPts != null && (
-            <span className={`text-xs tabular-nums transition-colors ${ptsColor("home")}`}>
+            <span className={cn("text-xs tabular-nums transition-colors", ptsHighlight("home"))}>
               {homeWinPts.toFixed(1)} pts
+            </span>
+          )}
+          {isLocked && (
+            <span className="text-xs text-neutral-300 tabular-nums">
+              {homeWinPts != null ? `${homeWinPts.toFixed(1)} pts` : ""}
             </span>
           )}
         </div>
 
         {/* Score center */}
-        <div className="flex flex-col items-center gap-1 min-w-[130px]">
-          {/* Live/finished score */}
+        <div className="flex flex-col items-center gap-1 min-w-[120px]">
+          {/* Live / finished score display */}
           {(effectivelyFinished || isInPlay) && displayHome != null ? (
             <div className="flex items-center gap-2">
-              <span className="text-xl font-bold tabular-nums text-neutral-900">{displayHome}</span>
-              <span className="text-neutral-300 font-medium">–</span>
-              <span className="text-xl font-bold tabular-nums text-neutral-900">{displayAway}</span>
+              <span className="text-2xl font-display font-bold tabular-nums text-neutral-900">
+                {displayHome}
+              </span>
+              <span className="text-lg text-neutral-300 font-display">–</span>
+              <span className="text-2xl font-display font-bold tabular-nums text-neutral-900">
+                {displayAway}
+              </span>
               {isInPlay && (
-                <span className="flex items-center gap-1 text-xs font-semibold text-red-500">
+                <span className="flex items-center gap-1 text-xs font-semibold text-red-500 ml-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                   {liveScore?.status === "PAUSED"
                     ? "HT"
@@ -217,9 +286,9 @@ export function MatchBetCard({
               )}
             </div>
           ) : isLocked ? (
-            <span className="text-sm text-neutral-300 font-medium">vs</span>
+            <span className="text-2xl font-display font-medium text-neutral-300">vs</span>
           ) : (
-            /* Score inputs + inline save status */
+            /* Score inputs */
             <div className="flex items-center gap-1.5">
               <input
                 type="number"
@@ -228,9 +297,9 @@ export function MatchBetCard({
                 value={homeScore}
                 onChange={(e) => { dirtyRef.current = true; setHomeScore(e.target.value); setSaved(false); }}
                 placeholder="–"
-                className="w-12 h-9 px-2 rounded-lg border border-neutral-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-200"
+                className="w-12 h-10 px-1 rounded-xl border border-neutral-200 text-xl font-display font-semibold text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-200 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-neutral-300"
               />
-              <span className="text-neutral-400 font-medium">–</span>
+              <span className="text-xl font-display text-neutral-300">–</span>
               <input
                 type="number"
                 min={0}
@@ -238,43 +307,49 @@ export function MatchBetCard({
                 value={awayScore}
                 onChange={(e) => { dirtyRef.current = true; setAwayScore(e.target.value); setSaved(false); }}
                 placeholder="–"
-                className="w-12 h-9 px-2 rounded-lg border border-neutral-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-200"
+                className="w-12 h-10 px-1 rounded-xl border border-neutral-200 text-xl font-display font-semibold text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-200 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-neutral-300"
               />
-              {error && <span className="text-xs text-red-500">{error}</span>}
             </div>
           )}
 
-          {/* Exact score pts (below inputs, only when unlocked + valid) */}
-          {!isLocked && scorePts != null && (
-            <span className="text-xs text-neutral-500">
-              +<span className="text-amber-500 font-semibold tabular-nums">{scorePts.toFixed(1)}</span> pts if exact
-            </span>
-          )}
-
-          {/* Draw pts (centered, only when unlocked) */}
+          {/* Draw pts row (open bets) */}
           {!isLocked && drawPts != null && (
-            <span className={`text-xs tabular-nums transition-colors ${ptsColor("draw")}`}>
+            <span className={cn("text-xs tabular-nums transition-colors mt-0.5", ptsHighlight("draw"))}>
               Draw: {drawPts.toFixed(1)} pts
             </span>
           )}
 
-          {/* Locked: show user prediction */}
+          {/* Exact score pts row */}
+          {!isLocked && scorePts != null && (
+            <span className="text-xs text-neutral-400 tabular-nums">
+              +<span className="text-amber-500 font-semibold">{scorePts.toFixed(1)}</span> pts if exact
+            </span>
+          )}
+
+          {/* Locked: user prediction */}
           {isLocked && currentCorrectScore?.homeScore != null && (
             <div className="flex flex-col items-center gap-0.5 mt-1">
-              <span className={`text-sm font-semibold tabular-nums ${
+              <span className={cn(
+                "text-sm font-semibold tabular-nums font-display",
                 scoreCorrect || projectedScoreMatch
                   ? "text-emerald-600"
                   : outcomeCorrect
                   ? "text-amber-700"
                   : "text-neutral-600"
-              }`}>
+              )}>
                 {currentCorrectScore.homeScore} – {currentCorrectScore.awayScore}
               </span>
-              {scoreCorrect && <span className="text-xs text-emerald-600 font-medium">Exact!</span>}
-              {!scoreCorrect && outcomeCorrect && <span className="text-xs text-amber-600">Winner ✓</span>}
-              {outcomeCorrect === false && <span className="text-xs text-red-500">Incorrect</span>}
+              {scoreCorrect && (
+                <span className="text-xs text-emerald-600 font-medium">Exact!</span>
+              )}
+              {!scoreCorrect && outcomeCorrect && (
+                <span className="text-xs text-amber-600">Winner correct</span>
+              )}
+              {outcomeCorrect === false && (
+                <span className="text-xs text-red-500">Incorrect</span>
+              )}
               {isCompleted && !scoreCorrect && (
-                <span className="text-xs text-neutral-400">
+                <span className="text-xs text-neutral-400 tabular-nums">
                   actual: {match.actualHomeScore}–{match.actualAwayScore}
                 </span>
               )}
@@ -287,41 +362,69 @@ export function MatchBetCard({
                 <span className="text-xs text-amber-600">winner leading</span>
               )}
               {isInPlay && !projectedScoreMatch && !projectedOutcomeMatch && displayHome != null && (
-                <span className="text-xs text-neutral-400">
+                <span className="text-xs text-neutral-400 tabular-nums">
                   live: {displayHome}–{displayAway}
                 </span>
               )}
             </div>
           )}
 
-          {isLocked && currentCorrectScore?.homeScore == null && (
-            <span className="text-xs text-neutral-400 mt-1">No prediction</span>
+          {error && (
+            <span className="text-xs text-red-500 text-center mt-0.5">{error}</span>
+          )}
+          {saving && (
+            <span className="text-xs text-neutral-400 mt-0.5">Saving…</span>
+          )}
+          {saved && !saving && !isLocked && (
+            <span className="text-xs text-emerald-500 mt-0.5">Saved</span>
           )}
         </div>
 
         {/* Away team */}
-        <div className="flex-1 flex flex-col items-start gap-0.5">
-          <span className="text-base font-semibold text-neutral-900">{match.awayTeamCode}</span>
+        <div className="flex-1 flex flex-col items-center gap-1.5">
+          <div className="rounded-full bg-white shadow-sm p-0.5 border border-neutral-100">
+            <Flag code={match.awayTeamCode} size="md" />
+          </div>
+          <span className="text-xs font-medium text-neutral-700 text-center leading-tight max-w-[72px] truncate">
+            {match.awayTeamName || match.awayTeamCode}
+          </span>
           {!isLocked && awayWinPts != null && (
-            <span className={`text-xs tabular-nums transition-colors ${ptsColor("away")}`}>
+            <span className={cn("text-xs tabular-nums transition-colors", ptsHighlight("away"))}>
               {awayWinPts.toFixed(1)} pts
+            </span>
+          )}
+          {isLocked && (
+            <span className="text-xs text-neutral-300 tabular-nums">
+              {awayWinPts != null ? `${awayWinPts.toFixed(1)} pts` : ""}
             </span>
           )}
         </div>
       </div>
 
-      {/* Footer: date + lock badge */}
-      <div className="flex items-center justify-between mt-3">
-        <p className="text-xs text-neutral-400">
-          {kickoff.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-          {" · "}
-          {kickoff.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-          {match.groupLetter && ` · Group ${match.groupLetter}`}
-        </p>
-        {isLocked && (
-          <div className="flex items-center gap-1.5 text-xs text-amber-600">
-            <Lock className="w-3.5 h-3.5" />
-            {effectivelyFinished ? "Played" : "Locked"}
+      {/* Row 3: footer with direction / score / potential */}
+      <div className="border-t border-neutral-100 px-4 py-2.5 bg-neutral-50">
+        {isLocked && currentCorrectScore?.homeScore == null ? (
+          <p className="text-center text-xs text-neutral-400">Locked – no bet placed</p>
+        ) : (
+          <div className="grid grid-cols-3 divide-x divide-neutral-200">
+            <div className="flex flex-col items-center gap-0.5 px-2">
+              <span className="text-[10px] uppercase tracking-wider text-neutral-400">Direction</span>
+              <span className="text-sm font-semibold text-neutral-900 tabular-nums">
+                {directionPts != null ? `${directionPts.toFixed(1)}` : "–"}
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-0.5 px-2">
+              <span className="text-[10px] uppercase tracking-wider text-neutral-400">Score</span>
+              <span className="text-sm font-semibold text-neutral-900 tabular-nums">
+                {scorePts != null ? `+${scorePts.toFixed(1)}` : "–"}
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-0.5 px-2">
+              <span className="text-[10px] uppercase tracking-wider text-neutral-400">Potential</span>
+              <span className="text-sm font-semibold text-amber-500 tabular-nums">
+                {potentialPts != null ? `${potentialPts.toFixed(1)} pts` : "–"}
+              </span>
+            </div>
           </div>
         )}
       </div>
