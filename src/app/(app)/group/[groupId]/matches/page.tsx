@@ -99,18 +99,27 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
   return (
     <div className="space-y-5">
       {/* Phase tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-1">
-        {availablePhases.map((p) => (
-          <Link
-            key={p}
-            href={`/group/${groupId}/matches?phase=${p}`}
-            className={`shrink-0 h-8 px-3 rounded-lg text-sm font-medium transition-colors ${
-              activePhase === p ? "bg-neutral-900 text-white" : "text-neutral-500 hover:bg-neutral-100"
-            }`}
-          >
-            {PHASE_LABELS[p] ?? p}
-          </Link>
-        ))}
+      <div className="space-y-1">
+        {activePhase === "GROUP" && (
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
+            Group Stage
+          </p>
+        )}
+        <div className="flex gap-1 overflow-x-auto pb-1">
+          {availablePhases.map((p) => (
+            <Link
+              key={p}
+              href={`/group/${groupId}/matches?phase=${p}`}
+              className={`shrink-0 h-8 px-3 rounded-lg text-sm font-medium transition-colors ${
+                activePhase === p
+                  ? "bg-pitch-900 text-white"
+                  : "text-neutral-500 hover:bg-neutral-100"
+              }`}
+            >
+              {PHASE_LABELS[p] ?? p}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Group filter */}
@@ -119,7 +128,9 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
           <Link
             href={`/group/${groupId}/matches?phase=GROUP`}
             className={`h-7 px-2.5 rounded-lg text-xs font-medium transition-colors ${
-              !groupFilter ? "bg-amber-100 text-amber-700" : "text-neutral-500 hover:bg-neutral-100"
+              !groupFilter
+                ? "bg-amber-100 text-amber-700"
+                : "text-neutral-500 hover:bg-neutral-100"
             }`}
           >
             All groups
@@ -129,7 +140,9 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
               key={g}
               href={`/group/${groupId}/matches?phase=GROUP&group=${g}`}
               className={`h-7 px-2.5 rounded-lg text-xs font-medium transition-colors ${
-                groupFilter === g ? "bg-amber-100 text-amber-700" : "text-neutral-500 hover:bg-neutral-100"
+                groupFilter === g
+                  ? "bg-amber-100 text-amber-700"
+                  : "text-neutral-500 hover:bg-neutral-100"
               }`}
             >
               Group {g}
@@ -148,8 +161,9 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
             .sort(([a], [b]) => Number(a) - Number(b))
             .map(([matchday, matches]) => (
               <div key={matchday} className="space-y-2">
-                <h3 className="text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                  Matchday {matchday}
+                <h3 className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
+                  Matchday {matchday} &middot; {matches.length} match
+                  {matches.length !== 1 ? "es" : ""}
                 </h3>
                 <div className="space-y-3">{matches.map(renderMatchCard)}</div>
               </div>

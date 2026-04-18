@@ -81,12 +81,12 @@ export default async function BetsPage({ params }: BetsPageProps) {
   ) {
     return (
       <div className="text-center py-16">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-50 mb-4">
-          <Trophy className="w-7 h-7 text-amber-400" />
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl pitch-bg mb-4">
+          <Trophy className="w-7 h-7 text-white" />
         </div>
-        <h2 className="text-lg font-semibold text-neutral-900 mb-1">No tournament bets open</h2>
+        <h2 className="text-lg font-semibold text-neutral-900 mb-1">Tournament bets not open yet</h2>
         <p className="text-sm text-neutral-500 max-w-sm mx-auto">
-          The admin hasn&apos;t opened pre-tournament or prop bets yet.
+          The admin will open pre-tournament picks, milestones, and prop bets as the tournament progresses.
         </p>
       </div>
     );
@@ -96,16 +96,17 @@ export default async function BetsPage({ params }: BetsPageProps) {
     <div className="space-y-8">
       {preTournamentBets.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-sm font-medium text-neutral-500 uppercase tracking-wider">
-            Pre-Tournament
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display font-semibold text-neutral-900">Pre-Tournament</h2>
+            <span className="text-xs text-neutral-400">{preTournamentBets.length} bet{preTournamentBets.length !== 1 ? "s" : ""}</span>
+          </div>
           <div className="space-y-3">
             {preTournamentBets.map((bt) => {
               const currentBet = betByTypeId[bt.id];
               const isLocked = bt.effectiveStatus === "LOCKED" || bt.effectiveStatus === "RESOLVED";
               return (
                 <div key={bt.id} className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-                  <div className="px-4 py-3 border-b border-neutral-100">
+                  <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-semibold text-neutral-900">{bt.name}</h3>
                       {statusBadge(bt.effectiveStatus)}
@@ -115,7 +116,12 @@ export default async function BetsPage({ params }: BetsPageProps) {
                     )}
                   </div>
                   <div className="p-4">
-                    {bt.subType === "winner" || bt.subType === "runner_up" || bt.subType === "dark_horse" || bt.subType === "reverse_dark_horse" ? (() => {
+                    {bt.effectiveStatus === "DRAFT" ? (
+                      <div className="flex flex-col items-center justify-center gap-1.5 py-6 text-neutral-400">
+                        <Lock className="w-5 h-5" />
+                        <span className="text-sm">Opens soon</span>
+                      </div>
+                    ) : bt.subType === "winner" || bt.subType === "runner_up" || bt.subType === "dark_horse" || bt.subType === "reverse_dark_horse" ? (() => {
                       let filteredTeams = tournament.teams;
                       if (bt.subType === "dark_horse") {
                         filteredTeams = [...tournament.teams]
@@ -174,14 +180,17 @@ export default async function BetsPage({ params }: BetsPageProps) {
 
       {milestoneBets.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-sm font-medium text-neutral-500 uppercase tracking-wider">Milestones</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display font-semibold text-neutral-900">Milestones</h2>
+            <span className="text-xs text-neutral-400">{milestoneBets.length} bet{milestoneBets.length !== 1 ? "s" : ""}</span>
+          </div>
           <div className="space-y-3">
             {milestoneBets.map((bt) => {
               const currentBet = betByTypeId[bt.id];
               const isLocked = bt.effectiveStatus === "LOCKED" || bt.effectiveStatus === "RESOLVED";
               return (
                 <div key={bt.id} className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-                  <div className="px-4 py-3 border-b border-neutral-100">
+                  <div className="px-4 py-3 border-b border-neutral-100 bg-pitch-50">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-semibold text-neutral-900">{bt.name}</h3>
                       {statusBadge(bt.effectiveStatus)}
@@ -191,7 +200,12 @@ export default async function BetsPage({ params }: BetsPageProps) {
                     )}
                   </div>
                   <div className="p-4">
-                    {bt.subType === "semifinalists" ? (
+                    {bt.effectiveStatus === "DRAFT" ? (
+                      <div className="flex flex-col items-center justify-center gap-1.5 py-6 text-neutral-400">
+                        <Lock className="w-5 h-5" />
+                        <span className="text-sm">Opens soon</span>
+                      </div>
+                    ) : bt.subType === "semifinalists" ? (
                       <SemifinalistsPicker
                         groupId={groupId}
                         tournamentId={tournament.id}
@@ -214,7 +228,10 @@ export default async function BetsPage({ params }: BetsPageProps) {
 
       {curatedBets.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-sm font-medium text-neutral-500 uppercase tracking-wider">Prop Bets</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display font-semibold text-neutral-900">Prop Bets</h2>
+            <span className="text-xs text-neutral-400">{curatedBets.length} bet{curatedBets.length !== 1 ? "s" : ""}</span>
+          </div>
           <div className="space-y-3">
             {curatedBets.map((bt) => {
               const currentBet = betByTypeId[bt.id];
@@ -222,7 +239,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
               const config = bt.config as { options?: string[] };
               return (
                 <div key={bt.id} className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-                  <div className="px-4 py-3 border-b border-neutral-100">
+                  <div className="px-4 py-3 border-b border-neutral-100 bg-amber-50">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-semibold text-neutral-900">{bt.name}</h3>
                       {statusBadge(bt.effectiveStatus)}
@@ -232,15 +249,22 @@ export default async function BetsPage({ params }: BetsPageProps) {
                     )}
                   </div>
                   <div className="p-4">
-                    <OptionPickForm
-                      groupId={groupId}
-                      tournamentId={tournament.id}
-                      betTypeId={bt.id}
-                      description={bt.description}
-                      options={config.options ?? []}
-                      isLocked={isLocked}
-                      currentPrediction={currentBet?.prediction as { option?: string } | undefined}
-                    />
+                    {bt.effectiveStatus === "DRAFT" ? (
+                      <div className="flex flex-col items-center justify-center gap-1.5 py-6 text-neutral-400">
+                        <Lock className="w-5 h-5" />
+                        <span className="text-sm">Opens soon</span>
+                      </div>
+                    ) : (
+                      <OptionPickForm
+                        groupId={groupId}
+                        tournamentId={tournament.id}
+                        betTypeId={bt.id}
+                        description={bt.description}
+                        options={config.options ?? []}
+                        isLocked={isLocked}
+                        currentPrediction={currentBet?.prediction as { option?: string } | undefined}
+                      />
+                    )}
                   </div>
                 </div>
               );
