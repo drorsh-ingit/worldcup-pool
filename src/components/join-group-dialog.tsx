@@ -40,7 +40,7 @@ export function JoinGroupDialog() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="h-9 px-3.5 rounded-xl border border-neutral-200 text-neutral-700 text-sm font-medium hover:bg-neutral-50 active:scale-[0.98] transition-all inline-flex items-center gap-1.5"
+        className="h-9 px-4 rounded-xl border border-neutral-200 text-neutral-700 text-sm font-medium hover:bg-neutral-50 active:scale-[0.98] transition-all inline-flex items-center gap-1.5"
       >
         <UserPlus className="w-4 h-4" />
         Join

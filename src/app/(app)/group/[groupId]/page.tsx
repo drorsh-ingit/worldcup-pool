@@ -113,13 +113,13 @@ export default async function GroupPage({ params }: GroupPageProps) {
           <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
             {/* Table header */}
             <div className="grid grid-cols-[40px_1fr_80px_80px_80px_80px_80px] gap-2 px-4 py-2.5 border-b border-neutral-100 text-xs font-medium text-neutral-400 uppercase tracking-wider">
-              <span>#</span>
+              <span className="w-10">#</span>
               <span>Player</span>
               <span className="text-right">Pre</span>
               <span className="text-right">Games</span>
               <span className="text-right">Miles.</span>
               <span className="text-right">Props</span>
-              <span className="text-right">Total</span>
+              <span className="w-16 text-right">Total</span>
             </div>
 
             {/* Rows */}
@@ -129,7 +129,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
                 href={`/group/${groupId}/user/${s.userId}`}
                 className="grid grid-cols-[40px_1fr_80px_80px_80px_80px_80px] gap-2 px-4 py-3 items-center hover:bg-neutral-50 transition-colors border-b border-neutral-50 last:border-0"
               >
-                <span className="text-sm font-medium text-neutral-400">
+                <span className="w-10 text-sm font-medium text-neutral-400">
                   {i === 0 && s.totalPoints > 0 ? (
                     <Crown className="w-4 h-4 text-amber-500" />
                   ) : (
@@ -161,7 +161,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
                 <span className="text-sm text-neutral-500 text-right tabular-nums">
                   {s.curatedPts.toFixed(1)}
                 </span>
-                <span className="text-sm font-semibold text-neutral-900 text-right tabular-nums">
+                <span className="w-16 text-sm font-semibold text-neutral-900 text-right tabular-nums">
                   {s.totalPoints.toFixed(1)}
                 </span>
               </Link>

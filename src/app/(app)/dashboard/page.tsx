@@ -32,7 +32,7 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-neutral-900">
             Your groups
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
