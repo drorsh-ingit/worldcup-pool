@@ -1,8 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/refresh-odds",
-      "schedule": "0 * * * *"
-    }
-  ]
-}
+{"crons":[{"path":"/api/cron/refresh-odds","schedule":"0 6 * * *"}]}
