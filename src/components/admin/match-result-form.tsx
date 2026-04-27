@@ -104,7 +104,7 @@ function MatchRow({ groupId, match }: { groupId: string; match: MatchRow }) {
             <button
               onClick={handleSave}
               disabled={loading || !home || !away}
-              className="h-8 px-3 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-60 transition-colors"
+              className="h-8 px-3 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors"
             >
               {loading ? "..." : "Save"}
             </button>

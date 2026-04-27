@@ -23,15 +23,15 @@ export function PendingMembers({ members }: { members: PendingMember[] }) {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-sm font-medium text-amber-600 uppercase tracking-wider flex items-center gap-1.5">
+      <h2 className="text-sm font-medium text-pitch-700 uppercase tracking-wider flex items-center gap-1.5">
         <Clock className="w-3.5 h-3.5" />
         Pending requests ({members.length})
       </h2>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {members.map((m) => (
           <div
             key={m.id}
-            className="flex items-center justify-between p-3 rounded-xl border border-amber-200 bg-amber-50"
+            className="flex items-center justify-between p-4 rounded-xl border border-amber-200 bg-pitch-50"
           >
             <div>
               <p className="text-sm font-medium text-neutral-900">{m.user.name}</p>

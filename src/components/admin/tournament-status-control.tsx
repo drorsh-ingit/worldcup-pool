@@ -50,7 +50,7 @@ export function TournamentStatusControl({
           <div key={s} className="flex items-center gap-1">
             <div
               className={`h-2 w-2 rounded-full ${
-                i <= currentIdx ? "bg-amber-500" : "bg-neutral-200"
+                i <= currentIdx ? "bg-pitch-500" : "bg-neutral-200"
               }`}
             />
             <span

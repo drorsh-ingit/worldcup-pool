@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { createGroupSchema, joinGroupSchema } from "@/lib/validators";
 import { DEFAULT_GROUP_SETTINGS } from "@/lib/settings";
 import { revalidatePath } from "next/cache";
+import { initTournament } from "@/lib/actions/tournaments";
+import { isTournamentKind } from "@/lib/tournaments/registry";
 
 function slugify(text: string): string {
   return text
@@ -34,6 +36,9 @@ export async function createGroup(formData: FormData) {
     return { error: parsed.error.issues[0].message };
   }
 
+  const rawKind = String(formData.get("tournamentKind") ?? "");
+  const kind = isTournamentKind(rawKind) ? rawKind : "WC_2026";
+
   try {
     const slug = generateSlug(parsed.data.name);
 
@@ -51,6 +56,8 @@ export async function createGroup(formData: FormData) {
         },
       },
     });
+
+    await initTournament(group.id, kind);
 
     revalidatePath("/dashboard");
     return { success: true, groupId: group.id, slug: group.slug };
@@ -163,5 +170,26 @@ export async function updateMembership(membershipId: string, action: "approve" |
   } catch (error) {
     console.error("Update membership error:", error);
     return { error: "Failed to update membership. Please try again." };
+  }
+}
+
+export async function deleteGroup(groupId: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Not authenticated" };
+
+  const membership = await db.groupMembership.findUnique({
+    where: { userId_groupId: { userId: session.user.id, groupId } },
+  });
+  if (!membership || membership.role !== "ADMIN") {
+    return { error: "Only the group admin can delete this group" };
+  }
+
+  try {
+    await db.group.delete({ where: { id: groupId } });
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    console.error("Delete group error:", error);
+    return { error: "Failed to delete group. Please try again." };
   }
 }

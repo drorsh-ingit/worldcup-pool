@@ -70,6 +70,7 @@ enum MembershipStatus {
 model Tournament {
   id        String           @id @default(cuid())
   groupId   String
+  kind      String           @default("WC_2026") // TournamentProfile id — see src/lib/tournaments/registry.ts
   name      String           @default("FIFA World Cup 2026")
   status    TournamentStatus @default(SETUP)
   createdAt DateTime         @default(now())
@@ -153,18 +154,22 @@ enum MatchStatus {
 // ─── BET TYPES ───
 
 model BetType {
-  id           String        @id @default(cuid())
+  id           String           @id @default(cuid())
   tournamentId String
   category     BetCategory
-  subType      String        // e.g., "winner", "runner_up", "boot", "grpwin", "match_score", etc.
-  name         String        // Display name
+  subType      String           // e.g., "winner", "runner_up", "boot", "grpwin", "match_score", etc.
+  name         String           // Display name
   description  String?
-  config       Json          @default("{}") // { options, odds, subWeight, basePct, outlierThreshold, ... }
+  config       Json             @default("{}") // { options, odds, subWeight, basePct, outlierThreshold, ... }
+  openTrigger  BetOpenTrigger?  // When tournament bets become available (null for PER_GAME/CURATED)
   opensAt      DateTime?
   locksAt      DateTime?
   resolvedAt   DateTime?
-  resolution   Json?         // The correct answer(s) once resolved
-  status       BetTypeStatus @default(DRAFT)
+  resolution   Json?            // The correct answer(s) once resolved
+  status       BetTypeStatus    @default(DRAFT)
+  frozenOdds   Json?            // Snapshot of relevant odds at the moment this bet type opened.
+                                // For tournament bets: { teams: { CODE: { winnerOdds, groupWinnerOdds, qualifyOdds } } }
+                                // Null until openBetType runs. Reads fall back to live Team.odds when null.
 
   tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   bets       Bet[]
@@ -173,10 +178,18 @@ model BetType {
 }
 
 enum BetCategory {
-  PRE_TOURNAMENT
+  TOURNAMENT
   PER_GAME
-  MILESTONE
   CURATED
+}
+
+enum BetOpenTrigger {
+  PRE_TOURNAMENT
+  AFTER_GROUP_STAGE
+  AFTER_R32
+  AFTER_R16
+  AFTER_QF
+  AFTER_SF
 }
 
 enum BetTypeStatus {
@@ -223,9 +236,8 @@ model LeaderboardEntry {
   tournamentId    String
   totalPoints     Float    @default(0)
   rank            Int      @default(0)
-  preTournamentPts Float   @default(0)
+  tournamentPts   Float    @default(0)
   perGamePts      Float    @default(0)
-  milestonePts    Float    @default(0)
   curatedPts      Float    @default(0)
   correctBets     Int      @default(0)
   totalBets       Int      @default(0)

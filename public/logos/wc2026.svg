@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120">
+  <!-- White background -->
+  <rect width="100" height="120" fill="white"/>
+
+  <!-- ── "2" — large black, upper-left ── -->
+  <text x="4" y="72"
+        font-family="Arial Black, 'Arial Bold', Arial, sans-serif"
+        font-weight="900" font-size="80" fill="black">2</text>
+
+  <!-- ── "6" — large black, lower-right ── -->
+  <text x="44" y="114"
+        font-family="Arial Black, 'Arial Bold', Arial, sans-serif"
+        font-weight="900" font-size="80" fill="black">6</text>
+
+  <!-- ── "FIFA" in white inside the "6" belly ── -->
+  <text x="64" y="106" text-anchor="middle"
+        font-family="Arial Black, Arial, sans-serif"
+        font-weight="900" font-size="9" fill="white" letter-spacing="1">FIFA</text>
+
+  <!-- ══ Gold Trophy (centred, overlapping 2 and 6) ══ -->
+
+  <!-- Globe -->
+  <circle cx="51" cy="26" r="14" fill="#D4A020"/>
+  <!-- Globe highlight -->
+  <ellipse cx="51" cy="26" rx="14" ry="14" fill="url(#globe-shine)"/>
+  <!-- Continent hint lines -->
+  <path d="M43 21 Q47 17 51 20 Q55 17 59 21" fill="none" stroke="#8B6510" stroke-width="1.5" opacity="0.55"/>
+  <path d="M38 27 Q44 24 51 26 Q58 24 64 27" fill="none" stroke="#8B6510" stroke-width="1" opacity="0.4"/>
+
+  <!-- Left figure arm (reaching up to globe) -->
+  <path d="M37 36 Q30 30 36 23 Q41 18 43 23" fill="#C09018" stroke="none"/>
+  <!-- Right figure arm -->
+  <path d="M65 36 Q72 30 66 23 Q61 18 59 23" fill="#C09018" stroke="none"/>
+
+  <!-- Trophy body / cup -->
+  <path d="M35 36 Q35 55 44 60 L58 60 Q67 55 67 36 Q59 42 51 42 Q43 42 35 36 Z" fill="#D4A020"/>
+  <!-- Body highlight -->
+  <path d="M38 36 Q38 52 45 57 L50 58 Q43 53 41 44 Q39 39 38 36 Z" fill="#ECC040" opacity="0.4"/>
+
+  <!-- Neck -->
+  <rect x="45" y="60" width="12" height="9" rx="1" fill="#C09018"/>
+
+  <!-- Malachite collar (green band) -->
+  <rect x="39" y="69" width="24" height="9" rx="2" fill="#2A7035"/>
+  <text x="51" y="76.5" text-anchor="middle"
+        font-family="Arial, sans-serif" font-weight="bold" font-size="3.8"
+        fill="#D4A020" letter-spacing="0.2">FIFA WORLD CUP</text>
+
+  <!-- Base -->
+  <rect x="36" y="78" width="30" height="9" rx="3" fill="#A87810"/>
+
+  <!-- Shine gradient def (used above) -->
+  <defs>
+    <radialGradient id="globe-shine" cx="40%" cy="35%" r="55%">
+      <stop offset="0%"   stop-color="#ECC84A" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#A07010" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

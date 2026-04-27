@@ -1,6 +1,8 @@
 // football-data.org v4 API client
 // Module-level cache shared across all server requests on the same instance (55s TTL)
 
+export { FD_CLUB_IDS } from "./fd-club-ids";
+
 export interface FDMatch {
   id: number;
   utcDate: string;
@@ -14,6 +16,8 @@ export interface FDMatch {
     | "POSTPONED"
     | "CANCELLED"
     | "AWARDED";
+  stage: string;
+  matchday: number | null;
   minute: number | null;
   injuryTime: number | null;
   homeTeam: { id: number; name: string; shortName: string; tla: string };
@@ -50,6 +54,11 @@ async function apiFetch<T>(path: string): Promise<T> {
 
 export async function fetchWCSchedule(): Promise<FDMatch[]> {
   const data = await apiFetch<{ matches: FDMatch[] }>("/competitions/WC/matches");
+  return data.matches;
+}
+
+export async function fetchCLSchedule(): Promise<FDMatch[]> {
+  const data = await apiFetch<{ matches: FDMatch[] }>("/competitions/CL/matches?season=2025");
   return data.matches;
 }
 

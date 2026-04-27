@@ -43,7 +43,7 @@ async function simulateTournamentProgression(
   // Helper: complete upcoming matches before simulated date and score them
   async function completeMatchesBefore(date: Date, useKnockoutScoring: boolean) {
     const matches = await db.match.findMany({
-      where: { tournamentId, status: "UPCOMING", kickoffAt: { lt: date } },
+      where: { tournamentId, status: "UPCOMING", kickoffAt: { lt: date }, actualHomeScore: null },
     });
 
     for (const match of matches) {
@@ -87,6 +87,9 @@ async function simulateTournamentProgression(
       // Auto-resolve group_predictions bet type
       await autoResolveGroupPredictions(groupId, tournamentId, standings, allMatches);
 
+      // Auto-open post-group-stage bets (bracket, golden_ball, golden_glove)
+      await autoOpenPostGroupBets(tournamentId, simulatedDate);
+
       // Auto-resolve reverse_dark_horse — top-15 favs eliminated in group stage
       const { bestThirdPlaceTeams: btp } = await import("@/lib/tournament-engine");
       const advancingCodes = new Set<string>();
@@ -122,6 +125,11 @@ async function simulateTournamentProgression(
       if (winners.length > 0) {
         await createNextRoundMatches(tournamentId, phase, winners);
 
+        // Auto-open semifinalists when R16 teams are known (R32 complete)
+        if (nextPhase === "R16") {
+          await autoOpenAfterR32Bets(tournamentId, simulatedDate);
+        }
+
         // Auto-resolve dark_horse when QF teams are known (R16 complete)
         if (nextPhase === "QF") {
           const qfTeamCodes = new Set(
@@ -156,6 +164,7 @@ async function simulateTournamentProgression(
 
   if (isPhaseComplete(finalMatches, "FINAL")) {
     await autoResolveWinnerRunnerUp(groupId, tournamentId, finalMatches, teams);
+    await autoResolveBracket(groupId, tournamentId, finalMatches, teams);
   }
 
   // Auto-resolve awards if provided
@@ -163,13 +172,38 @@ async function simulateTournamentProgression(
     await autoResolveAwards(groupId, tournamentId, awards);
   }
 
-  // Recalculate leaderboard
-  if (totalCompleted > 0) {
-    await recalculateLeaderboard(groupId, tournamentId);
-  }
+  // Always recalculate leaderboard — tournament bets may have been scored
+  // even if no new matches were completed in this pass.
+  await recalculateLeaderboard(groupId, tournamentId);
 }
 
 // ─── Auto-resolve helpers ───
+
+async function autoOpenPostGroupBets(tournamentId: string, simulatedDate: Date) {
+  const POST_GROUP_SUBTYPES = ["bracket", "golden_ball", "golden_glove"];
+  const bets = await db.betType.findMany({
+    where: { tournamentId, subType: { in: POST_GROUP_SUBTYPES }, status: "DRAFT" },
+  });
+  for (const bt of bets) {
+    await db.betType.update({
+      where: { id: bt.id },
+      data: { status: "OPEN", opensAt: simulatedDate },
+    });
+  }
+}
+
+async function autoOpenAfterR32Bets(tournamentId: string, simulatedDate: Date) {
+  const AFTER_R32_SUBTYPES = ["semifinalists"];
+  const bets = await db.betType.findMany({
+    where: { tournamentId, subType: { in: AFTER_R32_SUBTYPES }, status: "DRAFT" },
+  });
+  for (const bt of bets) {
+    await db.betType.update({
+      where: { id: bt.id },
+      data: { status: "OPEN", opensAt: simulatedDate },
+    });
+  }
+}
 
 async function autoResolveGroupPredictions(
   groupId: string,
@@ -345,6 +379,55 @@ async function autoResolveReverseDarkHorse(
   await scoreBets(groupId, tournamentId, null, betType.id);
 }
 
+async function autoResolveBracket(
+  groupId: string,
+  tournamentId: string,
+  matches: Array<{
+    id: string;
+    phase: string;
+    status: string;
+    homeTeamId: string;
+    awayTeamId: string;
+    kickoffAt: Date;
+    actualHomeScore: number | null;
+    actualAwayScore: number | null;
+  }>,
+  teams: Array<{ id: string; code: string }>
+) {
+  const betType = await db.betType.findFirst({ where: { tournamentId, subType: "bracket" } });
+  if (!betType || betType.status === "RESOLVED") return;
+
+  const KNOCKOUT_PHASES = ["R32", "R16", "QF", "SF", "FINAL"] as const;
+  const winners: Record<string, string> = {};
+
+  for (const phase of KNOCKOUT_PHASES) {
+    const phaseMatches = matches
+      .filter((m) => m.phase === phase && m.status === "COMPLETED")
+      .sort(
+        (a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime()
+      );
+    phaseMatches.forEach((m, i) => {
+      if (m.actualHomeScore == null || m.actualAwayScore == null) return;
+      const winnerId =
+        m.actualHomeScore >= m.actualAwayScore ? m.homeTeamId : m.awayTeamId;
+      const winnerCode = teams.find((t) => t.id === winnerId)?.code;
+      if (winnerCode) winners[`${phase}-${i}`] = winnerCode;
+    });
+  }
+
+  if (Object.keys(winners).length === 0) return;
+
+  await db.betType.update({
+    where: { id: betType.id },
+    data: {
+      status: "RESOLVED",
+      resolution: { winners } as unknown as Prisma.InputJsonValue,
+      resolvedAt: new Date(),
+    },
+  });
+  await scoreBets(groupId, tournamentId, null, betType.id);
+}
+
 async function autoResolveAwards(
   groupId: string,
   tournamentId: string,
@@ -447,10 +530,37 @@ export async function updateSimulationDate(groupId: string, newDateStr: string, 
   const newDate = new Date(newDateStr);
   if (isNaN(newDate.getTime())) return { error: "Invalid date" };
 
-  // Reset to snapshot state
-  await restoreSnapshot(groupId, settings.simulation.snapshot);
+  const isMovingForward = newDate > new Date(settings.simulation.simulatedDate);
 
-  // Re-fetch tournament after restore
+  if (!isMovingForward) {
+    // Moving backward: full restore so over-simulated matches are wiped
+    await restoreSnapshot(groupId, settings.simulation.snapshot);
+  } else {
+    // Moving forward: keep match results (random scores stay stable) but
+    // clear tournament-bet scores so they get re-scored with current settings.
+    const tournament0 = await db.tournament.findFirst({ where: { groupId } });
+    if (tournament0) {
+      const tournamentBetTypeIds = (
+        await db.betType.findMany({
+          where: { tournamentId: tournament0.id, category: { not: "PER_GAME" } },
+          select: { id: true },
+        })
+      ).map((bt) => bt.id);
+
+      await db.bet.updateMany({
+        where: { tournamentId: tournament0.id, betTypeId: { in: tournamentBetTypeIds }, scoredAt: { not: null } },
+        data: { isCorrect: null, basePoints: null, bonusPoints: null, totalPoints: null, scoredAt: null },
+      });
+
+      // Un-resolve tournament bet types so they get re-resolved and re-scored.
+      await db.betType.updateMany({
+        where: { id: { in: tournamentBetTypeIds }, status: "RESOLVED" },
+        data: { status: "LOCKED", resolution: Prisma.JsonNull, resolvedAt: null },
+      });
+    }
+  }
+
+  // Re-fetch tournament after potential restore
   const tournament = await db.tournament.findFirst({
     where: { groupId },
     include: { betTypes: true, matches: true },

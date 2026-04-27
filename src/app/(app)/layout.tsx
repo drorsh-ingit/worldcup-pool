@@ -21,7 +21,10 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen bg-neutral-50 pb-16 sm:pb-0">
       <AppNav user={session.user} groups={groups} />
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      <main
+        className="max-w-screen-2xl mx-auto page-x-pad"
+        style={{ paddingBottom: "50vh" }}
+      >
         {children}
       </main>
     </div>

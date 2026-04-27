@@ -66,3 +66,50 @@ export function Flag({ code, size = "sm", className = "", title }: FlagProps) {
 
   return <FlagSvg className={base} title={title ?? code} />;
 }
+
+const CIRCLE_SIZE_PX: Record<FlagSize, number> = {
+  xs: 20,
+  sm: 28,
+  md: 40,
+  lg: 56,
+};
+
+/**
+ * Circular flag — renders the flag cropped into a circle with a thin ring.
+ * The flag SVG (3:2) is scaled to fill the square container by height, with
+ * overflowing sides clipped by the circular mask.
+ */
+export function CircleFlag({
+  code,
+  size = "md",
+  className = "",
+  title,
+}: FlagProps) {
+  const px = CIRCLE_SIZE_PX[size];
+  const wrapperStyle = { width: px, height: px };
+
+  const renderInner = () => {
+    if (code === "ENG") return <EnglandFlag className="h-full w-auto max-w-none" title={title ?? "England"} />;
+    if (code === "SCO") return <ScotlandFlag className="h-full w-auto max-w-none" title={title ?? "Scotland"} />;
+
+    const iso = FIFA_TO_ISO[code];
+    if (!iso) {
+      return (
+        <span className="text-[9px] font-semibold text-neutral-500">{code}</span>
+      );
+    }
+    const FlagSvg = (Flags as Record<string, React.ComponentType<{ className?: string; title?: string }>>)[iso];
+    if (!FlagSvg) return <span className="h-full w-full bg-neutral-200" />;
+    return <FlagSvg className="h-full w-auto max-w-none" title={title ?? code} />;
+  };
+
+  return (
+    <span
+      style={wrapperStyle}
+      className={`inline-flex items-center justify-center rounded-full overflow-hidden bg-white ring-1 ring-neutral-200 shrink-0 ${className}`}
+      aria-label={title ?? code}
+    >
+      {renderInner()}
+    </span>
+  );
+}

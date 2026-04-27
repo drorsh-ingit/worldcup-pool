@@ -44,7 +44,7 @@ export function RefreshOddsButton({
         {loading ? "Refreshing…" : "Refresh odds"}
       </button>
       {result && (
-        <span className={`text-xs ${result.includes("No odds") || result.includes("not set") ? "text-amber-600" : "text-emerald-600"}`}>
+        <span className={`text-xs ${result.includes("No odds") || result.includes("not set") ? "text-pitch-700" : "text-emerald-600"}`}>
           {result}
         </span>
       )}

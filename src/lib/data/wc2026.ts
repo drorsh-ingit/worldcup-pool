@@ -17,78 +17,92 @@ export interface TeamData {
 }
 
 export const WC2026_TEAMS: TeamData[] = [
-  // Group A
-  { name: "Mexico", code: "MEX", groupLetter: "A", odds: { winnerOdds: 3500, groupWinnerOdds: 250, qualifyOdds: 130 } },
-  { name: "South Africa", code: "RSA", groupLetter: "A", odds: { winnerOdds: 10000, groupWinnerOdds: 800, qualifyOdds: 320 } },
-  { name: "South Korea", code: "KOR", groupLetter: "A", odds: { winnerOdds: 3500, groupWinnerOdds: 270, qualifyOdds: 138 } },
-  { name: "Czechia", code: "CZE", groupLetter: "A", odds: { winnerOdds: 2000, groupWinnerOdds: 180, qualifyOdds: 110 } },
+  // Group A — winnerOdds updated from The Odds API 2026-04-25
+  { name: "Mexico", code: "MEX", groupLetter: "A", odds: { winnerOdds: 8100, groupWinnerOdds: 250, qualifyOdds: 130 } },
+  { name: "South Africa", code: "RSA", groupLetter: "A", odds: { winnerOdds: 100000, groupWinnerOdds: 800, qualifyOdds: 320 } },
+  { name: "South Korea", code: "KOR", groupLetter: "A", odds: { winnerOdds: 43000, groupWinnerOdds: 270, qualifyOdds: 138 } },
+  { name: "Czechia", code: "CZE", groupLetter: "A", odds: { winnerOdds: 30100, groupWinnerOdds: 180, qualifyOdds: 110 } },
 
   // Group B
-  { name: "Canada", code: "CAN", groupLetter: "B", odds: { winnerOdds: 3000, groupWinnerOdds: 220, qualifyOdds: 120 } },
-  { name: "Bosnia-Herzegovina", code: "BIH", groupLetter: "B", odds: { winnerOdds: 6000, groupWinnerOdds: 480, qualifyOdds: 215 } },
-  { name: "Qatar", code: "QAT", groupLetter: "B", odds: { winnerOdds: 12000, groupWinnerOdds: 950, qualifyOdds: 380 } },
-  { name: "Switzerland", code: "SUI", groupLetter: "B", odds: { winnerOdds: 2800, groupWinnerOdds: 220, qualifyOdds: 125 } },
+  { name: "Canada", code: "CAN", groupLetter: "B", odds: { winnerOdds: 20100, groupWinnerOdds: 220, qualifyOdds: 120 } },
+  { name: "Bosnia-Herzegovina", code: "BIH", groupLetter: "B", odds: { winnerOdds: 30100, groupWinnerOdds: 480, qualifyOdds: 215 } },
+  { name: "Qatar", code: "QAT", groupLetter: "B", odds: { winnerOdds: 100100, groupWinnerOdds: 950, qualifyOdds: 380 } },
+  { name: "Switzerland", code: "SUI", groupLetter: "B", odds: { winnerOdds: 8100, groupWinnerOdds: 220, qualifyOdds: 125 } },
 
   // Group C
-  { name: "Brazil", code: "BRA", groupLetter: "C", odds: { winnerOdds: 400, groupWinnerOdds: 55, qualifyOdds: 40 } },
-  { name: "Haiti", code: "HAI", groupLetter: "C", odds: { winnerOdds: 20000, groupWinnerOdds: 2000, qualifyOdds: 750 } },
-  { name: "Morocco", code: "MAR", groupLetter: "C", odds: { winnerOdds: 1800, groupWinnerOdds: 160, qualifyOdds: 100 } },
-  { name: "Scotland", code: "SCO", groupLetter: "C", odds: { winnerOdds: 3500, groupWinnerOdds: 270, qualifyOdds: 140 } },
+  { name: "Brazil", code: "BRA", groupLetter: "C", odds: { winnerOdds: 900, groupWinnerOdds: 55, qualifyOdds: 40 } },
+  { name: "Haiti", code: "HAI", groupLetter: "C", odds: { winnerOdds: 200100, groupWinnerOdds: 2000, qualifyOdds: 750 } },
+  { name: "Morocco", code: "MAR", groupLetter: "C", odds: { winnerOdds: 5500, groupWinnerOdds: 160, qualifyOdds: 100 } },
+  { name: "Scotland", code: "SCO", groupLetter: "C", odds: { winnerOdds: 24000, groupWinnerOdds: 270, qualifyOdds: 140 } },
 
   // Group D
-  { name: "Australia", code: "AUS", groupLetter: "D", odds: { winnerOdds: 5500, groupWinnerOdds: 440, qualifyOdds: 210 } },
-  { name: "Paraguay", code: "PAR", groupLetter: "D", odds: { winnerOdds: 4000, groupWinnerOdds: 310, qualifyOdds: 170 } },
-  { name: "Turkey", code: "TUR", groupLetter: "D", odds: { winnerOdds: 2500, groupWinnerOdds: 220, qualifyOdds: 125 } },
-  { name: "United States", code: "USA", groupLetter: "D", odds: { winnerOdds: 1200, groupWinnerOdds: 130, qualifyOdds: 80 } },
+  { name: "Australia", code: "AUS", groupLetter: "D", odds: { winnerOdds: 50100, groupWinnerOdds: 440, qualifyOdds: 210 } },
+  { name: "Paraguay", code: "PAR", groupLetter: "D", odds: { winnerOdds: 15100, groupWinnerOdds: 310, qualifyOdds: 170 } },
+  { name: "Turkey", code: "TUR", groupLetter: "D", odds: { winnerOdds: 10100, groupWinnerOdds: 220, qualifyOdds: 125 } },
+  { name: "United States", code: "USA", groupLetter: "D", odds: { winnerOdds: 6100, groupWinnerOdds: 130, qualifyOdds: 80 } },
 
   // Group E
-  { name: "Germany", code: "GER", groupLetter: "E", odds: { winnerOdds: 550, groupWinnerOdds: 70, qualifyOdds: 50 } },
-  { name: "Curaçao", code: "CUR", groupLetter: "E", odds: { winnerOdds: 25000, groupWinnerOdds: 2500, qualifyOdds: 900 } },
-  { name: "Côte d'Ivoire", code: "CIV", groupLetter: "E", odds: { winnerOdds: 4500, groupWinnerOdds: 350, qualifyOdds: 190 } },
-  { name: "Ecuador", code: "ECU", groupLetter: "E", odds: { winnerOdds: 5000, groupWinnerOdds: 400, qualifyOdds: 195 } },
+  { name: "Germany", code: "GER", groupLetter: "E", odds: { winnerOdds: 1500, groupWinnerOdds: 70, qualifyOdds: 50 } },
+  { name: "Curaçao", code: "CUR", groupLetter: "E", odds: { winnerOdds: 200100, groupWinnerOdds: 2500, qualifyOdds: 900 } },
+  { name: "Côte d'Ivoire", code: "CIV", groupLetter: "E", odds: { winnerOdds: 30100, groupWinnerOdds: 350, qualifyOdds: 190 } },
+  { name: "Ecuador", code: "ECU", groupLetter: "E", odds: { winnerOdds: 10100, groupWinnerOdds: 400, qualifyOdds: 195 } },
 
   // Group F
-  { name: "Netherlands", code: "NED", groupLetter: "F", odds: { winnerOdds: 1100, groupWinnerOdds: 120, qualifyOdds: 75 } },
-  { name: "Japan", code: "JPN", groupLetter: "F", odds: { winnerOdds: 2200, groupWinnerOdds: 200, qualifyOdds: 115 } },
-  { name: "Sweden", code: "SWE", groupLetter: "F", odds: { winnerOdds: 3000, groupWinnerOdds: 230, qualifyOdds: 125 } },
-  { name: "Tunisia", code: "TUN", groupLetter: "F", odds: { winnerOdds: 5000, groupWinnerOdds: 400, qualifyOdds: 200 } },
+  { name: "Netherlands", code: "NED", groupLetter: "F", odds: { winnerOdds: 2100, groupWinnerOdds: 120, qualifyOdds: 75 } },
+  { name: "Japan", code: "JPN", groupLetter: "F", odds: { winnerOdds: 5100, groupWinnerOdds: 200, qualifyOdds: 115 } },
+  { name: "Sweden", code: "SWE", groupLetter: "F", odds: { winnerOdds: 10100, groupWinnerOdds: 230, qualifyOdds: 125 } },
+  { name: "Tunisia", code: "TUN", groupLetter: "F", odds: { winnerOdds: 50100, groupWinnerOdds: 400, qualifyOdds: 200 } },
 
   // Group G
-  { name: "Belgium", code: "BEL", groupLetter: "G", odds: { winnerOdds: 1400, groupWinnerOdds: 135, qualifyOdds: 82 } },
-  { name: "Egypt", code: "EGY", groupLetter: "G", odds: { winnerOdds: 6000, groupWinnerOdds: 500, qualifyOdds: 220 } },
-  { name: "Iran", code: "IRN", groupLetter: "G", odds: { winnerOdds: 4500, groupWinnerOdds: 360, qualifyOdds: 185 } },
-  { name: "New Zealand", code: "NZL", groupLetter: "G", odds: { winnerOdds: 15000, groupWinnerOdds: 1500, qualifyOdds: 530 } },
+  { name: "Belgium", code: "BEL", groupLetter: "G", odds: { winnerOdds: 3600, groupWinnerOdds: 135, qualifyOdds: 82 } },
+  { name: "Egypt", code: "EGY", groupLetter: "G", odds: { winnerOdds: 30100, groupWinnerOdds: 500, qualifyOdds: 220 } },
+  { name: "Iran", code: "IRN", groupLetter: "G", odds: { winnerOdds: 50100, groupWinnerOdds: 360, qualifyOdds: 185 } },
+  { name: "New Zealand", code: "NZL", groupLetter: "G", odds: { winnerOdds: 100100, groupWinnerOdds: 1500, qualifyOdds: 530 } },
 
   // Group H
-  { name: "Spain", code: "ESP", groupLetter: "H", odds: { winnerOdds: 450, groupWinnerOdds: 60, qualifyOdds: 45 } },
-  { name: "Cape Verde Islands", code: "CPV", groupLetter: "H", odds: { winnerOdds: 15000, groupWinnerOdds: 1400, qualifyOdds: 500 } },
-  { name: "Saudi Arabia", code: "KSA", groupLetter: "H", odds: { winnerOdds: 6000, groupWinnerOdds: 480, qualifyOdds: 215 } },
-  { name: "Uruguay", code: "URU", groupLetter: "H", odds: { winnerOdds: 1400, groupWinnerOdds: 140, qualifyOdds: 85 } },
+  { name: "Spain", code: "ESP", groupLetter: "H", odds: { winnerOdds: 600, groupWinnerOdds: 60, qualifyOdds: 45 } },
+  { name: "Cape Verde Islands", code: "CPV", groupLetter: "H", odds: { winnerOdds: 100100, groupWinnerOdds: 1400, qualifyOdds: 500 } },
+  { name: "Saudi Arabia", code: "KSA", groupLetter: "H", odds: { winnerOdds: 100100, groupWinnerOdds: 480, qualifyOdds: 215 } },
+  { name: "Uruguay", code: "URU", groupLetter: "H", odds: { winnerOdds: 8100, groupWinnerOdds: 140, qualifyOdds: 85 } },
 
   // Group I
-  { name: "France", code: "FRA", groupLetter: "I", odds: { winnerOdds: 500, groupWinnerOdds: 70, qualifyOdds: 50 } },
-  { name: "Senegal", code: "SEN", groupLetter: "I", odds: { winnerOdds: 3500, groupWinnerOdds: 270, qualifyOdds: 140 } },
-  { name: "Iraq", code: "IRQ", groupLetter: "I", odds: { winnerOdds: 6000, groupWinnerOdds: 490, qualifyOdds: 218 } },
-  { name: "Norway", code: "NOR", groupLetter: "I", odds: { winnerOdds: 1400, groupWinnerOdds: 140, qualifyOdds: 85 } },
+  { name: "France", code: "FRA", groupLetter: "I", odds: { winnerOdds: 620, groupWinnerOdds: 70, qualifyOdds: 50 } },
+  { name: "Senegal", code: "SEN", groupLetter: "I", odds: { winnerOdds: 10100, groupWinnerOdds: 270, qualifyOdds: 140 } },
+  { name: "Iraq", code: "IRQ", groupLetter: "I", odds: { winnerOdds: 100100, groupWinnerOdds: 490, qualifyOdds: 218 } },
+  { name: "Norway", code: "NOR", groupLetter: "I", odds: { winnerOdds: 3100, groupWinnerOdds: 140, qualifyOdds: 85 } },
 
   // Group J
-  { name: "Argentina", code: "ARG", groupLetter: "J", odds: { winnerOdds: 500, groupWinnerOdds: 65, qualifyOdds: 48 } },
-  { name: "Algeria", code: "ALG", groupLetter: "J", odds: { winnerOdds: 5000, groupWinnerOdds: 400, qualifyOdds: 200 } },
-  { name: "Austria", code: "AUT", groupLetter: "J", odds: { winnerOdds: 1600, groupWinnerOdds: 145, qualifyOdds: 88 } },
-  { name: "Jordan", code: "JOR", groupLetter: "J", odds: { winnerOdds: 8000, groupWinnerOdds: 650, qualifyOdds: 270 } },
+  { name: "Argentina", code: "ARG", groupLetter: "J", odds: { winnerOdds: 950, groupWinnerOdds: 65, qualifyOdds: 48 } },
+  { name: "Algeria", code: "ALG", groupLetter: "J", odds: { winnerOdds: 40100, groupWinnerOdds: 400, qualifyOdds: 200 } },
+  { name: "Austria", code: "AUT", groupLetter: "J", odds: { winnerOdds: 15100, groupWinnerOdds: 145, qualifyOdds: 88 } },
+  { name: "Jordan", code: "JOR", groupLetter: "J", odds: { winnerOdds: 200100, groupWinnerOdds: 650, qualifyOdds: 270 } },
 
   // Group K
-  { name: "Portugal", code: "POR", groupLetter: "K", odds: { winnerOdds: 700, groupWinnerOdds: 90, qualifyOdds: 60 } },
-  { name: "Congo DR", code: "COD", groupLetter: "K", odds: { winnerOdds: 8000, groupWinnerOdds: 650, qualifyOdds: 270 } },
-  { name: "Uzbekistan", code: "UZB", groupLetter: "K", odds: { winnerOdds: 12000, groupWinnerOdds: 950, qualifyOdds: 380 } },
-  { name: "Colombia", code: "COL", groupLetter: "K", odds: { winnerOdds: 1600, groupWinnerOdds: 145, qualifyOdds: 88 } },
+  { name: "Portugal", code: "POR", groupLetter: "K", odds: { winnerOdds: 1200, groupWinnerOdds: 90, qualifyOdds: 60 } },
+  { name: "Congo DR", code: "COD", groupLetter: "K", odds: { winnerOdds: 75100, groupWinnerOdds: 650, qualifyOdds: 270 } },
+  { name: "Uzbekistan", code: "UZB", groupLetter: "K", odds: { winnerOdds: 100100, groupWinnerOdds: 950, qualifyOdds: 380 } },
+  { name: "Colombia", code: "COL", groupLetter: "K", odds: { winnerOdds: 4100, groupWinnerOdds: 145, qualifyOdds: 88 } },
 
   // Group L
-  { name: "England", code: "ENG", groupLetter: "L", odds: { winnerOdds: 600, groupWinnerOdds: 75, qualifyOdds: 52 } },
-  { name: "Croatia", code: "CRO", groupLetter: "L", odds: { winnerOdds: 1800, groupWinnerOdds: 160, qualifyOdds: 100 } },
-  { name: "Ghana", code: "GHA", groupLetter: "L", odds: { winnerOdds: 9000, groupWinnerOdds: 750, qualifyOdds: 300 } },
-  { name: "Panama", code: "PAN", groupLetter: "L", odds: { winnerOdds: 10000, groupWinnerOdds: 800, qualifyOdds: 310 } },
+  { name: "England", code: "ENG", groupLetter: "L", odds: { winnerOdds: 750, groupWinnerOdds: 75, qualifyOdds: 52 } },
+  { name: "Croatia", code: "CRO", groupLetter: "L", odds: { winnerOdds: 8100, groupWinnerOdds: 160, qualifyOdds: 100 } },
+  { name: "Ghana", code: "GHA", groupLetter: "L", odds: { winnerOdds: 40100, groupWinnerOdds: 750, qualifyOdds: 300 } },
+  { name: "Panama", code: "PAN", groupLetter: "L", odds: { winnerOdds: 100100, groupWinnerOdds: 800, qualifyOdds: 310 } },
 ];
+
+/**
+ * Maps The Odds API team names to our 3-letter codes.
+ * Only needed where API name differs from our team.name.
+ */
+export const WC2026_API_NAME_TO_CODE: Record<string, string> = {
+  "USA": "USA",
+  "Bosnia & Herzegovina": "BIH",
+  "Czech Republic": "CZE",
+  "Ivory Coast": "CIV",
+  "DR Congo": "COD",
+  "Cape Verde": "CPV",
+  "Saudi Arabia": "KSA",
+};
 
 /** Group letters in order */
 export const GROUP_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"] as const;
@@ -236,6 +250,37 @@ export function groupStageKickoff(groupLetter: string, matchday: number, matchIn
   return match ? new Date(match.kickoffAt) : new Date("2026-06-11T18:00:00Z");
 }
 
+/** Best player candidates (Golden Ball) — top outfield players */
+export const GOLDEN_BALL_CANDIDATES = [
+  { playerName: "Kylian Mbappé", teamCode: "FRA", odds: 500 },
+  { playerName: "Jude Bellingham", teamCode: "ENG", odds: 600 },
+  { playerName: "Vinicius Jr.", teamCode: "BRA", odds: 700 },
+  { playerName: "Erling Haaland", teamCode: "NOR", odds: 800 },
+  { playerName: "Lamine Yamal", teamCode: "ESP", odds: 900 },
+  { playerName: "Pedri", teamCode: "ESP", odds: 1000 },
+  { playerName: "Lionel Messi", teamCode: "ARG", odds: 1000 },
+  { playerName: "Rodrygo", teamCode: "BRA", odds: 1200 },
+  { playerName: "Phil Foden", teamCode: "ENG", odds: 1400 },
+  { playerName: "Lautaro Martínez", teamCode: "ARG", odds: 1500 },
+  { playerName: "Florian Wirtz", teamCode: "GER", odds: 1600 },
+  { playerName: "Bukayo Saka", teamCode: "ENG", odds: 1800 },
+] as const;
+
+/** Best goalkeeper candidates (Golden Glove) */
+export const GOLDEN_GLOVE_CANDIDATES = [
+  { playerName: "Emiliano Martínez", teamCode: "ARG", odds: 500 },
+  { playerName: "Alisson Becker", teamCode: "BRA", odds: 700 },
+  { playerName: "Mike Maignan", teamCode: "FRA", odds: 800 },
+  { playerName: "David Raya", teamCode: "ESP", odds: 900 },
+  { playerName: "Jordan Pickford", teamCode: "ENG", odds: 1000 },
+  { playerName: "Gregor Kobel", teamCode: "SUI", odds: 1200 },
+  { playerName: "Yann Sommer", teamCode: "SUI", odds: 1400 },
+  { playerName: "Diogo Costa", teamCode: "POR", odds: 1500 },
+  { playerName: "Yassine Bounou", teamCode: "MAR", odds: 2000 },
+  { playerName: "Tyler Adams", teamCode: "USA", odds: 2500 },
+  { playerName: "Dominik Livakovic", teamCode: "CRO", odds: 2500 },
+] as const;
+
 /** Top scorer candidates — top 10 by bookmaker odds */
 export const GOLDEN_BOOT_CANDIDATES = [
   { playerName: "Kylian Mbappé", teamCode: "FRA", odds: 600 },
@@ -298,70 +343,124 @@ export function knockoutKickoff(phase: string, matchIndex: number): Date {
   return d;
 }
 
-/** Pre-tournament standard bet types */
-export const PRE_TOURNAMENT_BET_TYPES = [
+export type BetOpenTrigger =
+  | "PRE_TOURNAMENT"
+  | "AFTER_GROUP_STAGE"
+  | "AFTER_R32"
+  | "AFTER_R16"
+  | "AFTER_QF"
+  | "AFTER_SF";
+
+export const BET_OPEN_TRIGGER_LABELS: Record<BetOpenTrigger, string> = {
+  PRE_TOURNAMENT: "Pre-tournament (1 week before)",
+  AFTER_GROUP_STAGE: "After group stage",
+  AFTER_R32: "After Round of 32",
+  AFTER_R16: "After Round of 16",
+  AFTER_QF: "After Quarter-Finals",
+  AFTER_SF: "After Semi-Finals",
+};
+
+export const BET_OPEN_TRIGGERS: BetOpenTrigger[] = [
+  "PRE_TOURNAMENT",
+  "AFTER_GROUP_STAGE",
+  "AFTER_R32",
+  "AFTER_R16",
+  "AFTER_QF",
+  "AFTER_SF",
+];
+
+const TOURNAMENT_START = new Date("2026-06-11T00:00:00Z");
+
+/**
+ * Resolve an open trigger into concrete (opensAt, locksAt) dates.
+ * Opens: the moment the stage transition happens.
+ * Locks: the first match of the next stage (so users can't place the bet after it's begun to be decided).
+ */
+export function resolveOpenTrigger(trigger: BetOpenTrigger): { opensAt: Date; locksAt: Date } {
+  const oneWeekBefore = new Date(TOURNAMENT_START.getTime() - 7 * 24 * 60 * 60 * 1000);
+  switch (trigger) {
+    case "PRE_TOURNAMENT":
+      return { opensAt: oneWeekBefore, locksAt: TOURNAMENT_START };
+    case "AFTER_GROUP_STAGE":
+      // Group stage ends ~Jun 30 evening; R32 starts Jul 2.
+      return { opensAt: new Date("2026-07-01T00:00:00Z"), locksAt: knockoutKickoff("R32", 0) };
+    case "AFTER_R32":
+      // R32 ends Jul 5; R16 starts Jul 6.
+      return { opensAt: new Date("2026-07-05T23:00:00Z"), locksAt: knockoutKickoff("R16", 0) };
+    case "AFTER_R16":
+      return { opensAt: new Date("2026-07-09T23:00:00Z"), locksAt: knockoutKickoff("QF", 0) };
+    case "AFTER_QF":
+      return { opensAt: new Date("2026-07-11T23:00:00Z"), locksAt: knockoutKickoff("SF", 0) };
+    case "AFTER_SF":
+      return { opensAt: new Date("2026-07-14T23:00:00Z"), locksAt: knockoutKickoff("FINAL", 0) };
+  }
+}
+
+/** Tournament bet types — all bets about overall tournament outcomes, each with its own open trigger. */
+export const TOURNAMENT_BET_TYPES: ReadonlyArray<{
+  subType: string;
+  name: string;
+  description: string;
+  openTrigger: BetOpenTrigger;
+}> = [
   {
     subType: "winner",
     name: "Tournament Winner",
     description: "Pick the team that will lift the World Cup trophy. Higher odds = bigger payout.",
-    category: "PRE_TOURNAMENT" as const,
+    openTrigger: "PRE_TOURNAMENT",
   },
   {
     subType: "runner_up",
     name: "Runner Up",
     description: "Pick the team that reaches the final but loses. Scores separately from the winner bet.",
-    category: "PRE_TOURNAMENT" as const,
+    openTrigger: "PRE_TOURNAMENT",
   },
   {
     subType: "golden_boot",
     name: "Golden Boot",
     description: "Pick the tournament's top scorer. Points are odds-scaled — backing a longshot pays more.",
-    category: "PRE_TOURNAMENT" as const,
+    openTrigger: "PRE_TOURNAMENT",
   },
   {
     subType: "group_predictions",
     name: "Group Predictions",
     description: "For each group, pick the winner and the teams that advance. 12 group winners + 20 advancing teams. Points awarded per correct pick, scaled by how unlikely the pick was.",
-    category: "PRE_TOURNAMENT" as const,
+    openTrigger: "PRE_TOURNAMENT",
   },
   {
     subType: "dark_horse",
     name: "Dark Horse",
     description: "Pick an underdog (odds > 20/1) that will reach the quarter-finals. Big points for correct calls — only long-shot teams are eligible.",
-    category: "PRE_TOURNAMENT" as const,
+    openTrigger: "PRE_TOURNAMENT",
   },
   {
     subType: "reverse_dark_horse",
     name: "Reverse Dark Horse",
     description: "Pick a favourite (top 15 by odds) that will be knocked out in the group stage. Backing a big name to crash out early pays big.",
-    category: "PRE_TOURNAMENT" as const,
+    openTrigger: "PRE_TOURNAMENT",
   },
-] as const;
-
-/** Milestone bet types — created at init but open at different tournament stages */
-export const MILESTONE_BET_TYPES = [
   {
     subType: "bracket",
     name: "Knockout Bracket",
     description: "Predict the full knockout bracket — who advances through every round from R32 to the final.",
-    category: "MILESTONE" as const,
+    openTrigger: "AFTER_GROUP_STAGE",
   },
   {
     subType: "golden_glove",
     name: "Golden Glove",
     description: "Pick the goalkeeper awarded the Golden Glove for the best performance of the tournament.",
-    category: "MILESTONE" as const,
+    openTrigger: "AFTER_GROUP_STAGE",
   },
   {
     subType: "golden_ball",
     name: "Golden Ball",
     description: "Pick the player awarded the Golden Ball — given to the tournament's best overall player.",
-    category: "MILESTONE" as const,
+    openTrigger: "AFTER_GROUP_STAGE",
   },
   {
     subType: "semifinalists",
     name: "Semifinalists",
     description: "Pick the 4 teams that reach the semi-finals. Opens after the Round of 32, locks before the Round of 16.",
-    category: "MILESTONE" as const,
+    openTrigger: "AFTER_R32",
   },
-] as const;
+];

@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Lock, CheckCircle } from "lucide-react";
+import { Lock, MapPin, Clock } from "lucide-react";
 import { placeBet } from "@/lib/actions/bets";
 import { getLiveMatchScore, type LiveScore } from "@/lib/actions/live-scores";
-import { Flag } from "@/components/flag";
+import { TeamBadge } from "@/components/team-badge";
 import { cn } from "@/lib/utils";
 
 interface MatchBetCardProps {
   groupId: string;
   tournamentId: string;
+  tournamentKind: string;
   match: {
     id: string;
     homeTeamCode: string;
@@ -36,25 +37,25 @@ function outcomeFromScore(h: number, a: number): "home" | "draw" | "away" {
   return h > a ? "home" : a > h ? "away" : "draw";
 }
 
-function formatKickoff(date: Date): string {
-  const month = date.toLocaleDateString("en-US", { month: "short" });
-  const day = date.getDate();
+function formatTime(date: Date): string {
   const hours = date.getHours().toString().padStart(2, "0");
   const mins = date.getMinutes().toString().padStart(2, "0");
-  return `${month} ${day} · ${hours}:${mins}`;
+  return `${hours}:${mins}`;
 }
 
-/** Pill label for match phase/round */
-function phaseLabel(phase: string, groupLetter: string | null): string {
-  if (phase === "GROUP" && groupLetter) return `Group ${groupLetter}`;
+function formatDate(date: Date): string {
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function phaseLabel(phase: string, groupLetter: string | null, tournamentKind?: string): string {
+  if (phase === "GROUP" && groupLetter && tournamentKind !== "UCL_2026") return `Group ${groupLetter}`;
+  if (tournamentKind === "UCL_2026") {
+    if (phase === "GROUP") return "League Phase";
+    if (phase === "R32") return "Playoffs";
+  }
   const labels: Record<string, string> = {
-    GROUP: "Group Stage",
-    R32: "Round of 32",
-    R16: "Round of 16",
-    QF: "Quarter-final",
-    SF: "Semi-final",
-    FINAL: "Final",
-    THIRD: "3rd Place",
+    GROUP: "Group Stage", R32: "Round of 32", R16: "Round of 16",
+    QF: "Quarter-final", SF: "Semi-final", FINAL: "Final", THIRD: "3rd Place",
   };
   return labels[phase] ?? phase;
 }
@@ -62,6 +63,7 @@ function phaseLabel(phase: string, groupLetter: string | null): string {
 export function MatchBetCard({
   groupId,
   tournamentId,
+  tournamentKind,
   match,
   matchWinnerBetTypeId,
   correctScoreBetTypeId,
@@ -89,12 +91,13 @@ export function MatchBetCard({
   );
 
   const kickoff = new Date(match.kickoffAt);
-  const isLocked = !betsOpen || match.status === "LOCKED" || match.status === "COMPLETED";
+  const isPastKickoff = new Date() > kickoff;
+  const isLocked = !betsOpen || match.status === "LOCKED" || match.status === "COMPLETED" || isPastKickoff;
+  const betsNotOpenYet = !betsOpen && match.status === "UPCOMING" && !isPastKickoff;
 
   useEffect(() => {
     const now = new Date();
     if (kickoff > now || match.status === "COMPLETED") return;
-
     let cancelled = false;
     async function poll() {
       const res = await getLiveMatchScore(groupId, match.id);
@@ -102,42 +105,67 @@ export function MatchBetCard({
     }
     poll();
     const interval = setInterval(poll, 60_000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
+    return () => { cancelled = true; clearInterval(interval); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, match.id, match.status]);
 
-  const effectivelyFinished =
-    match.status === "COMPLETED" || liveScore?.status === "FINISHED";
-  const displayHome = effectivelyFinished
-    ? (match.actualHomeScore ?? liveScore?.home)
-    : liveScore?.home;
-  const displayAway = effectivelyFinished
-    ? (match.actualAwayScore ?? liveScore?.away)
-    : liveScore?.away;
+  const effectivelyFinished = match.status === "COMPLETED" || liveScore?.status === "FINISHED";
+  const displayHome = effectivelyFinished ? (match.actualHomeScore ?? liveScore?.home) : liveScore?.home;
+  const displayAway = effectivelyFinished ? (match.actualAwayScore ?? liveScore?.away) : liveScore?.away;
   const isInPlay =
     match.status !== "COMPLETED" &&
     liveScore != null &&
     (liveScore.status === "IN_PLAY" || liveScore.status === "PAUSED");
+
+  const isCompleted = match.status === "COMPLETED" && match.actualHomeScore != null;
 
   const parsedHome = parseInt(homeScore);
   const parsedAway = parseInt(awayScore);
   const hasValidScore = !isNaN(parsedHome) && !isNaN(parsedAway);
   const predictedOutcome = hasValidScore ? outcomeFromScore(parsedHome, parsedAway) : null;
 
+  const savedOutcome = currentMatchWinner?.outcome as "home" | "draw" | "away" | undefined;
+  const hasSavedBet = currentCorrectScore?.homeScore != null;
+  const savedPredictedOutcome: "home" | "draw" | "away" | undefined =
+    hasSavedBet && currentCorrectScore!.homeScore != null && currentCorrectScore!.awayScore != null
+      ? outcomeFromScore(currentCorrectScore!.homeScore!, currentCorrectScore!.awayScore!)
+      : savedOutcome;
+
+  const actualOutcome = isCompleted
+    ? outcomeFromScore(match.actualHomeScore!, match.actualAwayScore!)
+    : null;
+  const outcomeCorrect = actualOutcome && savedPredictedOutcome ? savedPredictedOutcome === actualOutcome : null;
+  const scoreCorrect =
+    isCompleted &&
+    currentCorrectScore?.homeScore === match.actualHomeScore &&
+    currentCorrectScore?.awayScore === match.actualAwayScore;
+
   const homeWinPts = outcomePoints?.["home"];
   const drawPts = outcomePoints?.["draw"];
   const awayWinPts = outcomePoints?.["away"];
-  const scorePts = hasValidScore ? scorePointsMap?.[`${parsedHome}-${parsedAway}`] : undefined;
 
-  // Total potential pts for footer
-  const directionPts = predictedOutcome ? outcomePoints?.[predictedOutcome] : undefined;
+  const highlightOutcome = isCompleted
+    ? actualOutcome
+    : isLocked
+    ? savedPredictedOutcome
+    : predictedOutcome;
+
+  const savedDirectionPts = savedPredictedOutcome ? outcomePoints?.[savedPredictedOutcome] : undefined;
+  const savedScorePts = hasSavedBet
+    ? scorePointsMap?.[`${Math.min(currentCorrectScore!.homeScore!, 6)}-${Math.min(currentCorrectScore!.awayScore!, 6)}`]
+    : undefined;
+  const earnedPts = isCompleted && hasSavedBet
+    ? (outcomeCorrect ? (savedDirectionPts ?? 0) : 0) + (scoreCorrect ? (savedScorePts ?? 0) : 0)
+    : null;
+
+  const scorePts = hasValidScore ? scorePointsMap?.[`${Math.min(parsedHome, 6)}-${Math.min(parsedAway, 6)}`] : undefined;
+
+  // Potential: predicted direction pts + predicted score bonus
+  const predictedDirectionPts = predictedOutcome ? outcomePoints?.[predictedOutcome] : undefined;
   const potentialPts =
-    directionPts != null && scorePts != null
-      ? directionPts + scorePts
-      : directionPts ?? scorePts;
+    hasValidScore && predictedDirectionPts != null
+      ? predictedDirectionPts + (scorePts ?? 0)
+      : null;
 
   useEffect(() => {
     if (isLocked) return;
@@ -147,287 +175,270 @@ export function MatchBetCard({
     if (current === lastSavedRef.current) return;
 
     const timer = setTimeout(async () => {
-      setSaving(true);
-      setSaved(false);
-      setError(null);
-
+      setSaving(true); setSaved(false); setError(null);
       const outcome = outcomeFromScore(parsedHome, parsedAway);
       const ops: Promise<{ error?: string }>[] = [];
       if (correctScoreBetTypeId) {
-        ops.push(placeBet(groupId, {
-          tournamentId,
-          betTypeId: correctScoreBetTypeId,
-          matchId: match.id,
-          prediction: { homeScore: parsedHome, awayScore: parsedAway },
-        }));
+        ops.push(placeBet(groupId, { tournamentId, betTypeId: correctScoreBetTypeId, matchId: match.id, prediction: { homeScore: parsedHome, awayScore: parsedAway } }));
       }
       if (matchWinnerBetTypeId) {
-        ops.push(placeBet(groupId, {
-          tournamentId,
-          betTypeId: matchWinnerBetTypeId,
-          matchId: match.id,
-          prediction: { outcome },
-        }));
+        ops.push(placeBet(groupId, { tournamentId, betTypeId: matchWinnerBetTypeId, matchId: match.id, prediction: { outcome } }));
       }
       const results = await Promise.all(ops);
       setSaving(false);
       const firstError = results.find((r) => r.error)?.error;
-      if (firstError) {
-        setError(firstError);
-      } else {
-        lastSavedRef.current = current;
-        setSaved(true);
-      }
+      if (firstError) { setError(firstError); } else { lastSavedRef.current = current; setSaved(true); }
     }, 500);
 
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homeScore, awayScore, isLocked]);
 
-  const isCompleted = match.status === "COMPLETED" && match.actualHomeScore != null;
-  const actualOutcome = isCompleted
-    ? outcomeFromScore(match.actualHomeScore!, match.actualAwayScore!)
+  // Big boxes: show user's bet when locked/completed; live score during play
+  const shownHome = isCompleted
+    ? (hasSavedBet ? currentCorrectScore!.homeScore : null)
+    : isInPlay && displayHome != null
+    ? displayHome
+    : isLocked && hasSavedBet
+    ? currentCorrectScore!.homeScore
     : null;
-  const savedOutcome = currentMatchWinner?.outcome;
-  const outcomeCorrect = actualOutcome && savedOutcome ? savedOutcome === actualOutcome : null;
-  const scoreCorrect =
-    isCompleted &&
-    currentCorrectScore?.homeScore === match.actualHomeScore &&
-    currentCorrectScore?.awayScore === match.actualAwayScore;
+  const shownAway = isCompleted
+    ? (hasSavedBet ? currentCorrectScore!.awayScore : null)
+    : isInPlay && displayAway != null
+    ? displayAway
+    : isLocked && hasSavedBet
+    ? currentCorrectScore!.awayScore
+    : null;
 
-  const liveOutcome =
-    displayHome != null && displayAway != null
-      ? outcomeFromScore(displayHome, displayAway)
-      : null;
-  const projectedOutcomeMatch = isInPlay && liveOutcome && savedOutcome === liveOutcome;
-  const projectedScoreMatch =
-    isInPlay &&
-    displayHome != null &&
-    displayAway != null &&
-    currentCorrectScore?.homeScore === displayHome &&
-    currentCorrectScore?.awayScore === displayAway;
+  const noBetCompleted = isCompleted && !hasSavedBet;
 
-  const ptsHighlight = (outcome: "home" | "draw" | "away") => {
-    if (!hasValidScore) return "text-amber-500";
-    return predictedOutcome === outcome
-      ? "text-amber-500 font-semibold"
-      : "text-neutral-300";
-  };
+  const directionCellCls = (outcome: "home" | "draw" | "away") =>
+    cn(
+      "text-sm tabular-nums",
+      highlightOutcome === outcome ? "font-bold text-neutral-900" : "text-neutral-500"
+    );
+
+  const directionPts = (pts: number | undefined) =>
+    pts != null ? `${pts.toFixed(1)} pts` : "TBD";
 
   return (
     <div
       className={cn(
-        "rounded-2xl border border-neutral-200 bg-white overflow-hidden",
-        !isLocked && "card-hover"
+        "rounded-3xl border border-neutral-200 bg-white shadow-sm",
+        !isLocked && "transition-shadow hover:shadow-md"
       )}
     >
-      {/* Row 1: header bar */}
-      <div className="flex items-center justify-between px-3 py-2 bg-neutral-50 border-b border-neutral-100">
-        <span className="text-[11px] font-medium text-neutral-500 tracking-wide">
-          {phaseLabel(match.phase, match.groupLetter)}
-        </span>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-neutral-400 tabular-nums">
-            {formatKickoff(kickoff)}
+      {/* Header: phase + time, optional stats button */}
+      <div className="flex items-center justify-between gap-3" style={{ padding: "14px 20px 12px" }}>
+        <div className="inline-flex items-center gap-1.5 text-sm text-neutral-600 min-w-0">
+          <MapPin className="w-4 h-4 text-neutral-400 shrink-0" />
+          <span className="font-medium text-neutral-800 truncate">{phaseLabel(match.phase, match.groupLetter, tournamentKind)}</span>
+          <span className="text-neutral-300 px-0.5">·</span>
+          <Clock className="w-4 h-4 text-neutral-400 shrink-0" />
+          <span className="tabular-nums whitespace-nowrap">
+            {formatDate(kickoff)} {formatTime(kickoff)}
           </span>
-          {isLocked && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-100 rounded-full px-1.5 py-0.5">
-              <Lock className="w-2.5 h-2.5" />
-              {effectivelyFinished ? "Played" : "Locked"}
-            </span>
-          )}
         </div>
+        {isLocked && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-pitch-900 bg-pitch-50 border border-amber-200 rounded-full px-2.5 py-1 shrink-0">
+            <Lock className="w-3.5 h-3.5" />
+            {effectivelyFinished ? "Played" : "Locked"}
+          </span>
+        )}
       </div>
 
-      {/* Row 2: teams + score */}
-      <div className="flex items-center gap-3 px-4 py-4">
-
+      {/* Teams + score */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3" style={{ padding: "10px 20px 4px" }}>
         {/* Home team */}
-        <div className="flex-1 flex flex-col items-center gap-1.5">
-          <div className="rounded-full bg-white shadow-sm p-0.5 border border-neutral-100">
-            <Flag code={match.homeTeamCode} size="md" />
-          </div>
-          <span className="text-xs font-medium text-neutral-700 text-center leading-tight max-w-[72px] truncate">
+        <div className="flex flex-col items-center gap-2">
+          <TeamBadge code={match.homeTeamCode} tournamentKind={tournamentKind} size="md" />
+          <span className="text-sm font-semibold text-neutral-800 text-center leading-tight line-clamp-2">
             {match.homeTeamName || match.homeTeamCode}
           </span>
-          {!isLocked && homeWinPts != null && (
-            <span className={cn("text-xs tabular-nums transition-colors", ptsHighlight("home"))}>
-              {homeWinPts.toFixed(1)} pts
-            </span>
-          )}
-          {isLocked && (
-            <span className="text-xs text-neutral-300 tabular-nums">
-              {homeWinPts != null ? `${homeWinPts.toFixed(1)} pts` : ""}
-            </span>
-          )}
         </div>
 
-        {/* Score center */}
-        <div className="flex flex-col items-center gap-1 min-w-[120px]">
-          {/* Live / finished score display */}
-          {(effectivelyFinished || isInPlay) && displayHome != null ? (
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-display font-bold tabular-nums text-neutral-900">
-                {displayHome}
-              </span>
-              <span className="text-lg text-neutral-300 font-display">–</span>
-              <span className="text-2xl font-display font-bold tabular-nums text-neutral-900">
-                {displayAway}
-              </span>
-              {isInPlay && (
-                <span className="flex items-center gap-1 text-xs font-semibold text-red-500 ml-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                  {liveScore?.status === "PAUSED"
-                    ? "HT"
-                    : liveScore?.minute
-                    ? `${liveScore.minute}'`
-                    : "LIVE"}
-                </span>
-              )}
-            </div>
-          ) : isLocked ? (
-            <span className="text-2xl font-display font-medium text-neutral-300">vs</span>
-          ) : (
-            /* Score inputs */
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                min={0}
-                max={20}
-                value={homeScore}
-                onChange={(e) => { dirtyRef.current = true; setHomeScore(e.target.value); setSaved(false); }}
-                placeholder="–"
-                className="w-12 h-10 px-1 rounded-xl border border-neutral-200 text-xl font-display font-semibold text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-200 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-neutral-300"
-              />
-              <span className="text-xl font-display text-neutral-300">–</span>
-              <input
-                type="number"
-                min={0}
-                max={20}
-                value={awayScore}
-                onChange={(e) => { dirtyRef.current = true; setAwayScore(e.target.value); setSaved(false); }}
-                placeholder="–"
-                className="w-12 h-10 px-1 rounded-xl border border-neutral-200 text-xl font-display font-semibold text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-200 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-neutral-300"
-              />
-            </div>
-          )}
-
-          {/* Draw pts row (open bets) */}
-          {!isLocked && drawPts != null && (
-            <span className={cn("text-xs tabular-nums transition-colors mt-0.5", ptsHighlight("draw"))}>
-              Draw: {drawPts.toFixed(1)} pts
-            </span>
-          )}
-
-          {/* Exact score pts row */}
-          {!isLocked && scorePts != null && (
-            <span className="text-xs text-neutral-400 tabular-nums">
-              +<span className="text-amber-500 font-semibold">{scorePts.toFixed(1)}</span> pts if exact
-            </span>
-          )}
-
-          {/* Locked: user prediction */}
-          {isLocked && currentCorrectScore?.homeScore != null && (
-            <div className="flex flex-col items-center gap-0.5 mt-1">
+        {/* Score area */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center gap-1">
+            <ScoreCell
+              value={homeScore}
+              display={shownHome}
+              isLocked={isLocked}
+              onChange={(v) => { dirtyRef.current = true; setHomeScore(v); setSaved(false); }}
+              highlight={isCompleted ? (scoreCorrect ? "emerald" : "grayed") : isLocked ? "grayed" : undefined}
+            />
+            <span className="text-base font-medium text-neutral-400 px-1.5">vs</span>
+            <ScoreCell
+              value={awayScore}
+              display={shownAway}
+              isLocked={isLocked}
+              onChange={(v) => { dirtyRef.current = true; setAwayScore(v); setSaved(false); }}
+              highlight={isCompleted ? (scoreCorrect ? "emerald" : "grayed") : isLocked ? "grayed" : undefined}
+            />
+          </div>
+          {/* Secondary info below score */}
+          <div style={{ minHeight: 20 }} className="flex items-center justify-center">
+            {isCompleted ? (
               <span className={cn(
-                "text-sm font-semibold tabular-nums font-display",
-                scoreCorrect || projectedScoreMatch
-                  ? "text-emerald-600"
-                  : outcomeCorrect
-                  ? "text-amber-700"
-                  : "text-neutral-600"
+                "text-xs tabular-nums font-medium",
+                scoreCorrect ? "text-emerald-600 font-semibold" : "text-neutral-500"
               )}>
-                {currentCorrectScore.homeScore} – {currentCorrectScore.awayScore}
+                Final: {match.actualHomeScore}–{match.actualAwayScore}
+                {scoreCorrect ? " ✓" : ""}
               </span>
-              {scoreCorrect && (
-                <span className="text-xs text-emerald-600 font-medium">Exact!</span>
-              )}
-              {!scoreCorrect && outcomeCorrect && (
-                <span className="text-xs text-amber-600">Winner correct</span>
-              )}
-              {outcomeCorrect === false && (
-                <span className="text-xs text-red-500">Incorrect</span>
-              )}
-              {isCompleted && !scoreCorrect && (
-                <span className="text-xs text-neutral-400 tabular-nums">
-                  actual: {match.actualHomeScore}–{match.actualAwayScore}
-                </span>
-              )}
-              {isInPlay && projectedScoreMatch && (
-                <span className="text-xs text-emerald-600 flex items-center gap-0.5">
-                  <CheckCircle className="w-3 h-3" /> matches live!
-                </span>
-              )}
-              {isInPlay && !projectedScoreMatch && projectedOutcomeMatch && (
-                <span className="text-xs text-amber-600">winner leading</span>
-              )}
-              {isInPlay && !projectedScoreMatch && !projectedOutcomeMatch && displayHome != null && (
-                <span className="text-xs text-neutral-400 tabular-nums">
-                  live: {displayHome}–{displayAway}
-                </span>
-              )}
-            </div>
-          )}
-
-          {error && (
-            <span className="text-xs text-red-500 text-center mt-0.5">{error}</span>
-          )}
-          {saving && (
-            <span className="text-xs text-neutral-400 mt-0.5">Saving…</span>
-          )}
-          {saved && !saving && !isLocked && (
-            <span className="text-xs text-emerald-500 mt-0.5">Saved</span>
-          )}
+            ) : hasValidScore && scorePts != null ? (
+              <span className="text-sm font-semibold text-neutral-600 tabular-nums">+{scorePts.toFixed(1)} pts if exact</span>
+            ) : null}
+          </div>
         </div>
 
         {/* Away team */}
-        <div className="flex-1 flex flex-col items-center gap-1.5">
-          <div className="rounded-full bg-white shadow-sm p-0.5 border border-neutral-100">
-            <Flag code={match.awayTeamCode} size="md" />
-          </div>
-          <span className="text-xs font-medium text-neutral-700 text-center leading-tight max-w-[72px] truncate">
+        <div className="flex flex-col items-center gap-2">
+          <TeamBadge code={match.awayTeamCode} tournamentKind={tournamentKind} size="md" />
+          <span className="text-sm font-semibold text-neutral-800 text-center leading-tight line-clamp-2">
             {match.awayTeamName || match.awayTeamCode}
           </span>
-          {!isLocked && awayWinPts != null && (
-            <span className={cn("text-xs tabular-nums transition-colors", ptsHighlight("away"))}>
-              {awayWinPts.toFixed(1)} pts
-            </span>
-          )}
-          {isLocked && (
-            <span className="text-xs text-neutral-300 tabular-nums">
-              {awayWinPts != null ? `${awayWinPts.toFixed(1)} pts` : ""}
-            </span>
-          )}
         </div>
       </div>
 
-      {/* Row 3: footer with direction / score / potential */}
-      <div className="border-t border-neutral-100 px-4 py-2.5 bg-neutral-50">
-        {isLocked && currentCorrectScore?.homeScore == null ? (
-          <p className="text-center text-xs text-neutral-400">Locked – no bet placed</p>
-        ) : (
-          <div className="grid grid-cols-3 divide-x divide-neutral-200">
-            <div className="flex flex-col items-center gap-0.5 px-2">
-              <span className="text-[10px] uppercase tracking-wider text-neutral-400">Direction</span>
-              <span className="text-sm font-semibold text-neutral-900 tabular-nums">
-                {directionPts != null ? `${directionPts.toFixed(1)}` : "–"}
+      {/* Live indicator */}
+      {isInPlay && (
+        <div className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-red-500">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          {liveScore?.status === "PAUSED" ? "Half-time" : liveScore?.minute ? `${liveScore.minute}'` : "LIVE"}
+        </div>
+      )}
+
+      {/* Direction Pts row */}
+      <div className="border-t border-neutral-100" style={{ padding: "14px 20px" }}>
+        <div className="grid grid-cols-3 text-center gap-2">
+          <span className={directionCellCls("home")}>1 – {betsNotOpenYet ? "TBD" : directionPts(homeWinPts)}</span>
+          <span className={directionCellCls("draw")}>X – {betsNotOpenYet ? "TBD" : directionPts(drawPts)}</span>
+          <span className={directionCellCls("away")}>2 – {betsNotOpenYet ? "TBD" : directionPts(awayWinPts)}</span>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="relative flex items-center justify-end border-t border-neutral-100 bg-neutral-50 rounded-b-3xl" style={{ padding: "14px 20px" }}>
+        <span className="absolute inset-x-0 text-center text-sm font-bold text-neutral-900 tabular-nums pointer-events-none">
+          {isCompleted ? (
+            noBetCompleted ? (
+              <span className="text-neutral-400">No bet placed</span>
+            ) : (
+              <span className={earnedPts != null && earnedPts > 0 ? "text-pitch-700" : "text-neutral-700"}>
+                {earnedPts != null && earnedPts > 0 ? `${earnedPts.toFixed(1)} points earned` : "0 points earned"}
               </span>
-            </div>
-            <div className="flex flex-col items-center gap-0.5 px-2">
-              <span className="text-[10px] uppercase tracking-wider text-neutral-400">Score</span>
-              <span className="text-sm font-semibold text-neutral-900 tabular-nums">
-                {scorePts != null ? `+${scorePts.toFixed(1)}` : "–"}
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-0.5 px-2">
-              <span className="text-[10px] uppercase tracking-wider text-neutral-400">Potential</span>
-              <span className="text-sm font-semibold text-amber-500 tabular-nums">
-                {potentialPts != null ? `${potentialPts.toFixed(1)} pts` : "–"}
-              </span>
-            </div>
-          </div>
+            )
+          ) : betsNotOpenYet ? (
+            <span className="text-neutral-400">Potential points TBD</span>
+          ) : isPastKickoff && !hasSavedBet ? (
+            <span className="text-neutral-400">No bet placed</span>
+          ) : potentialPts != null ? (
+            `${potentialPts.toFixed(1)} potential points`
+          ) : (
+            <span className="text-neutral-400">0 potential points</span>
+          )}
+        </span>
+        {!(betsNotOpenYet && !hasSavedBet) && (
+          <StatusPill
+            isLocked={isLocked}
+            isCompleted={isCompleted}
+            betsNotOpenYet={betsNotOpenYet}
+            saving={saving}
+            saved={saved}
+            error={error}
+            hasSavedBet={hasSavedBet}
+          />
         )}
       </div>
     </div>
+  );
+}
+
+function ScoreCell({
+  value,
+  display,
+  isLocked,
+  onChange,
+  highlight,
+}: {
+  value: string;
+  display: number | null | undefined;
+  isLocked: boolean;
+  onChange: (v: string) => void;
+  highlight?: "emerald" | "amber" | "neutral" | "grayed";
+}) {
+  if (isLocked) {
+    const cls = cn(
+      "w-[52px] h-[52px] rounded-2xl border bg-white flex items-center justify-center text-2xl font-bold tabular-nums",
+      highlight === "emerald" && "text-emerald-600 border-emerald-200 bg-emerald-50",
+      highlight === "amber" && "text-pitch-700 border-amber-200 bg-pitch-50",
+      highlight === "grayed" && "text-neutral-300 border-neutral-150 bg-neutral-50",
+      (!highlight || highlight === "neutral") && "text-neutral-800 border-neutral-200"
+    );
+    return (
+      <div className={cls}>{display != null ? display : "–"}</div>
+    );
+  }
+  return (
+    <input
+      type="number"
+      min={0}
+      max={20}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder="–"
+      className="w-[52px] h-[52px] rounded-2xl border border-neutral-200 bg-white text-2xl font-bold text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-400/60 focus:border-amber-300 tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-neutral-300"
+    />
+  );
+}
+
+function StatusPill({
+  isLocked,
+  isCompleted,
+  betsNotOpenYet,
+  saving,
+  saved,
+  error,
+  hasSavedBet,
+}: {
+  isLocked: boolean;
+  isCompleted: boolean;
+  betsNotOpenYet: boolean;
+  saving: boolean;
+  saved: boolean;
+  error: string | null;
+  hasSavedBet: boolean;
+}) {
+  let label = "–";
+  let cls = "text-neutral-400 border-neutral-200";
+  if (isCompleted) {
+    label = hasSavedBet ? "Done" : "No bet";
+    cls = "text-neutral-500 border-neutral-200";
+  } else if (isLocked) {
+    label = hasSavedBet ? "Locked" : betsNotOpenYet ? "–" : "No bet";
+    cls = "text-neutral-500 border-neutral-200";
+  } else if (saving) {
+    label = "Saving…";
+    cls = "text-neutral-500 border-neutral-200";
+  } else if (error) {
+    label = "Error";
+    cls = "text-red-600 border-red-200 bg-red-50";
+  } else if (saved) {
+    label = "Saved";
+    cls = "text-emerald-700 border-emerald-200 bg-emerald-50";
+  } else {
+    label = "Pick";
+    cls = "text-neutral-400 border-neutral-200";
+  }
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center justify-center rounded-xl border bg-white px-3.5 py-2 text-sm font-semibold",
+        cls
+      )}
+    >
+      {label}
+    </span>
   );
 }

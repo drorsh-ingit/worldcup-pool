@@ -48,7 +48,7 @@ export function OptionPickForm({
   return (
     <div className="space-y-3">
       {isLocked && !selected && (
-        <div className="flex items-center gap-1.5 text-sm text-amber-600">
+        <div className="flex items-center gap-1.5 text-sm text-pitch-700">
           <Lock className="w-3.5 h-3.5" />
           Betting is closed
         </div>
@@ -61,7 +61,7 @@ export function OptionPickForm({
             disabled={isLocked || saving}
             className={`h-10 px-4 rounded-lg border text-sm font-medium text-left transition-colors ${
               selected === opt
-                ? "border-amber-400 bg-amber-50 text-amber-800"
+                ? "border-amber-400 bg-pitch-50 text-amber-800"
                 : "border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-default"
             }`}
           >

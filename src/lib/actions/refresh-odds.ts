@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import { fetchTournamentWinnerOdds, fetchMatchOdds, isConfigured } from "@/lib/odds-api";
 import { deriveScoreOdds, impliedTotalGoals } from "@/lib/match-odds";
+import { WC2026_API_NAME_TO_CODE, GOLDEN_BALL_CANDIDATES, GOLDEN_GLOVE_CANDIDATES, GOLDEN_BOOT_CANDIDATES } from "@/lib/data/wc2026";
 
 interface RefreshResult {
   refreshed: boolean;
@@ -25,15 +26,30 @@ export async function refreshTournamentWinnerOdds(tournamentId: string): Promise
   const teams = await db.team.findMany({ where: { tournamentId } });
   let updated = 0;
 
+  // Build reverse lookup: API team name → decimal odds
+  // API names sometimes differ from our team.name — WC2026_API_NAME_TO_CODE handles those.
+  const liveByCode: Record<string, number> = {};
+  for (const [apiName, decimalOdds] of Object.entries(live)) {
+    const code = WC2026_API_NAME_TO_CODE[apiName] ?? null;
+    if (code) {
+      liveByCode[code] = decimalOdds;
+    } else {
+      // Fall back to exact name match (most teams match directly)
+      liveByCode[`name:${apiName}`] = decimalOdds;
+    }
+  }
+
   await db.$transaction(
     teams.map((team) => {
-      const liveOdds = live[team.name];
+      // Match by code first, then by name
+      const liveOdds = liveByCode[team.code] ?? liveByCode[`name:${team.name}`] ?? null;
       if (liveOdds == null) {
         return db.team.update({ where: { id: team.id }, data: {} }); // no-op
       }
       updated++;
       const existing = (team.odds as Record<string, unknown>) ?? {};
-      const merged = { ...existing, winnerOdds: Math.round(liveOdds * 100) / 100 };
+      // Static seed stores winnerOdds as decimal × 100 (e.g., Spain=600 means 6.00 decimal).
+      const merged = { ...existing, winnerOdds: Math.round(liveOdds * 100) };
       return db.team.update({
         where: { id: team.id },
         data: { odds: merged as unknown as Prisma.InputJsonValue },
@@ -105,6 +121,50 @@ export async function refreshAllMatchOdds(tournamentId: string): Promise<Refresh
 }
 
 /**
+ * Snapshot relevant odds for a bet type at the moment it opens.
+ * Result is stored on BetType.frozenOdds and used for display + scoring,
+ * so that future Team.odds refreshes don't change points for bets already in flight.
+ *
+ * For tournament bets: snapshots all team odds (winnerOdds, groupWinnerOdds, qualifyOdds).
+ * For per-game / curated: returns null — those use per-Match oddsData / per-bet captured odds.
+ */
+export async function snapshotOddsForBetType(
+  tournamentId: string,
+  category: string,
+  subType?: string
+): Promise<Prisma.InputJsonValue | null> {
+  if (category !== "TOURNAMENT") return null;
+
+  // For player-award bets, snapshot the current candidate list sorted by odds.
+  // There is no live API for these markets, so we freeze the static list at open time
+  // so future edits to the data file don't affect already-open bets.
+  if (subType === "golden_ball") {
+    const candidates = [...GOLDEN_BALL_CANDIDATES].sort((a, b) => a.odds - b.odds);
+    return { candidates } as unknown as Prisma.InputJsonValue;
+  }
+  if (subType === "golden_glove") {
+    const candidates = [...GOLDEN_GLOVE_CANDIDATES].sort((a, b) => a.odds - b.odds);
+    return { candidates } as unknown as Prisma.InputJsonValue;
+  }
+  if (subType === "golden_boot") {
+    const candidates = [...GOLDEN_BOOT_CANDIDATES].sort((a, b) => a.odds - b.odds);
+    return { candidates } as unknown as Prisma.InputJsonValue;
+  }
+
+  const teams = await db.team.findMany({
+    where: { tournamentId },
+    select: { code: true, odds: true },
+  });
+
+  const teamsByCode: Record<string, unknown> = {};
+  for (const t of teams) {
+    teamsByCode[t.code] = t.odds;
+  }
+
+  return { teams: teamsByCode } as unknown as Prisma.InputJsonValue;
+}
+
+/**
  * Called before a bet type transitions to OPEN. Refreshes the odds most
  * relevant to that bet type's market. Never throws — odds refresh is
  * best-effort; callers proceed even on failure.
@@ -115,7 +175,7 @@ export async function refreshOddsForBetType(
   subType: string
 ): Promise<RefreshResult> {
   try {
-    if (category === "PRE_TOURNAMENT" && subType === "winner") {
+    if (category === "TOURNAMENT" && subType === "winner") {
       return await refreshTournamentWinnerOdds(tournamentId);
     }
     if (category === "PER_GAME") {

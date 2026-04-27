@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Sliders, ChevronDown, RotateCcw, Save, AlertTriangle, Check } from "lucide-react";
+import { Sliders, ChevronDown, RotateCcw, Save, AlertTriangle, Check, Lock } from "lucide-react";
 import { updateGroupSettings } from "@/lib/actions/tournaments";
 import { DEFAULT_GROUP_SETTINGS, type GroupSettings } from "@/lib/settings";
 
 // ─── Labels ───
 
 const TIER_LABELS: Record<string, string> = {
-  preTournament: "Pre-Tournament",
+  tournamentBets: "Tournament Bets",
   perGame: "Per Game",
-  milestone: "Milestone",
-  curated: "Curated",
+  curated: "Bonus",
 };
 
 const BET_LABELS: Record<string, string> = {
@@ -27,7 +26,7 @@ const BET_LABELS: Record<string, string> = {
   goldenGlove: "Golden Glove",
   goldenBall: "Golden Ball",
   semifinalists: "Semifinalists",
-  props: "Curated Props",
+  props: "Bonus Bets",
 };
 
 const BET_DESCRIPTIONS: Record<string, string> = {
@@ -43,7 +42,7 @@ const BET_DESCRIPTIONS: Record<string, string> = {
   goldenGlove: "Pick the goalkeeper awarded the Golden Glove.",
   goldenBall: "Pick the player awarded the Golden Ball (best player).",
   semifinalists: "Pick all 4 teams that reach the semi-finals.",
-  props: "Admin-defined custom prop bets.",
+  props: "Admin-defined custom bonus bets.",
 };
 
 const PHASE_LABELS: Record<string, string> = {
@@ -55,13 +54,15 @@ const PHASE_LABELS: Record<string, string> = {
   FINAL: "Final",
 };
 
-const TIER_KEYS = ["preTournament", "perGame", "milestone", "curated"] as const;
+const TIER_KEYS = ["tournamentBets", "perGame", "curated"] as const;
 
 // Which bet types belong to which tier
 const BET_TYPES_BY_TIER: Record<string, string[]> = {
-  preTournament: ["winner", "runnerUp", "goldenBoot", "groupPredictions", "darkHorse", "reverseDarkHorse"],
+  tournamentBets: [
+    "winner", "runnerUp", "goldenBoot", "groupPredictions", "darkHorse", "reverseDarkHorse",
+    "bracket", "goldenGlove", "goldenBall", "semifinalists",
+  ],
   perGame: ["matchWinner", "correctScore"],
-  milestone: ["bracket", "goldenGlove", "goldenBall", "semifinalists"],
   curated: ["props"],
 };
 
@@ -162,6 +163,7 @@ function NumInput({
   step = 1,
   suffix,
   hint,
+  disabled,
   className: extraClass,
 }: {
   label?: string;
@@ -172,6 +174,7 @@ function NumInput({
   step?: number;
   suffix?: string;
   hint?: string;
+  disabled?: boolean;
   className?: string;
 }) {
   return (
@@ -185,11 +188,12 @@ function NumInput({
           min={min}
           max={max}
           step={step}
-          className="w-20 h-8 px-2 rounded-lg border border-neutral-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-200"
+          disabled={disabled}
+          className="w-20 h-8 px-2 rounded-lg border border-neutral-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-50 disabled:cursor-not-allowed"
         />
         {suffix && <span className="text-xs text-neutral-400">{suffix}</span>}
       </div>
-      {hint && <p className="text-xs text-amber-600 mt-0.5">{hint}</p>}
+      {hint && <p className="text-xs text-pitch-700 mt-0.5">{hint}</p>}
     </div>
   );
 }
@@ -219,7 +223,7 @@ function OddsList({
         <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
         {expanded ? "Hide odds" : `Show odds`}
         {clampedCount > 0 && (
-          <span className="text-amber-500">({clampedCount} clamped)</span>
+          <span className="text-pitch-500">({clampedCount} clamped)</span>
         )}
       </button>
       {expanded && (
@@ -245,7 +249,7 @@ function OddsList({
                     <td className="py-1 px-2 text-right tabular-nums text-neutral-600 font-medium">
                       {e.points !== undefined ? e.points.toFixed(1) : "—"}
                     </td>
-                    <td className={`py-1 px-2 text-right ${isClamped ? "text-amber-500 font-medium" : "text-neutral-400"}`}>
+                    <td className={`py-1 px-2 text-right ${isClamped ? "text-pitch-500 font-medium" : "text-neutral-400"}`}>
                       {isClamped ? "clamped" : "—"}
                     </td>
                   </tr>
@@ -267,12 +271,14 @@ function BetTypeRow({
   oddsEntries,
   onBasePctChange,
   onThresholdChange,
+  disabled,
 }: {
   betKey: string;
   draft: Draft;
   oddsEntries?: OddsEntry[];
   onBasePctChange: (key: string, pctVal: number) => void;
   onThresholdChange: (key: string, val: number) => void;
+  disabled?: boolean;
 }) {
   const budget = betSubPool(draft, betKey);
   const basePctVal = draft.basePct[betKey as keyof typeof draft.basePct] ?? 0;
@@ -295,6 +301,7 @@ function BetTypeRow({
           step={1}
           suffix="%"
           hint={`${basePts.toFixed(1)} / ${budget.toFixed(1)} pts`}
+          disabled={disabled}
         />
         <NumInput
           label="Outlier cap"
@@ -303,6 +310,7 @@ function BetTypeRow({
           min={1}
           step={100}
           suffix={threshold >= 100000 ? "(none)" : `(${Math.round(threshold / 100)}/1)`}
+          disabled={disabled}
         />
       </div>
       {oddsEntries && oddsEntries.length > 0 && (
@@ -318,19 +326,20 @@ export function ScoringSettings({
   groupId,
   settings,
   oddsData,
+  locked = false,
 }: {
   groupId: string;
   settings: GroupSettings;
   oddsData?: OddsData;
+  locked?: boolean;
 }) {
   const initial: Draft = {
     ...DEFAULT_GROUP_SETTINGS,
     ...settings,
     tierWeights: { ...DEFAULT_GROUP_SETTINGS.tierWeights, ...settings.tierWeights },
     subWeights: {
-      preTournament: { ...DEFAULT_GROUP_SETTINGS.subWeights.preTournament, ...settings.subWeights?.preTournament },
+      tournamentBets: { ...DEFAULT_GROUP_SETTINGS.subWeights.tournamentBets, ...settings.subWeights?.tournamentBets },
       perGame: { ...DEFAULT_GROUP_SETTINGS.subWeights.perGame, ...settings.subWeights?.perGame },
-      milestone: { ...DEFAULT_GROUP_SETTINGS.subWeights.milestone, ...settings.subWeights?.milestone },
       curated: { ...DEFAULT_GROUP_SETTINGS.subWeights.curated, ...settings.subWeights?.curated },
     },
     basePct: { ...DEFAULT_GROUP_SETTINGS.basePct, ...settings.basePct },
@@ -434,17 +443,28 @@ export function ScoringSettings({
           <Sliders className="w-4 h-4 text-neutral-500" />
           <h2 className="text-sm font-semibold text-neutral-900">Scoring Settings</h2>
         </div>
-        <button
-          type="button"
-          onClick={handleReset}
-          className="text-xs text-neutral-400 hover:text-neutral-600 flex items-center gap-1 transition-colors"
-        >
-          <RotateCcw className="w-3 h-3" />
-          Reset to defaults
-        </button>
+        {!locked && (
+          <button
+            type="button"
+            onClick={handleReset}
+            className="text-xs text-neutral-400 hover:text-neutral-600 flex items-center gap-1 transition-colors"
+          >
+            <RotateCcw className="w-3 h-3" />
+            Reset to defaults
+          </button>
+        )}
       </div>
 
-      <div className="px-4">
+      {locked && (
+        <div className="flex items-start gap-2 px-4 py-2.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-800">
+          <Lock className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <span>
+            Scoring settings are locked once the first bet of the tournament has been opened, so points already in play don&apos;t shift retroactively.
+          </span>
+        </div>
+      )}
+
+      <div className={`px-4 ${locked ? "opacity-60" : ""}`}>
         {/* Total Pool */}
         <Section title="Total Pool" summary={`${draft.totalPool} pts`}>
           <NumInput
@@ -454,6 +474,7 @@ export function ScoringSettings({
             min={1}
             step={100}
             suffix="pts"
+            disabled={locked}
           />
           <p className="text-xs text-neutral-400 mt-1">
             Total points distributed across all bet types. Higher = bigger spreads between players.
@@ -479,6 +500,7 @@ export function ScoringSettings({
                   step={0.5}
                   suffix="%"
                   hint={`${tierPool.toFixed(1)} pts`}
+                  disabled={locked}
                 />
               );
             })}
@@ -515,6 +537,7 @@ export function ScoringSettings({
                         step={0.5}
                         suffix="%"
                         hint={`${budget.toFixed(1)} pts max`}
+                        disabled={locked}
                       />
                     );
                   })}
@@ -543,6 +566,7 @@ export function ScoringSettings({
                     oddsEntries={oddsData?.[key]}
                     onBasePctChange={setBasePct}
                     onThresholdChange={setThreshold}
+                    disabled={locked}
                   />
                 ))}
               </div>
@@ -566,6 +590,7 @@ export function ScoringSettings({
                 max={10}
                 step={0.1}
                 suffix="x"
+                disabled={locked}
               />
             ))}
           </div>
@@ -573,6 +598,7 @@ export function ScoringSettings({
       </div>
 
       {/* Footer: Save / status */}
+      {!locked && (
       <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-100">
         <div className="flex items-center gap-2">
           {error && <span className="text-xs text-red-500">{error}</span>}
@@ -591,12 +617,13 @@ export function ScoringSettings({
           type="button"
           onClick={handleSave}
           disabled={!dirty || !valid || saving}
-          className="h-9 px-4 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+          className="h-9 px-4 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
         >
           <Save className="w-3.5 h-3.5" />
           {saving ? "Saving..." : "Save changes"}
         </button>
       </div>
+      )}
     </section>
   );
 }

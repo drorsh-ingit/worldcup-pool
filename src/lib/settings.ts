@@ -2,30 +2,27 @@ export const DEFAULT_GROUP_SETTINGS = {
   totalPool: 1000,
 
   tierWeights: {
-    preTournament: 0.25,
-    perGame: 0.40,
-    milestone: 0.20,
+    tournamentBets: 0.30,
+    perGame: 0.55,
     curated: 0.15,
   },
 
   subWeights: {
-    preTournament: {
-      winner: 0.25,
-      runnerUp: 0.15,
-      goldenBoot: 0.15,
-      groupPredictions: 0.30,
-      darkHorse: 0.075,
-      reverseDarkHorse: 0.075,
+    tournamentBets: {
+      winner: 0.10,
+      runnerUp: 0.07,
+      goldenBoot: 0.06,
+      groupPredictions: 0.25,
+      darkHorse: 0.04,
+      reverseDarkHorse: 0.04,
+      bracket: 0.25,
+      goldenGlove: 0.06,
+      goldenBall: 0.06,
+      semifinalists: 0.07,
     },
     perGame: {
       matchWinner: 0.55,
       correctScore: 0.45,
-    },
-    milestone: {
-      bracket: 0.40,
-      goldenGlove: 0.15,
-      goldenBall: 0.15,
-      semifinalists: 0.30,
     },
     curated: {
       props: 1.0,
@@ -55,7 +52,7 @@ export const DEFAULT_GROUP_SETTINGS = {
     runnerUp: 20000,
     goldenBoot: 8000,
     groupPredictions: 5000,
-    darkHorse: 10000,
+    darkHorse: 35000,
     reverseDarkHorse: 10000,
     matchWinner: 100000,
     correctScore: 100000,
@@ -127,9 +124,8 @@ export function resolveGroupSettings(stored: unknown): GroupSettings {
     ...s,
     tierWeights: { ...DEFAULT_GROUP_SETTINGS.tierWeights, ...(s.tierWeights ?? {}) },
     subWeights: {
-      preTournament: { ...DEFAULT_GROUP_SETTINGS.subWeights.preTournament, ...(s.subWeights?.preTournament ?? {}) },
+      tournamentBets: { ...DEFAULT_GROUP_SETTINGS.subWeights.tournamentBets, ...(s.subWeights?.tournamentBets ?? {}) },
       perGame: { ...DEFAULT_GROUP_SETTINGS.subWeights.perGame, ...(s.subWeights?.perGame ?? {}) },
-      milestone: { ...DEFAULT_GROUP_SETTINGS.subWeights.milestone, ...(s.subWeights?.milestone ?? {}) },
       curated: { ...DEFAULT_GROUP_SETTINGS.subWeights.curated, ...(s.subWeights?.curated ?? {}) },
     },
     basePct: { ...DEFAULT_GROUP_SETTINGS.basePct, ...(s.basePct ?? {}) },

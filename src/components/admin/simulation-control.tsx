@@ -62,12 +62,12 @@ export function SimulationControl({
   }
 
   return (
-    <section className="p-4 rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/50 space-y-4">
+    <section className="p-4 rounded-xl border-2 border-dashed border-amber-300 bg-pitch-50/50 space-y-4">
       <div className="flex items-center gap-2">
-        <FlaskConical className="w-4 h-4 text-amber-600" />
+        <FlaskConical className="w-4 h-4 text-pitch-700" />
         <h2 className="text-sm font-semibold text-amber-900">Simulation Mode</h2>
         {simulationEnabled && (
-          <span className="ml-auto text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+          <span className="ml-auto text-xs font-medium text-pitch-900 bg-pitch-50 px-2 py-0.5 rounded-full">
             Active
           </span>
         )}
@@ -99,7 +99,7 @@ export function SimulationControl({
             type="datetime-local"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="flex-1 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400"
+            className="flex-1 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
             min="2026-06-01T00:00"
             max="2026-07-25T00:00"
           />
@@ -110,7 +110,7 @@ export function SimulationControl({
             <button
               onClick={handleActivate}
               disabled={loading}
-              className="h-9 px-4 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-60 transition-colors flex items-center gap-1.5"
+              className="h-9 px-4 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors flex items-center gap-1.5"
             >
               <Play className="w-3.5 h-3.5" />
               {loading ? "Activating..." : "Activate"}
@@ -120,7 +120,7 @@ export function SimulationControl({
               <button
                 onClick={handleUpdateDate}
                 disabled={loading}
-                className="h-9 px-4 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-60 transition-colors flex items-center gap-1.5"
+                className="h-9 px-4 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors flex items-center gap-1.5"
               >
                 <CalendarClock className="w-3.5 h-3.5" />
                 {loading ? "Updating..." : "Update Date"}
@@ -152,7 +152,7 @@ export function SimulationControl({
               value={goldenBoot}
               onChange={(e) => setGoldenBoot(e.target.value)}
               placeholder="Player name"
-              className="w-full h-8 px-2 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400"
+              className="w-full h-8 px-2 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
             />
             <datalist id="golden-boot-list">
               {GOLDEN_BOOT_CANDIDATES.map((c) => (
@@ -166,7 +166,7 @@ export function SimulationControl({
               value={goldenBall}
               onChange={(e) => setGoldenBall(e.target.value)}
               placeholder="Player name"
-              className="w-full h-8 px-2 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400"
+              className="w-full h-8 px-2 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
             />
           </div>
           <div className="space-y-1">
@@ -175,7 +175,7 @@ export function SimulationControl({
               value={goldenGlove}
               onChange={(e) => setGoldenGlove(e.target.value)}
               placeholder="Goalkeeper name"
-              className="w-full h-8 px-2 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400"
+              className="w-full h-8 px-2 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
             />
           </div>
         </div>

@@ -10,6 +10,11 @@ import { BetTypeControls } from "@/components/admin/bet-type-controls";
 import { CuratedPropForm } from "@/components/admin/curated-prop-form";
 import { SimulationControl } from "@/components/admin/simulation-control";
 import { ScoringSettings, type OddsData } from "@/components/admin/scoring-settings";
+import { DeleteGroupButton } from "@/components/admin/delete-group-button";
+import { SyncResultsButton } from "@/components/admin/sync-results-button";
+import { RecalculateStandingsButton } from "@/components/admin/recalculate-standings-button";
+import { ResetTournamentButton } from "@/components/admin/reset-tournament-button";
+import { DebugCLFixturesButton } from "@/components/admin/debug-cl-fixtures-button";
 import { resolveGroupSettings, type GroupSettings } from "@/lib/settings";
 import { GOLDEN_BOOT_CANDIDATES } from "@/lib/data/wc2026";
 import { calculatePoints } from "@/lib/scoring";
@@ -146,7 +151,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
       {/* Tournament setup */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-amber-500" />
+          <Trophy className="w-4 h-4 text-pitch-500" />
           <h2 className="font-display text-sm font-semibold text-neutral-900">Tournament</h2>
         </div>
 
@@ -171,30 +176,49 @@ export default async function AdminPage({ params }: AdminPageProps) {
                 </div>
               </div>
               <RefreshOddsButton tournamentId={tournament.id} />
+              <SyncResultsButton groupId={groupId} />
+              <RecalculateStandingsButton groupId={groupId} />
+              <ResetTournamentButton groupId={groupId} />
+              {tournament.kind === "UCL_2026" && (
+                <DebugCLFixturesButton groupId={groupId} />
+              )}
             </div>
 
-            {/* Groups overview */}
+            {/* Groups / Teams overview */}
             <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
               <div className="px-4 py-2.5 border-b border-neutral-100 bg-neutral-50">
                 <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                  Groups &amp; Teams
+                  {tournament.kind === "UCL_2026" ? "League Phase — Teams" : "Groups & Teams"}
                 </p>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-px bg-neutral-100">
-                {["A","B","C","D","E","F","G","H","I","J","K","L"].map((letter) => {
-                  const groupTeams = tournament.teams.filter((t) => t.groupLetter === letter);
-                  return (
-                    <div key={letter} className="bg-white p-3">
-                      <p className="text-xs font-semibold text-amber-500 mb-1.5">Group {letter}</p>
-                      {groupTeams.map((t) => (
-                        <p key={t.id} className="text-xs text-neutral-700 leading-5">
-                          {t.code} — {t.name}
-                        </p>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
+              {tournament.kind === "UCL_2026" ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-px bg-neutral-100">
+                  {[...tournament.teams]
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((t) => (
+                      <div key={t.id} className="bg-white p-3 flex items-center gap-2">
+                        <span className="text-xs font-semibold text-neutral-500 w-8 shrink-0">{t.code}</span>
+                        <span className="text-xs text-neutral-700 truncate">{t.name}</span>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-px bg-neutral-100">
+                  {["A","B","C","D","E","F","G","H","I","J","K","L"].map((letter) => {
+                    const groupTeams = tournament.teams.filter((t) => t.groupLetter === letter);
+                    return (
+                      <div key={letter} className="bg-white p-3">
+                        <p className="text-xs font-semibold text-pitch-500 mb-1.5">Group {letter}</p>
+                        {groupTeams.map((t) => (
+                          <p key={t.id} className="text-xs text-neutral-700 leading-5">
+                            {t.code} — {t.name}
+                          </p>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -206,6 +230,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
           groupId={groupId}
           settings={groupSettings}
           oddsData={oddsData}
+          locked={tournament.betTypes.some((bt) => bt.status !== "DRAFT")}
         />
       )}
 
@@ -228,6 +253,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
               description: bt.description,
               category: bt.category,
               status: bt.status as "DRAFT" | "OPEN" | "LOCKED" | "RESOLVED",
+              openTrigger: bt.openTrigger,
               opensAt: bt.opensAt,
               locksAt: bt.locksAt,
             }))}
@@ -235,6 +261,12 @@ export default async function AdminPage({ params }: AdminPageProps) {
           <CuratedPropForm groupId={groupId} tournamentId={tournament.id} />
         </section>
       )}
+
+      {/* Danger zone */}
+      <section className="p-4 rounded-xl border border-red-100 bg-red-50 space-y-3">
+        <h2 className="text-sm font-semibold text-red-700">Danger zone</h2>
+        <DeleteGroupButton groupId={groupId} groupName={group.name} />
+      </section>
 
     </div>
   );

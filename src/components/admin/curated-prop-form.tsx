@@ -66,7 +66,7 @@ export function CuratedPropForm({
         className="inline-flex items-center gap-2 h-9 px-4 rounded-xl border border-neutral-200 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
       >
         <Plus className="w-4 h-4" />
-        Add prop bet
+        Add bonus bet
       </button>
     );
   }
@@ -74,7 +74,7 @@ export function CuratedPropForm({
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-neutral-900">New prop bet</p>
+        <p className="text-sm font-medium text-neutral-900">New bonus bet</p>
         <button onClick={() => setOpen(false)} className="text-neutral-400 hover:text-neutral-600">
           <X className="w-4 h-4" />
         </button>
@@ -111,7 +111,7 @@ export function CuratedPropForm({
             </div>
           ))}
           {options.length < 6 && (
-            <button onClick={addOption} className="text-xs text-amber-600 hover:text-amber-700 flex items-center gap-1">
+            <button onClick={addOption} className="text-xs text-pitch-700 hover:text-pitch-900 flex items-center gap-1">
               <Plus className="w-3 h-3" /> Add option
             </button>
           )}
@@ -133,9 +133,9 @@ export function CuratedPropForm({
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="h-9 px-4 rounded-xl bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-60 transition-colors"
+          className="h-9 px-4 rounded-xl bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors"
         >
-          {loading ? "Creating..." : "Create prop bet"}
+          {loading ? "Creating..." : "Create bonus bet"}
         </button>
         <button
           onClick={() => setOpen(false)}

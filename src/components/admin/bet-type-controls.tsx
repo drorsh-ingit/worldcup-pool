@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { CheckCircle, Lock, Circle, ChevronDown, ChevronUp } from "lucide-react";
-import { openBetType, lockBetType, reopenBetType, resolveBetType } from "@/lib/actions/bet-types";
+import { openBetType, lockBetType, reopenBetType, resolveBetType, updateBetTypeOpenTrigger } from "@/lib/actions/bet-types";
+import { BET_OPEN_TRIGGERS, BET_OPEN_TRIGGER_LABELS, type BetOpenTrigger } from "@/lib/data/wc2026";
 
 interface BetTypeRow {
   id: string;
@@ -11,6 +12,7 @@ interface BetTypeRow {
   description?: string | null;
   status: "DRAFT" | "OPEN" | "LOCKED" | "RESOLVED";
   category: string;
+  openTrigger: BetOpenTrigger | null;
   opensAt: Date | null;
   locksAt: Date | null;
 }
@@ -19,7 +21,7 @@ function statusBadge(status: BetTypeRow["status"]) {
   const map = {
     DRAFT: "bg-neutral-100 text-neutral-500",
     OPEN: "bg-emerald-50 text-emerald-600",
-    LOCKED: "bg-amber-50 text-amber-600",
+    LOCKED: "bg-pitch-50 text-pitch-700",
     RESOLVED: "bg-neutral-100 text-neutral-400",
   };
   return `text-xs px-2 py-0.5 rounded-full font-medium ${map[status]}`;
@@ -101,7 +103,7 @@ function ResolutionForm({
         <button
           onClick={handleResolve}
           disabled={loading || !value.trim()}
-          className="h-8 px-3 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-60 transition-colors"
+          className="h-8 px-3 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors"
         >
           {loading ? "Resolving..." : "Resolve"}
         </button>
@@ -125,6 +127,7 @@ function BetTypeRow({
 }) {
   const [loading, setLoading] = useState(false);
   const [showResolve, setShowResolve] = useState(false);
+  const [triggerError, setTriggerError] = useState<string | null>(null);
 
   async function handleOpen() {
     setLoading(true);
@@ -140,6 +143,20 @@ function BetTypeRow({
     setLoading(true);
     try { await reopenBetType(groupId, betType.id); } finally { setLoading(false); }
   }
+
+  async function handleTriggerChange(next: BetOpenTrigger) {
+    setLoading(true);
+    setTriggerError(null);
+    try {
+      const result = await updateBetTypeOpenTrigger(groupId, betType.id, next);
+      if ("error" in result) setTriggerError(result.error as string);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const showTriggerDropdown =
+    betType.category === "TOURNAMENT" && betType.status === "DRAFT";
 
   return (
     <div className="px-4 py-3 border-b border-neutral-50 last:border-0">
@@ -163,6 +180,21 @@ function BetTypeRow({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {showTriggerDropdown && (
+            <select
+              value={betType.openTrigger ?? "PRE_TOURNAMENT"}
+              onChange={(e) => handleTriggerChange(e.target.value as BetOpenTrigger)}
+              disabled={loading}
+              className="h-7 px-2 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-700 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-60"
+              title="When this bet opens"
+            >
+              {BET_OPEN_TRIGGERS.map((t) => (
+                <option key={t} value={t}>
+                  Opens: {BET_OPEN_TRIGGER_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          )}
           <span className={statusBadge(betType.status)}>{betType.status}</span>
           {betType.status === "DRAFT" && (
             <button
@@ -177,7 +209,7 @@ function BetTypeRow({
             <button
               onClick={handleLock}
               disabled={loading}
-              className="h-7 px-2.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium hover:bg-amber-100 disabled:opacity-60 transition-colors"
+              className="h-7 px-2.5 rounded-lg bg-pitch-50 text-pitch-900 text-xs font-medium hover:bg-pitch-50 disabled:opacity-60 transition-colors"
             >
               Lock
             </button>
@@ -202,6 +234,9 @@ function BetTypeRow({
           )}
         </div>
       </div>
+      {triggerError && (
+        <p className="text-xs text-red-500 mt-1">{triggerError}</p>
+      )}
       {showResolve && (
         <ResolutionForm
           groupId={groupId}
@@ -220,6 +255,24 @@ export function BetTypeControls({
   groupId: string;
   betTypes: BetTypeRow[];
 }) {
+  // Canonical display order for tournament bets — matches the bets page.
+  const TOURNAMENT_BET_ORDER = [
+    "winner",
+    "runner_up",
+    "golden_boot",
+    "dark_horse",
+    "reverse_dark_horse",
+    "group_predictions",
+    "bracket",
+    "golden_ball",
+    "golden_glove",
+    "semifinalists",
+  ];
+  const tournamentRank = (subType: string) => {
+    const i = TOURNAMENT_BET_ORDER.indexOf(subType);
+    return i === -1 ? TOURNAMENT_BET_ORDER.length : i;
+  };
+
   const grouped = betTypes.reduce(
     (acc, bt) => {
       const key = bt.category;
@@ -229,12 +282,14 @@ export function BetTypeControls({
     },
     {} as Record<string, BetTypeRow[]>
   );
+  if (grouped.TOURNAMENT) {
+    grouped.TOURNAMENT.sort((a, b) => tournamentRank(a.subType) - tournamentRank(b.subType));
+  }
 
   const categoryLabel: Record<string, string> = {
-    PRE_TOURNAMENT: "Pre-Tournament",
+    TOURNAMENT: "Tournament",
     PER_GAME: "Per Game",
-    MILESTONE: "Milestones",
-    CURATED: "Curated Props",
+    CURATED: "Bonus Bets",
   };
 
   return (

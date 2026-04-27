@@ -3,7 +3,9 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { refreshOddsForBetType } from "@/lib/actions/refresh-odds";
+import { refreshOddsForBetType, snapshotOddsForBetType } from "@/lib/actions/refresh-odds";
+import { getProfile } from "@/lib/tournaments/registry";
+import type { BetOpenTrigger } from "@prisma/client";
 
 async function requireAdmin(groupId: string) {
   const session = await auth();
@@ -25,9 +27,17 @@ export async function openBetType(groupId: string, betTypeId: string) {
   // Best-effort live odds refresh right before opening; ignored on failure.
   const refresh = await refreshOddsForBetType(betType.tournamentId, betType.category, betType.subType);
 
+  // Snapshot the now-current odds onto the bet type so future refreshes
+  // don't retroactively change points for bets placed against this opening.
+  const frozenOdds = await snapshotOddsForBetType(betType.tournamentId, betType.category);
+
   await db.betType.update({
     where: { id: betTypeId },
-    data: { status: "OPEN", opensAt: new Date() },
+    data: {
+      status: "OPEN",
+      opensAt: new Date(),
+      ...(frozenOdds != null && { frozenOdds }),
+    },
   });
   revalidatePath(`/group/${groupId}/admin`);
   revalidatePath(`/group/${groupId}/bets`);
@@ -80,6 +90,39 @@ export async function resolveBetType(
       resolution: resolution as unknown as import("@prisma/client").Prisma.InputJsonValue,
       resolvedAt: new Date(),
     },
+  });
+
+  revalidatePath(`/group/${groupId}/admin`);
+  revalidatePath(`/group/${groupId}/bets`);
+
+  return { success: true };
+}
+
+/**
+ * Change when a tournament bet opens. Recomputes opensAt/locksAt from the trigger.
+ * Only applies to DRAFT bet types — already-opened bets shouldn't reschedule.
+ */
+export async function updateBetTypeOpenTrigger(
+  groupId: string,
+  betTypeId: string,
+  trigger: BetOpenTrigger
+) {
+  await requireAdmin(groupId);
+
+  const betType = await db.betType.findUnique({
+    where: { id: betTypeId },
+    include: { tournament: true },
+  });
+  if (!betType) return { error: "Bet type not found" };
+  if (betType.category !== "TOURNAMENT") return { error: "Open trigger only applies to tournament bets" };
+  if (betType.status !== "DRAFT") return { error: "Can only change open timing while bet is in DRAFT" };
+
+  const profile = getProfile(betType.tournament.kind);
+  const { opensAt, locksAt } = profile.resolveOpenTrigger(trigger);
+
+  await db.betType.update({
+    where: { id: betTypeId },
+    data: { openTrigger: trigger, opensAt, locksAt },
   });
 
   revalidatePath(`/group/${groupId}/admin`);
