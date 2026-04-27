@@ -229,7 +229,7 @@ async function autoResolveGroupPredictions(
     if (group[0]) advancingCodes.push(group[0].code);
     if (group[1]) advancingCodes.push(group[1].code);
   }
-  const third = bestThirdPlaceTeams(standings as Record<string, Array<{ teamId: string; code: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; gd: number; points: number }>>);
+  const third = bestThirdPlaceTeams(standings as unknown as Record<string, import("@/lib/tournament-engine").TeamStanding[]>);
   for (const t of third) advancingCodes.push(t.code);
 
   await db.betType.update({
