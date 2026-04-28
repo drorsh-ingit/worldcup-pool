@@ -62,12 +62,12 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
   const filteredMatches = tournament.matches.filter((m) => m.phase === activePhase);
 
   const effectiveNow = data.effectiveNow;
-  // 1. First future non-completed match
-  // 2. First non-completed match (past kickoff but not yet scored)
+  // 1. Live match (past kickoff but not yet completed) — stop here
+  // 2. First future non-completed match
   // 3. Last completed match (scroll to latest results)
   const nextUpcomingMatch =
+    filteredMatches.find((m) => m.status !== "COMPLETED" && new Date(m.kickoffAt) <= effectiveNow) ??
     filteredMatches.find((m) => m.status !== "COMPLETED" && new Date(m.kickoffAt) > effectiveNow) ??
-    filteredMatches.find((m) => m.status !== "COMPLETED") ??
     [...filteredMatches].reverse().find((m) => m.status === "COMPLETED");
 
   type MatchGroup = { label: string; matches: typeof filteredMatches };
