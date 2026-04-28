@@ -194,18 +194,14 @@ export function MatchBetCard({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homeScore, awayScore, isLocked]);
 
-  // Big boxes: show user's bet when locked/completed; live score during play
+  // Big boxes: show the user's prediction whenever locked (including during play); final score when completed
   const shownHome = isCompleted
     ? (hasSavedBet ? currentCorrectScore!.homeScore : null)
-    : isInPlay && displayHome != null
-    ? displayHome
     : isLocked && hasSavedBet
     ? currentCorrectScore!.homeScore
     : null;
   const shownAway = isCompleted
     ? (hasSavedBet ? currentCorrectScore!.awayScore : null)
-    : isInPlay && displayAway != null
-    ? displayAway
     : isLocked && hasSavedBet
     ? currentCorrectScore!.awayScore
     : null;
@@ -303,9 +299,14 @@ export function MatchBetCard({
 
       {/* Live indicator */}
       {isInPlay && (
-        <div className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-red-500">
+        <div className="flex items-center justify-center gap-2 py-2 text-xs font-semibold text-red-500">
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          {liveScore?.status === "PAUSED" ? "Half-time" : liveScore?.minute ? `${liveScore.minute}'` : "LIVE"}
+          <span>{liveScore?.status === "PAUSED" ? "Half-time" : liveScore?.minute ? `${liveScore.minute}'` : "LIVE"}</span>
+          {displayHome != null && displayAway != null && (
+            <span className="text-neutral-700 tabular-nums">
+              {displayHome}–{displayAway}
+            </span>
+          )}
         </div>
       )}
 
