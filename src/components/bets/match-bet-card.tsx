@@ -303,7 +303,7 @@ export function MatchBetCard({
         // Cap fallback minute at 90 to avoid showing wild numbers if match overruns
         const fallbackMinute = elapsedMin > 0 && elapsedMin <= 120 ? Math.min(elapsedMin, 90) : null;
         const minute = liveScore?.minute ?? fallbackMinute;
-        const label = liveScore?.status === "PAUSED" ? "Half-time" : minute ? `${minute}'` : "LIVE";
+        const label = liveScore?.status === "PAUSED" ? "Half-time" : minute ? `LIVE ${minute}'` : "LIVE";
         return (
           <div className="flex items-center justify-center gap-2 py-2 text-xs font-semibold text-red-500">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
