@@ -298,24 +298,17 @@ export function MatchBetCard({
       </div>
 
       {/* Live indicator */}
-      {isInPlay && (() => {
-        const elapsedMin = Math.max(0, Math.floor((Date.now() - kickoff.getTime()) / 60000));
-        // Cap fallback minute at 90 to avoid showing wild numbers if match overruns
-        const fallbackMinute = elapsedMin > 0 && elapsedMin <= 120 ? Math.min(elapsedMin, 90) : null;
-        const minute = liveScore?.minute ?? fallbackMinute;
-        const label = liveScore?.status === "PAUSED" ? "Half-time" : minute ? `LIVE ${minute}'` : "LIVE";
-        return (
-          <div className="flex items-center justify-center gap-2 py-2 text-xs font-semibold text-red-500">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-            <span>{label}</span>
-            {displayHome != null && displayAway != null && (
-              <span className="text-neutral-700 tabular-nums">
-                {displayHome}–{displayAway}
-              </span>
-            )}
-          </div>
-        );
-      })()}
+      {isInPlay && (
+        <div className="flex items-center justify-center gap-2 py-2 text-xs font-semibold text-red-500">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          <span>{liveScore?.status === "PAUSED" ? "Half-time" : liveScore?.minute ? `LIVE ${liveScore.minute}'` : "LIVE"}</span>
+          {displayHome != null && displayAway != null && (
+            <span className="text-neutral-700 tabular-nums">
+              {displayHome}–{displayAway}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Direction Pts row */}
       <div className="border-t border-neutral-100" style={{ padding: "14px 20px" }}>
