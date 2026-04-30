@@ -324,7 +324,7 @@ export function MatchBetCard({
         <span className="absolute inset-x-0 text-center text-sm font-bold text-neutral-900 tabular-nums pointer-events-none">
           {isCompleted ? (
             noBetCompleted ? (
-              <span className="text-neutral-400">No bet placed</span>
+              <span className="text-neutral-400">0 points earned</span>
             ) : (
               <span className={earnedPts != null && earnedPts > 0 ? "text-pitch-700" : "text-neutral-700"}>
                 {earnedPts != null && earnedPts > 0 ? `${earnedPts.toFixed(1)} points earned` : "0 points earned"}
