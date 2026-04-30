@@ -89,7 +89,6 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
     tournament,
     effectiveNow,
     betByTypeId,
-    betTypesWithEffectiveStatus,
     teamsByGroup,
     teamWinnerOdds,
     teamQualifyOdds,
@@ -108,18 +107,13 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
     ? tournament.matches
     : tournament.matches.filter((m) => effectiveNow > new Date(m.kickoffAt));
 
-  // Tournament/curated bets: visible when LOCKED or RESOLVED
-  const allNonGameBets = betTypesWithEffectiveStatus.filter(
-    (bt) => bt.category === "TOURNAMENT" || bt.category === "CURATED"
-  );
-  const visibleNonGameBets = isOwnProfile
-    ? allNonGameBets
-    : allNonGameBets.filter(
-        (bt) => bt.effectiveStatus === "LOCKED" || bt.effectiveStatus === "RESOLVED"
-      );
-
-  const tournamentBets = visibleNonGameBets.filter((bt) => bt.category === "TOURNAMENT");
-  const curatedBets = visibleNonGameBets.filter((bt) => bt.category === "CURATED");
+  // Tournament/curated bets: visible when LOCKED or RESOLVED. Use the pre-sorted lists
+  // from loadBetsPageData so the order matches the bets page.
+  const visibilityFilter = (bt: { effectiveStatus: string }) =>
+    isOwnProfile || bt.effectiveStatus === "LOCKED" || bt.effectiveStatus === "RESOLVED";
+  const tournamentBets = data.tournamentBets.filter(visibilityFilter);
+  const curatedBets = data.curatedBets.filter(visibilityFilter);
+  const visibleNonGameBets = [...tournamentBets, ...curatedBets];
   const groupStandings = calculateGroupStandings(
     tournament.matches as Parameters<typeof calculateGroupStandings>[0],
     tournament.teams
@@ -151,7 +145,7 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
       ? candidates.filter((c) => advancingTeamCodes.has(c.teamCode))
       : [...candidates];
 
-  type BetTypeItem = typeof betTypesWithEffectiveStatus[number];
+  type BetTypeItem = BetsPageData["tournamentBets"][number];
 
   function renderBetCard(bt: BetTypeItem) {
     const currentBet = betByTypeId[bt.id];
