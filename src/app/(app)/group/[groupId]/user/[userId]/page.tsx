@@ -290,9 +290,9 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
     );
   }
 
-  // Group phases for match cards
+  // Group phases for match cards — latest phase first
   const phases = ([...new Set(visibleMatches.map((m) => m.phase))] as string[]).sort(
-    (a, b) => PHASE_ORDER.indexOf(a) - PHASE_ORDER.indexOf(b)
+    (a, b) => PHASE_ORDER.indexOf(b) - PHASE_ORDER.indexOf(a)
   );
 
   return (
@@ -322,7 +322,7 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
               byDate[dateKey].push(m);
             }
             const dates = Object.keys(byDate).sort(
-              (a, b) => new Date(byDate[a][0].kickoffAt).getTime() - new Date(byDate[b][0].kickoffAt).getTime()
+              (a, b) => new Date(byDate[b][0].kickoffAt).getTime() - new Date(byDate[a][0].kickoffAt).getTime()
             );
             return (
               <div key={phase} className="flex flex-col gap-8">
