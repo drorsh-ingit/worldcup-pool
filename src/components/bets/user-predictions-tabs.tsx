@@ -36,7 +36,7 @@ export function UserPredictionsTabs({
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex gap-2 border-b border-neutral-200">
+      <div className="flex gap-8 border-b border-neutral-200">
         {tabs.map((t) => {
           const isActive = active === t.id;
           const Icon = t.icon;
@@ -46,7 +46,7 @@ export function UserPredictionsTabs({
               type="button"
               onClick={() => setActive(t.id)}
               className={cn(
-                "inline-flex items-center gap-2 px-4 py-3 text-sm border-b-2 -mb-px transition-colors",
+                "inline-flex items-center gap-2 px-2 py-3 text-sm border-b-2 -mb-px transition-colors",
                 isActive
                   ? "border-emerald-600 text-neutral-900 font-semibold"
                   : "border-transparent text-neutral-500 hover:text-neutral-800 font-medium"
