@@ -6,6 +6,7 @@ import { ArrowLeft, Lock, CheckCircle } from "lucide-react";
 import { MatchBetCard } from "@/components/bets/match-bet-card";
 import { TeamPicker, GroupPredictionsPicker, SemifinalistsPicker } from "@/components/bets/team-picker";
 import { PlayerNameForm } from "@/components/bets/player-name-form";
+import { UserPredictionsTabs } from "@/components/bets/user-predictions-tabs";
 import { GOLDEN_BOOT_CANDIDATES } from "@/lib/data/wc2026";
 import { loadBetsPageData, buildMatchCardProps, PHASE_ORDER } from "@/lib/bets-page-data";
 import { calculateGroupStandings } from "@/lib/tournament-engine";
@@ -295,80 +296,87 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
     (a, b) => PHASE_ORDER.indexOf(b) - PHASE_ORDER.indexOf(a)
   );
 
+  const tournamentTab = (
+    <div className="flex flex-col gap-12">
+      <Section title="Tournament" bets={regularTournamentBets} />
+      <Section title="Bonus Bets" bets={curatedBets} />
+      <Section title="Group Predictions" bets={groupPredictionBets} hideTitle />
+    </div>
+  );
+
+  const matchesTab = visibleMatches.length > 0 ? (
+    <div className="flex flex-col gap-8">
+      {phases.map((phase) => {
+        const phaseMatches = visibleMatches.filter((m) => m.phase === phase);
+        const byDate: Record<string, typeof phaseMatches> = {};
+        for (const m of phaseMatches) {
+          const dateKey = new Date(m.kickoffAt).toLocaleDateString("en-US", {
+            weekday: "short", month: "short", day: "numeric",
+          });
+          if (!byDate[dateKey]) byDate[dateKey] = [];
+          byDate[dateKey].push(m);
+        }
+        const dates = Object.keys(byDate).sort(
+          (a, b) => new Date(byDate[b][0].kickoffAt).getTime() - new Date(byDate[a][0].kickoffAt).getTime()
+        );
+        return (
+          <div key={phase} className="flex flex-col gap-8">
+            {dates.map((dateKey) => (
+              <div key={dateKey} className="flex flex-col gap-4">
+                <span className="text-xs font-medium text-neutral-400">{dateKey}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {byDate[dateKey].map((match) => {
+                    const props = buildMatchCardProps(data, match);
+                    return (
+                      <MatchBetCard
+                        key={match.id}
+                        groupId={groupId}
+                        tournamentId={tournament.id}
+                        tournamentKind={tournament.kind}
+                        match={{
+                          id: match.id,
+                          homeTeamCode: match.homeTeam?.code ?? "TBD",
+                          awayTeamCode: match.awayTeam?.code ?? "TBD",
+                          homeTeamName: match.homeTeam?.name ?? "",
+                          awayTeamName: match.awayTeam?.name ?? "",
+                          kickoffAt: match.kickoffAt,
+                          phase: match.phase,
+                          groupLetter: match.groupLetter,
+                          status: match.status as "UPCOMING" | "LOCKED" | "COMPLETED",
+                          actualHomeScore: match.actualHomeScore,
+                          actualAwayScore: match.actualAwayScore,
+                        }}
+                        matchWinnerBetTypeId={props.mwBetId}
+                        correctScoreBetTypeId={props.csBetId}
+                        betsOpen={false}
+                        currentMatchWinner={props.mwBet?.prediction as { outcome?: string } | undefined}
+                        currentCorrectScore={props.csBet?.prediction as { homeScore?: number; awayScore?: number } | undefined}
+                        outcomePoints={props.matchOutcomePoints}
+                        scorePointsMap={props.scorePointsMap}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  ) : null;
+
   return (
     <div className="flex flex-col gap-12" style={{ marginLeft: "3rem" }}>
       <BackLink groupId={groupId} name={targetUser.name} isOwn={isOwnProfile} />
 
-      <Section title="Tournament" bets={regularTournamentBets} />
-      <Section title="Bonus Bets" bets={curatedBets} />
-      <Section title="Group Predictions" bets={groupPredictionBets} hideTitle />
-
-      {/* Match predictions */}
-      {visibleMatches.length > 0 && (
-        <section className="flex flex-col gap-8">
-          {visibleNonGameBets.length > 0 && (
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-200">
-              <h2 className="font-display font-semibold text-neutral-900">Match Predictions</h2>
-            </div>
-          )}
-          {phases.map((phase) => {
-            const phaseMatches = visibleMatches.filter((m) => m.phase === phase);
-            const byDate: Record<string, typeof phaseMatches> = {};
-            for (const m of phaseMatches) {
-              const dateKey = new Date(m.kickoffAt).toLocaleDateString("en-US", {
-                weekday: "short", month: "short", day: "numeric",
-              });
-              if (!byDate[dateKey]) byDate[dateKey] = [];
-              byDate[dateKey].push(m);
-            }
-            const dates = Object.keys(byDate).sort(
-              (a, b) => new Date(byDate[b][0].kickoffAt).getTime() - new Date(byDate[a][0].kickoffAt).getTime()
-            );
-            return (
-              <div key={phase} className="flex flex-col gap-8">
-                {dates.map((dateKey) => (
-                  <div key={dateKey} className="flex flex-col gap-4">
-                    <span className="text-xs font-medium text-neutral-400">{dateKey}</span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {byDate[dateKey].map((match) => {
-                        const props = buildMatchCardProps(data, match);
-                        return (
-                          <MatchBetCard
-                            key={match.id}
-                            groupId={groupId}
-                            tournamentId={tournament.id}
-                            tournamentKind={tournament.kind}
-                            match={{
-                              id: match.id,
-                              homeTeamCode: match.homeTeam?.code ?? "TBD",
-                              awayTeamCode: match.awayTeam?.code ?? "TBD",
-                              homeTeamName: match.homeTeam?.name ?? "",
-                              awayTeamName: match.awayTeam?.name ?? "",
-                              kickoffAt: match.kickoffAt,
-                              phase: match.phase,
-                              groupLetter: match.groupLetter,
-                              status: match.status as "UPCOMING" | "LOCKED" | "COMPLETED",
-                              actualHomeScore: match.actualHomeScore,
-                              actualAwayScore: match.actualAwayScore,
-                            }}
-                            matchWinnerBetTypeId={props.mwBetId}
-                            correctScoreBetTypeId={props.csBetId}
-                            betsOpen={false}
-                            currentMatchWinner={props.mwBet?.prediction as { outcome?: string } | undefined}
-                            currentCorrectScore={props.csBet?.prediction as { homeScore?: number; awayScore?: number } | undefined}
-                            outcomePoints={props.matchOutcomePoints}
-                            scorePointsMap={props.scorePointsMap}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-        </section>
-      )}
+      <UserPredictionsTabs
+        tournamentTab={tournamentTab}
+        matchesTab={matchesTab}
+        hasTournament={visibleNonGameBets.length > 0}
+        hasMatches={visibleMatches.length > 0}
+        tournamentCount={visibleNonGameBets.length}
+        matchesCount={visibleMatches.length}
+      />
     </div>
   );
 }
