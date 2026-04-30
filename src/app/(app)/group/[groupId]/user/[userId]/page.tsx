@@ -6,13 +6,27 @@ import { ArrowLeft, Lock, CheckCircle } from "lucide-react";
 import { MatchBetCard } from "@/components/bets/match-bet-card";
 import { TeamPicker, GroupPredictionsPicker, SemifinalistsPicker } from "@/components/bets/team-picker";
 import { PlayerNameForm } from "@/components/bets/player-name-form";
+import { BracketPicker } from "@/components/bets/bracket-picker";
 import { UserPredictionsTabs } from "@/components/bets/user-predictions-tabs";
-import { GOLDEN_BOOT_CANDIDATES } from "@/lib/data/wc2026";
+import { GOLDEN_BOOT_CANDIDATES, GOLDEN_BALL_CANDIDATES, GOLDEN_GLOVE_CANDIDATES } from "@/lib/data/wc2026";
+import type { BetsPageData } from "@/lib/bets-page-data";
 import { loadBetsPageData, buildMatchCardProps, PHASE_ORDER } from "@/lib/bets-page-data";
 import { calculateGroupStandings } from "@/lib/tournament-engine";
 
 interface UserBetsPageProps {
   params: Promise<{ groupId: string; userId: string }>;
+}
+
+type Candidate = { playerName: string; teamCode: string; odds: number };
+
+function resolveCandidates(
+  bt: BetsPageData["betTypesWithEffectiveStatus"][number],
+  fallback: readonly Candidate[],
+  filterByAdvancing: <T extends { teamCode: string }>(c: readonly T[]) => T[]
+): Candidate[] {
+  const frozen = (bt.frozenOdds as { candidates?: Candidate[] } | null)?.candidates;
+  const base: readonly Candidate[] = frozen ?? fallback;
+  return filterByAdvancing(base).slice(0, 12);
 }
 
 function statusBadge(status: string) {
@@ -78,10 +92,15 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
     betTypesWithEffectiveStatus,
     teamsByGroup,
     teamWinnerOdds,
+    teamQualifyOdds,
     teamPointsMap,
+    semifinalistPointsMap,
     groupPredictionPoints,
     groupQualifierPoints,
     goldenBootPoints,
+    goldenBallPoints,
+    goldenGlovePoints,
+    bracketPickPoints,
   } = data;
 
   // Match predictions: visible once kickoff has passed (betting permanently closed)
@@ -119,6 +138,18 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
       ? tournament.teams.filter((t) => semifinalistEligibleCodes.has(t.code))
       : tournament.teams
   ).filter((t) => t.code !== "TBD");
+
+  const advancingTeamCodes = new Set<string>();
+  for (const m of tournament.matches) {
+    if (["R32", "R16", "QF", "SF", "FINAL"].includes(m.phase)) {
+      if (m.homeTeam) advancingTeamCodes.add(m.homeTeam.code);
+      if (m.awayTeam) advancingTeamCodes.add(m.awayTeam.code);
+    }
+  }
+  const filterByAdvancing = <T extends { teamCode: string }>(candidates: readonly T[]) =>
+    advancingTeamCodes.size > 0
+      ? candidates.filter((c) => advancingTeamCodes.has(c.teamCode))
+      : [...candidates];
 
   type BetTypeItem = typeof betTypesWithEffectiveStatus[number];
 
@@ -192,7 +223,7 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
                 betTypeId={bt.id}
                 isLocked={isLocked}
                 teams={filteredTeams}
-                teamOdds={teamWinnerOdds}
+                teamOdds={bt.subType === "reverse_dark_horse" ? teamQualifyOdds : teamWinnerOdds}
                 currentPrediction={currentBet?.prediction as { teamCode?: string } | undefined}
                 pointsByTeam={teamPointsMap[bt.subType]}
                 tournamentKind={tournament.kind}
@@ -234,6 +265,52 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
               teams={semifinalistTeams}
               tournamentKind={tournament.kind}
               currentPrediction={currentBet?.prediction as { teams?: string[] } | undefined}
+              pointsByTeam={semifinalistPointsMap}
+            />
+          ) : bt.subType === "golden_ball" ? (
+            <PlayerNameForm
+              groupId={groupId}
+              tournamentId={tournament.id}
+              betTypeId={bt.id}
+              description={bt.description}
+              isLocked={isLocked}
+              candidates={resolveCandidates(bt, GOLDEN_BALL_CANDIDATES, filterByAdvancing)}
+              currentPrediction={currentBet?.prediction as { playerName?: string; teamCode?: string } | undefined}
+              pointsByCandidate={goldenBallPoints}
+            />
+          ) : bt.subType === "golden_glove" ? (
+            <PlayerNameForm
+              groupId={groupId}
+              tournamentId={tournament.id}
+              betTypeId={bt.id}
+              description={bt.description}
+              isLocked={isLocked}
+              candidates={resolveCandidates(bt, GOLDEN_GLOVE_CANDIDATES, filterByAdvancing)}
+              currentPrediction={currentBet?.prediction as { playerName?: string; teamCode?: string } | undefined}
+              pointsByCandidate={goldenGlovePoints}
+            />
+          ) : bt.subType === "bracket" ? (
+            <BracketPicker
+              groupId={groupId}
+              tournamentId={tournament.id}
+              betTypeId={bt.id}
+              isLocked={isLocked}
+              tournamentKind={tournament.kind}
+              matches={tournament.matches
+                .filter((m) => ["R32","R16","QF","SF","FINAL"].includes(m.phase))
+                .map((m) => ({
+                  id: m.id,
+                  homeTeam: { code: m.homeTeam.code, name: m.homeTeam.name },
+                  awayTeam: { code: m.awayTeam.code, name: m.awayTeam.name },
+                  phase: m.phase,
+                  status: m.status,
+                  kickoffAt: m.kickoffAt,
+                  actualHomeScore: m.actualHomeScore,
+                  actualAwayScore: m.actualAwayScore,
+                }))}
+              currentPrediction={currentBet?.prediction as { picks?: Record<string, string> } | undefined}
+              resolution={bt.resolution as { winners?: Record<string, string> } | undefined}
+              pointsByPickKey={bracketPickPoints}
             />
           ) : (
             <p className="text-sm text-neutral-400">{bt.description}</p>
