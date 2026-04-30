@@ -101,8 +101,6 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
 
   const tournamentBets = visibleNonGameBets.filter((bt) => bt.category === "TOURNAMENT");
   const curatedBets = visibleNonGameBets.filter((bt) => bt.category === "CURATED");
-  const groupPredictionBets = tournamentBets.filter((bt) => bt.subType === "group_predictions");
-  const regularTournamentBets = tournamentBets.filter((bt) => bt.subType !== "group_predictions");
   const groupStandings = calculateGroupStandings(
     tournament.matches as Parameters<typeof calculateGroupStandings>[0],
     tournament.teams
@@ -298,9 +296,8 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
 
   const tournamentTab = (
     <div className="flex flex-col gap-12">
-      <Section title="Tournament" bets={regularTournamentBets} />
+      <Section title="Tournament" bets={tournamentBets} />
       <Section title="Bonus Bets" bets={curatedBets} />
-      <Section title="Group Predictions" bets={groupPredictionBets} hideTitle />
     </div>
   );
 
