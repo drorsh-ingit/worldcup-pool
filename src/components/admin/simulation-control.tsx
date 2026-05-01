@@ -76,6 +76,7 @@ export function SimulationControl({
       <p className="text-xs text-amber-800/70">
         Set a simulated date to auto-open bets and generate random match results.
         Match scores drive all outcomes — group standings, knockout bracket, dark horse bets, and so on.
+        The date can only move <strong>forward</strong> — already-scored matches and bets are never recalculated. Use <strong>Reset</strong> to start over from a snapshot.
       </p>
 
       {/* Current simulated date */}
@@ -100,7 +101,11 @@ export function SimulationControl({
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="flex-1 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
-            min="2026-06-01T00:00"
+            min={
+              simulationEnabled && simulatedDate
+                ? simulatedDate.slice(0, 16)
+                : "2026-06-01T00:00"
+            }
             max="2026-07-25T00:00"
           />
         </div>

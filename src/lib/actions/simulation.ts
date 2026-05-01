@@ -525,37 +525,16 @@ export async function updateSimulationDate(groupId: string, newDateStr: string, 
   const newDate = new Date(newDateStr);
   if (isNaN(newDate.getTime())) return { error: "Invalid date" };
 
-  const isMovingForward = newDate > new Date(settings.simulation.simulatedDate);
-
-  if (!isMovingForward) {
-    // Moving backward: full restore so over-simulated matches are wiped
-    await restoreSnapshot(groupId, settings.simulation.snapshot);
-  } else {
-    // Moving forward: keep match results (random scores stay stable) but
-    // clear tournament-bet scores so they get re-scored with current settings.
-    const tournament0 = await db.tournament.findFirst({ where: { groupId } });
-    if (tournament0) {
-      const tournamentBetTypeIds = (
-        await db.betType.findMany({
-          where: { tournamentId: tournament0.id, category: { not: "PER_GAME" } },
-          select: { id: true },
-        })
-      ).map((bt) => bt.id);
-
-      await db.bet.updateMany({
-        where: { tournamentId: tournament0.id, betTypeId: { in: tournamentBetTypeIds }, scoredAt: { not: null } },
-        data: { isCorrect: null, basePoints: null, bonusPoints: null, totalPoints: null, scoredAt: null },
-      });
-
-      // Un-resolve tournament bet types so they get re-resolved and re-scored.
-      await db.betType.updateMany({
-        where: { id: { in: tournamentBetTypeIds }, status: "RESOLVED" },
-        data: { status: "LOCKED", resolution: Prisma.JsonNull, resolvedAt: null },
-      });
-    }
+  const currentDate = new Date(settings.simulation.simulatedDate);
+  if (newDate < currentDate) {
+    return {
+      error: "Simulation can only move forward. Use Reset to start over from a snapshot.",
+    };
   }
 
-  // Re-fetch tournament after potential restore
+  // Forward-only: never wipe match results or un-resolve bet types. Progression
+  // simply scores matches whose kickoff is now in the past and resolves any
+  // newly-eligible tournament bets — already-scored bets stay untouched.
   const tournament = await db.tournament.findFirst({
     where: { groupId },
     include: { betTypes: true, matches: true },
