@@ -17,6 +17,7 @@ import {
   getKnockoutWinners,
   createNextRoundMatches,
   generateKnockoutScore,
+  syncPhaseBetLocks,
 } from "@/lib/tournament-engine";
 import { Prisma } from "@prisma/client";
 
@@ -98,6 +99,7 @@ async function simulateTournamentProgression(
       await autoOpenPostGroupBets(tournamentId, simulatedDate);
       totalCompleted += await completeMatchesBefore(simulatedDate, true);
     }
+    await syncPhaseBetLocks(tournamentId);
   }
 
   // Step 3: Chain through knockout rounds
@@ -119,6 +121,7 @@ async function simulateTournamentProgression(
       const winners = getKnockoutWinners(currentMatches, phase);
       if (winners.length > 0) {
         await createNextRoundMatches(tournamentId, phase, winners);
+        await syncPhaseBetLocks(tournamentId);
 
         // Auto-open semifinalists when R16 teams are known (R32 complete)
         if (nextPhase === "R16") {

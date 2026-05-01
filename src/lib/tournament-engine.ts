@@ -274,6 +274,48 @@ export async function createNextRoundMatches(
 }
 
 /**
+ * Sync each phase-locked bet type's locksAt to the actual first match of its lock
+ * phase in the DB. Replaces the static schedule constant (set at init time before
+ * knockout matches existed) with the real kickoff, so a rescheduled or simulated
+ * R16 doesn't silently lock the bet at the wrong moment.
+ */
+const OPEN_TRIGGER_TO_LOCK_PHASE = {
+  AFTER_GROUP_STAGE: "R32",
+  AFTER_R32: "R16",
+  AFTER_R16: "QF",
+  AFTER_QF: "SF",
+  AFTER_SF: "FINAL",
+} as const;
+type LockTriggerKey = keyof typeof OPEN_TRIGGER_TO_LOCK_PHASE;
+
+export async function syncPhaseBetLocks(tournamentId: string): Promise<void> {
+  const phaseFirstKickoff: Record<string, Date> = {};
+  for (const phase of ["R32", "R16", "QF", "SF", "FINAL"]) {
+    const first = await db.match.findFirst({
+      where: { tournamentId, phase: phase as MatchPhase },
+      orderBy: { kickoffAt: "asc" },
+      select: { kickoffAt: true },
+    });
+    if (first) phaseFirstKickoff[phase] = first.kickoffAt;
+  }
+
+  const triggerKeys = Object.keys(OPEN_TRIGGER_TO_LOCK_PHASE) as LockTriggerKey[];
+  const betTypes = await db.betType.findMany({
+    where: { tournamentId, openTrigger: { in: triggerKeys } },
+    select: { id: true, openTrigger: true, locksAt: true },
+  });
+
+  for (const bt of betTypes) {
+    if (!bt.openTrigger || !(bt.openTrigger in OPEN_TRIGGER_TO_LOCK_PHASE)) continue;
+    const lockPhase = OPEN_TRIGGER_TO_LOCK_PHASE[bt.openTrigger as LockTriggerKey];
+    const target = phaseFirstKickoff[lockPhase];
+    if (!target) continue;
+    if (bt.locksAt && bt.locksAt.getTime() === target.getTime()) continue;
+    await db.betType.update({ where: { id: bt.id }, data: { locksAt: target } });
+  }
+}
+
+/**
  * Generate a knockout score (no draws allowed).
  */
 export function generateKnockoutScore(): { homeScore: number; awayScore: number } {
