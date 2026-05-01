@@ -150,7 +150,7 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
   function renderBetCard(bt: BetTypeItem) {
     const currentBet = betByTypeId[bt.id];
     const isLocked = bt.effectiveStatus === "LOCKED" || bt.effectiveStatus === "RESOLVED";
-    const isWide = bt.subType === "group_predictions" || bt.subType === "semifinalists";
+    const isWide = bt.subType === "group_predictions" || bt.subType === "semifinalists" || bt.subType === "bracket";
 
     let groupPredictionsPointsEarned: number | null = null;
     if (bt.subType === "group_predictions") {
