@@ -78,29 +78,24 @@ async function simulateTournamentProgression(
 
   if (isGroupStageComplete(allMatches)) {
     const hasR32 = allMatches.some((m) => m.phase === "R32");
+    const standings = calculateGroupStandings(allMatches, teams);
+
+    // Idempotent helpers — hoisted out of the !hasR32 branch so re-running simulation
+    // can backfill scoring even when R32 was already created in a prior pass.
+    await autoResolveGroupPredictions(groupId, tournamentId, standings, allMatches);
+
+    const { bestThirdPlaceTeams: btp } = await import("@/lib/tournament-engine");
+    const advancingCodes = new Set<string>();
+    for (const group of Object.values(standings)) {
+      if (group[0]) advancingCodes.add(group[0].code);
+      if (group[1]) advancingCodes.add(group[1].code);
+    }
+    for (const t of btp(standings as Parameters<typeof btp>[0])) advancingCodes.add(t.code);
+    await autoResolveReverseDarkHorse(groupId, tournamentId, advancingCodes);
 
     if (!hasR32) {
-      // Generate R32 bracket
-      const standings = calculateGroupStandings(allMatches, teams);
       await createR32Matches(tournamentId, standings);
-
-      // Auto-resolve group_predictions bet type
-      await autoResolveGroupPredictions(groupId, tournamentId, standings, allMatches);
-
-      // Auto-open post-group-stage bets (bracket, golden_ball, golden_glove)
       await autoOpenPostGroupBets(tournamentId, simulatedDate);
-
-      // Auto-resolve reverse_dark_horse — top-15 favs eliminated in group stage
-      const { bestThirdPlaceTeams: btp } = await import("@/lib/tournament-engine");
-      const advancingCodes = new Set<string>();
-      for (const group of Object.values(standings)) {
-        if (group[0]) advancingCodes.add(group[0].code);
-        if (group[1]) advancingCodes.add(group[1].code);
-      }
-      for (const t of btp(standings as Parameters<typeof btp>[0])) advancingCodes.add(t.code);
-      await autoResolveReverseDarkHorse(groupId, tournamentId, advancingCodes);
-
-      // Complete R32 matches that are before simulated date
       totalCompleted += await completeMatchesBefore(simulatedDate, true);
     }
   }
