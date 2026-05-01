@@ -347,21 +347,23 @@ export function GroupPredictionsPicker({
               {/* Standings table header — shown when standings data available */}
               {standings && (() => {
                 const showPickers = !isLocked && !resolution;
-                const gridCols = showPickers
-                  ? "28px 28px 1fr 28px 28px 28px 36px 28px 28px 34px 34px"
-                  : "28px 28px 1fr 28px 28px 28px 36px 28px 28px";
+                const gridCls = showPickers
+                  ? "grid grid-cols-[24px_22px_1fr_30px_30px_30px] sm:grid-cols-[28px_28px_1fr_28px_28px_28px_36px_28px_28px_34px_34px]"
+                  : "grid grid-cols-[24px_22px_1fr_30px] sm:grid-cols-[28px_28px_1fr_28px_28px_28px_36px_28px_28px]";
                 return (
-                  <div className="grid text-xs font-semibold text-neutral-400 uppercase tracking-wide border-b border-neutral-100 bg-neutral-50"
-                    style={{ gridTemplateColumns: gridCols, gap: 0, paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8 }}>
+                  <div className={cn(gridCls,
+                      "text-xs font-semibold text-neutral-400 uppercase tracking-wide border-b border-neutral-100 bg-neutral-50"
+                    )}
+                    style={{ gap: 0, paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8 }}>
                     <span className="text-center">#</span>
                     <span />
                     <span>Team</span>
-                    <span className="text-center">P</span>
-                    <span className="text-center">W</span>
-                    <span className="text-center">D</span>
+                    <span className="hidden sm:block text-center">P</span>
+                    <span className="hidden sm:block text-center">W</span>
+                    <span className="hidden sm:block text-center">D</span>
                     <span className="text-center">Pts</span>
-                    <span className="text-center">GF</span>
-                    <span className="text-center">GA</span>
+                    <span className="hidden sm:block text-center">GF</span>
+                    <span className="hidden sm:block text-center">GA</span>
                     {showPickers && <span className="text-center">W</span>}
                     {showPickers && <span className="text-center">Q</span>}
                   </div>
@@ -395,14 +397,14 @@ export function GroupPredictionsPicker({
 
                   if (standings && st) {
                     const showPickers = !isLocked && !resolution;
-                    const gridCols = showPickers
-                      ? "28px 28px 1fr 28px 28px 28px 36px 28px 28px 34px 34px"
-                      : "28px 28px 1fr 28px 28px 28px 36px 28px 28px";
+                    const gridCls = showPickers
+                      ? "grid grid-cols-[24px_22px_1fr_30px_30px_30px] sm:grid-cols-[28px_28px_1fr_28px_28px_28px_36px_28px_28px_34px_34px]"
+                      : "grid grid-cols-[24px_22px_1fr_30px] sm:grid-cols-[28px_28px_1fr_28px_28px_28px_36px_28px_28px]";
                     // Full standings row
                     return (
                       <div key={team.code}
-                        className={cn("grid items-center divide-x-0 gap-0", rowBg)}
-                        style={{ gridTemplateColumns: gridCols, paddingLeft: 12, paddingRight: 12, paddingTop: 10, paddingBottom: 10 }}>
+                        className={cn(gridCls, "items-center divide-x-0 gap-0", rowBg)}
+                        style={{ paddingLeft: 12, paddingRight: 12, paddingTop: 10, paddingBottom: 10 }}>
                         {/* Place */}
                         <span className={cn("text-xs font-bold text-center tabular-nums",
                           place === 1 ? "text-amber-500" : place === 2 ? "text-neutral-500" : "text-neutral-300"
@@ -414,19 +416,19 @@ export function GroupPredictionsPicker({
                           isActualWinner ? "text-amber-800" : isActualQualifier ? "text-emerald-800" : "text-neutral-500"
                         )}>{team.name}</span>
                         {/* P */}
-                        <span className="text-xs tabular-nums text-center text-neutral-500">{st.played}</span>
+                        <span className="hidden sm:block text-xs tabular-nums text-center text-neutral-500">{st.played}</span>
                         {/* W */}
-                        <span className="text-xs tabular-nums text-center text-neutral-500">{st.won}</span>
+                        <span className="hidden sm:block text-xs tabular-nums text-center text-neutral-500">{st.won}</span>
                         {/* D */}
-                        <span className="text-xs tabular-nums text-center text-neutral-500">{st.drawn}</span>
+                        <span className="hidden sm:block text-xs tabular-nums text-center text-neutral-500">{st.drawn}</span>
                         {/* Pts */}
                         <span className={cn("text-xs font-bold tabular-nums text-center",
                           isActualWinner ? "text-amber-700" : isActualQualifier ? "text-emerald-700" : "text-neutral-400"
                         )}>{st.points}</span>
                         {/* GF */}
-                        <span className="text-xs tabular-nums text-center text-neutral-500">{st.gf}</span>
+                        <span className="hidden sm:block text-xs tabular-nums text-center text-neutral-500">{st.gf}</span>
                         {/* GA */}
-                        <span className="text-xs tabular-nums text-center text-neutral-500">{st.ga}</span>
+                        <span className="hidden sm:block text-xs tabular-nums text-center text-neutral-500">{st.ga}</span>
                         {showPickers && (
                           <span className="flex justify-center">
                             <button onClick={() => handleWinner(letter, team.code)} disabled={isLocked}
