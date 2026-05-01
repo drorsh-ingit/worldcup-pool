@@ -331,9 +331,9 @@ export function BracketPicker({
               className="grid min-w-[900px]"
               style={{
                 gridTemplateColumns: "repeat(5, 1fr)",
-                gridTemplateRows: "repeat(16, 80px)",
+                gridTemplateRows: "repeat(16, 76px)",
                 columnGap: "16px",
-                rowGap: "0",
+                rowGap: "8px",
               }}
             >
               {PHASE_ORDER.map((phase, colIdx) => {
