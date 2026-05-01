@@ -104,6 +104,12 @@ export function TeamPicker({
     const correctTeam = correctTeamCode
       ? teams.find((t) => t.code === correctTeamCode)
       : null;
+    const correctTeams =
+      isResolved && resolution!.teams && resolution!.teams.length > 0
+        ? resolution!.teams
+            .map((code) => teams.find((t) => t.code === code))
+            .filter((t): t is Team => !!t)
+        : [];
 
     return (
       <div className="flex flex-col gap-1.5 py-1">
@@ -149,6 +155,28 @@ export function TeamPicker({
             <TeamBadge code={correctTeam.code} tournamentKind={tournamentKind} size="sm" />
             <span className="font-medium text-neutral-700">{correctTeam.name}</span>
           </div>
+        )}
+        {isResolved && correctTeams.length > 0 && (
+          <div className="flex items-start gap-1.5 text-xs text-neutral-500 flex-wrap">
+            <span className="shrink-0">Correct picks:</span>
+            <span className="flex items-center gap-1.5 flex-wrap">
+              {correctTeams.map((t) => (
+                <span
+                  key={t.code}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5",
+                    selectedTeam?.code === t.code && "bg-emerald-100 text-emerald-800"
+                  )}
+                >
+                  <TeamBadge code={t.code} tournamentKind={tournamentKind} size="sm" />
+                  <span className="font-medium">{t.name}</span>
+                </span>
+              ))}
+            </span>
+          </div>
+        )}
+        {isResolved && correctTeams.length === 0 && resolution!.teams && (
+          <span className="text-xs text-neutral-400">No team matched the criteria.</span>
         )}
       </div>
     );
