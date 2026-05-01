@@ -221,6 +221,8 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
                 currentPrediction={currentBet?.prediction as { teamCode?: string } | undefined}
                 pointsByTeam={teamPointsMap[bt.subType]}
                 tournamentKind={tournament.kind}
+                resolution={bt.resolution as { teamCode?: string; teams?: string[] } | undefined}
+                earnedPoints={currentBet?.totalPoints ?? null}
               />
             );
           })()

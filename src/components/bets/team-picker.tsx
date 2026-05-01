@@ -26,6 +26,12 @@ interface TeamPickerProps {
   currentPrediction?: { teamCode?: string };
   pointsByTeam?: Record<string, number>;
   tournamentKind?: string;
+  /** When the bet is RESOLVED, the answer used for scoring. `teamCode` for
+   *  single-answer bets (winner, runner_up); `teams` for list-answer bets
+   *  (dark_horse, reverse_dark_horse). */
+  resolution?: { teamCode?: string; teams?: string[] };
+  /** Points the user actually earned (read from the bet record). */
+  earnedPoints?: number | null;
 }
 
 export function TeamPicker({
@@ -38,6 +44,8 @@ export function TeamPicker({
   currentPrediction,
   pointsByTeam,
   tournamentKind = "WC_2026",
+  resolution,
+  earnedPoints,
 }: TeamPickerProps) {
   const [selected, setSelected] = useState<string>(currentPrediction?.teamCode ?? "");
   const [saved, setSaved] = useState(!!currentPrediction?.teamCode);
@@ -82,21 +90,65 @@ export function TeamPicker({
 
   if (isLocked) {
     const pts = selectedTeam ? pointsByTeam?.[selectedTeam.code] : undefined;
+    const isResolved = !!resolution && (
+      resolution.teamCode != null || (resolution.teams?.length ?? 0) > 0
+    );
+    const wasCorrect =
+      isResolved && selectedTeam
+        ? resolution!.teamCode != null
+          ? resolution!.teamCode === selectedTeam.code
+          : (resolution!.teams ?? []).includes(selectedTeam.code)
+        : null;
+    const correctTeamCode =
+      isResolved && resolution!.teamCode ? resolution!.teamCode : null;
+    const correctTeam = correctTeamCode
+      ? teams.find((t) => t.code === correctTeamCode)
+      : null;
+
     return (
-      <div className="flex items-center gap-2.5 py-1">
-        {selectedTeam ? (
-          <>
-            <TeamBadge code={selectedTeam.code} tournamentKind={tournamentKind} size="sm" />
-            <span className="text-sm font-medium text-neutral-900">{selectedTeam.name}</span>
-            {pts != null && (
-              <span className="text-xs text-neutral-400 tabular-nums">{pts.toFixed(1)} potential points</span>
-            )}
-          </>
-        ) : (
-          <span className="flex items-center gap-1.5 text-sm text-pitch-700">
-            <Lock className="w-3.5 h-3.5" />
-            No prediction entered
-          </span>
+      <div className="flex flex-col gap-1.5 py-1">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {selectedTeam ? (
+            <>
+              <TeamBadge code={selectedTeam.code} tournamentKind={tournamentKind} size="sm" />
+              <span className={cn(
+                "text-sm font-medium",
+                wasCorrect === true ? "text-emerald-700" : wasCorrect === false ? "text-neutral-500" : "text-neutral-900"
+              )}>
+                {selectedTeam.name}
+              </span>
+              {wasCorrect === true && (
+                <span className="text-xs font-bold rounded bg-emerald-500 text-white px-1.5 py-0.5 leading-none">✓</span>
+              )}
+              {wasCorrect === false && (
+                <span className="text-xs font-bold rounded bg-red-400 text-white px-1.5 py-0.5 leading-none">✗</span>
+              )}
+              {isResolved ? (
+                <span className={cn(
+                  "text-xs tabular-nums font-semibold",
+                  (earnedPoints ?? 0) > 0 ? "text-emerald-600" : "text-neutral-400"
+                )}>
+                  {(earnedPoints ?? 0).toFixed(1)} pts earned
+                </span>
+              ) : (
+                pts != null && (
+                  <span className="text-xs text-neutral-400 tabular-nums">{pts.toFixed(1)} potential points</span>
+                )
+              )}
+            </>
+          ) : (
+            <span className="flex items-center gap-1.5 text-sm text-pitch-700">
+              <Lock className="w-3.5 h-3.5" />
+              No prediction entered
+            </span>
+          )}
+        </div>
+        {isResolved && correctTeam && wasCorrect === false && (
+          <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+            <span>Actual:</span>
+            <TeamBadge code={correctTeam.code} tournamentKind={tournamentKind} size="sm" />
+            <span className="font-medium text-neutral-700">{correctTeam.name}</span>
+          </div>
         )}
       </div>
     );
