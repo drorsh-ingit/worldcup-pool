@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Lock, MapPin, Clock } from "lucide-react";
+import { Lock, MapPin, Clock, ChevronUp, ChevronDown } from "lucide-react";
 import { placeBet } from "@/lib/actions/bets";
 import { getLiveMatchScore, type LiveScore } from "@/lib/actions/live-scores";
 import { TeamBadge } from "@/components/team-badge";
@@ -263,7 +263,7 @@ export function MatchBetCard({
               onChange={(v) => { dirtyRef.current = true; setHomeScore(v); setSaved(false); }}
               highlight={isCompleted ? (scoreCorrect ? "emerald" : "grayed") : isLocked ? "grayed" : undefined}
             />
-            <span className="text-base font-medium text-neutral-400 px-1.5">vs</span>
+            <span className="text-base font-medium text-neutral-400 px-1.5 self-center" style={isLocked ? undefined : { marginTop: 4 }}>vs</span>
             <ScoreCell
               value={awayScore}
               display={shownAway}
@@ -381,16 +381,51 @@ function ScoreCell({
       <div className={cls}>{display != null ? display : "–"}</div>
     );
   }
+
+  const parsed = parseInt(value);
+  const numVal = isNaN(parsed) ? null : parsed;
+
+  function increment() {
+    const next = numVal == null ? 0 : Math.min(numVal + 1, 20);
+    onChange(String(next));
+  }
+
+  function decrement() {
+    if (numVal == null || numVal <= 0) return;
+    onChange(String(numVal - 1));
+  }
+
   return (
-    <input
-      type="number"
-      min={0}
-      max={20}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder="–"
-      className="w-[52px] h-[52px] rounded-2xl border border-neutral-200 bg-white text-2xl font-bold text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-400/60 focus:border-amber-300 tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-neutral-300"
-    />
+    <div className="flex flex-col items-center gap-0.5">
+      <button
+        type="button"
+        onClick={increment}
+        className="w-[52px] h-8 flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 transition-colors touch-manipulation"
+        aria-label="Increase score"
+      >
+        <ChevronUp className="w-4 h-4 text-neutral-600" />
+      </button>
+      <input
+        type="number"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        min={0}
+        max={20}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="–"
+        className="w-[52px] h-[52px] rounded-2xl border border-neutral-200 bg-white text-2xl font-bold text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-400/60 focus:border-amber-300 tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-neutral-300"
+      />
+      <button
+        type="button"
+        onClick={decrement}
+        disabled={numVal == null || numVal <= 0}
+        className="w-[52px] h-8 flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 disabled:opacity-30 transition-colors touch-manipulation"
+        aria-label="Decrease score"
+      >
+        <ChevronDown className="w-4 h-4 text-neutral-600" />
+      </button>
+    </div>
   );
 }
 
