@@ -1,12 +1,6 @@
 import webpush from "web-push";
 import { db } from "@/lib/db";
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
-
 interface PushPayload {
   title: string;
   body: string;
@@ -15,6 +9,11 @@ interface PushPayload {
 
 /** Send a push notification to all approved members of a group who have subscribed. */
 export async function sendPushToGroup(groupId: string, payload: PushPayload) {
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
   const memberships = await db.groupMembership.findMany({
     where: { groupId, status: "APPROVED" },
     select: { userId: true },
