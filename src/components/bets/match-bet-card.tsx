@@ -400,7 +400,7 @@ function ScoreCell({
       <button
         type="button"
         onClick={increment}
-        className="w-[52px] h-8 flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 transition-colors touch-manipulation"
+        className="sm:hidden w-[52px] h-8 flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 transition-colors touch-manipulation"
         aria-label="Increase score"
       >
         <ChevronUp className="w-4 h-4 text-neutral-600" />
@@ -420,7 +420,7 @@ function ScoreCell({
         type="button"
         onClick={decrement}
         disabled={numVal == null || numVal <= 0}
-        className="w-[52px] h-8 flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 disabled:opacity-30 transition-colors touch-manipulation"
+        className="sm:hidden w-[52px] h-8 flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 disabled:opacity-30 transition-colors touch-manipulation"
         aria-label="Decrease score"
       >
         <ChevronDown className="w-4 h-4 text-neutral-600" />
