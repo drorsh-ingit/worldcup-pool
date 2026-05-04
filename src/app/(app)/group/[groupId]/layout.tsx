@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { SimulationBanner } from "@/components/simulation-banner";
 import { GroupTabs } from "@/components/group-tabs";
 import { TournamentBadge } from "@/components/tournament-badge";
+import { getPendingBetCounts } from "@/lib/pending-bets";
 import type { GroupSettings } from "@/lib/settings";
 
 interface GroupLayoutProps {
@@ -31,10 +32,15 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
   const settings = group.settings as GroupSettings;
   const simulation = settings?.simulation;
 
-  const tournament = await db.tournament.findFirst({
-    where: { groupId },
-    select: { name: true, kind: true },
-  });
+  const [tournament, pendingBets] = await Promise.all([
+    db.tournament.findFirst({
+      where: { groupId },
+      select: { name: true, kind: true },
+    }),
+    session?.user?.id
+      ? getPendingBetCounts(groupId, session.user.id)
+      : { matches: 0, tournament: 0 },
+  ]);
 
   return (
     <div className="space-y-6">
@@ -47,7 +53,7 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
             <SimulationBanner simulatedDate={simulation.simulatedDate} />
           </div>
         )}
-        <GroupTabs groupId={groupId} isAdmin={isAdmin} />
+        <GroupTabs groupId={groupId} isAdmin={isAdmin} pendingBets={pendingBets} />
       </div>
       <div className="pt-2">
         {children}
