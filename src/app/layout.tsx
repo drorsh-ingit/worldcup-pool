@@ -16,12 +16,12 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Match Day — Tournament Prediction Pool",
+  title: "Matchday — Tournament Prediction Pool",
   description: "Pick winners, predict scores, and compete with your friends across any tournament.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "Match Day",
+    title: "Matchday",
     statusBarStyle: "default",
   },
 };

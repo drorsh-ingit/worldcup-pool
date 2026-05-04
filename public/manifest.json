@@ -1,6 +1,6 @@
 {
-  "name": "Match Day",
-  "short_name": "Match Day",
+  "name": "Matchday",
+  "short_name": "Matchday",
   "description": "Tournament prediction pool — pick winners, predict scores, compete with friends.",
   "start_url": "/",
   "display": "standalone",
