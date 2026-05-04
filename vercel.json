@@ -1,6 +1,6 @@
 {
   "crons": [
     { "path": "/api/cron/refresh-odds", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/open-bets",    "schedule": "0 7 * * *" }
+    { "path": "/api/cron/open-bets",    "schedule": "0 * * * *" }
   ]
 }
