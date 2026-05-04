@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { refreshOddsForBetType, snapshotOddsForBetType } from "@/lib/actions/refresh-odds";
 import { getProfile } from "@/lib/tournaments/registry";
+import { sendPushToGroup } from "@/lib/push";
 import type { BetOpenTrigger } from "@prisma/client";
 
 async function requireAdmin(groupId: string) {
@@ -39,6 +40,15 @@ export async function openBetType(groupId: string, betTypeId: string) {
       ...(frozenOdds != null && { frozenOdds }),
     },
   });
+
+  // Fire-and-forget push notification — don't let failures block the response
+  const betTypeName = betType.name ?? betType.subType.replace(/_/g, " ");
+  sendPushToGroup(groupId, {
+    title: "New predictions open!",
+    body: `${betTypeName} — place your bet now before it closes.`,
+    url: `/group/${groupId}/bets`,
+  }).catch(() => {});
+
   revalidatePath(`/group/${groupId}/admin`);
   revalidatePath(`/group/${groupId}/bets`);
   return { success: true, oddsRefresh: refresh };
