@@ -18,6 +18,12 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "Matchday — Tournament Prediction Pool",
   description: "Pick winners, predict scores, and compete with your friends across any tournament.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Matchday",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
@@ -37,6 +43,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
       <head>
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="font-sans antialiased bg-white text-neutral-900 min-h-screen">
         <Providers>{children}</Providers>
