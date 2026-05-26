@@ -160,9 +160,9 @@ function BetTypeRow({
 
   return (
     <div className="px-4 py-3 border-b border-neutral-50 last:border-0">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="shrink-0">
+          <div className="shrink-0" style={{ marginTop: 2 }}>
             {betType.status === "RESOLVED" ? (
               <CheckCircle className="w-4 h-4 text-emerald-500" />
             ) : betType.status === "LOCKED" ? (
@@ -180,21 +180,6 @@ function BetTypeRow({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {showTriggerDropdown && (
-            <select
-              value={betType.openTrigger ?? "PRE_TOURNAMENT"}
-              onChange={(e) => handleTriggerChange(e.target.value as BetOpenTrigger)}
-              disabled={loading}
-              className="h-7 px-2 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-700 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-60"
-              title="When this bet opens"
-            >
-              {BET_OPEN_TRIGGERS.map((t) => (
-                <option key={t} value={t}>
-                  Opens: {BET_OPEN_TRIGGER_LABELS[t]}
-                </option>
-              ))}
-            </select>
-          )}
           <span className={statusBadge(betType.status)}>{betType.status}</span>
           {betType.status === "DRAFT" && (
             <button
@@ -234,6 +219,23 @@ function BetTypeRow({
           )}
         </div>
       </div>
+      {showTriggerDropdown && (
+        <div style={{ marginTop: 8, paddingLeft: 26 }}>
+          <select
+            value={betType.openTrigger ?? "PRE_TOURNAMENT"}
+            onChange={(e) => handleTriggerChange(e.target.value as BetOpenTrigger)}
+            disabled={loading}
+            className="h-7 px-2 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-700 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-60 w-full max-w-xs"
+            title="When this bet opens"
+          >
+            {BET_OPEN_TRIGGERS.map((t) => (
+              <option key={t} value={t}>
+                Opens: {BET_OPEN_TRIGGER_LABELS[t]}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {triggerError && (
         <p className="text-xs text-red-500 mt-1">{triggerError}</p>
       )}
