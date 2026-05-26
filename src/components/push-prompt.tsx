@@ -21,7 +21,7 @@ export function PushPrompt() {
 
   return (
     <div className="bg-amber-50 border-b border-amber-100">
-      <div className="max-w-screen-2xl mx-auto page-x-pad flex items-center gap-3 py-2.5 text-sm">
+      <div className="max-w-screen-2xl mx-auto page-x-pad flex items-center gap-3 text-sm" style={{ paddingTop: 10, paddingBottom: 10 }}>
         <Bell className="w-4 h-4 text-amber-500 shrink-0" />
         <span className="flex-1 text-neutral-700">
           Get notified when new predictions open
