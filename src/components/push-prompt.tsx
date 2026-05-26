@@ -20,7 +20,7 @@ export function PushPrompt() {
   }
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-amber-50 border-b border-amber-100 text-sm">
+    <div className="flex items-center gap-3 page-x-pad py-2.5 bg-amber-50 border-b border-amber-100 text-sm">
       <Bell className="w-4 h-4 text-amber-500 shrink-0" />
       <span className="flex-1 text-neutral-700">
         Get notified when new predictions open

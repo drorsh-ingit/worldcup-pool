@@ -67,8 +67,8 @@ export default async function BetsPage({ params }: BetsPageProps) {
   if (!data) {
     return (
       <div
-        className="text-center"
-        style={{ paddingTop: 80, paddingBottom: 80, paddingLeft: 16, paddingRight: 16 }}
+        className="text-center page-x-pad"
+        style={{ paddingTop: 80, paddingBottom: 80 }}
       >
         <div
           className="inline-flex items-center justify-center rounded-2xl bg-pitch-50"
@@ -121,8 +121,8 @@ export default async function BetsPage({ params }: BetsPageProps) {
   if (tournamentBets.length === 0 && curatedBets.length === 0) {
     return (
       <div
-        className="text-center"
-        style={{ paddingTop: 80, paddingBottom: 80, paddingLeft: 16, paddingRight: 16 }}
+        className="text-center page-x-pad"
+        style={{ paddingTop: 80, paddingBottom: 80 }}
       >
         <div
           className="inline-flex items-center justify-center rounded-2xl pitch-bg"
@@ -474,7 +474,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
   }
 
   return (
-    <div className="flex flex-col gap-12" style={{ marginLeft: "3rem" }}>
+    <div className="flex flex-col gap-12">
       <Section title="Tournament" bets={tournamentBets} />
       <Section title="Bonus Bets" bets={curatedBets} />
     </div>

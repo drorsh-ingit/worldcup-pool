@@ -13,8 +13,8 @@ export function TournamentBadge({ kind, name }: TournamentBadgeProps) {
 
   return (
     <div
-      className="flex items-center gap-3 border-b border-neutral-100"
-      style={{ paddingTop: 12, paddingBottom: 12, paddingLeft: 4, paddingRight: 4 }}
+      className="flex items-center gap-3 border-b border-neutral-100 page-x-pad"
+      style={{ paddingTop: 12, paddingBottom: 12 }}
     >
       {logo && (
         <img

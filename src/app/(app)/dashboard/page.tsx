@@ -30,14 +30,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   return (
     <div
+      className="flex flex-col items-center page-x-pad"
       style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
         paddingTop: 80,
         paddingBottom: 80,
-        paddingLeft: 16,
-        paddingRight: 16,
       }}
     >
       <div

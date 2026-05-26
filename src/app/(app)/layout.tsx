@@ -25,7 +25,7 @@ export default async function AppLayout({
       <PushPrompt />
       <main
         className="max-w-screen-2xl mx-auto page-x-pad"
-        style={{ paddingBottom: "50vh" }}
+        style={{ paddingBottom: "8rem" }}
       >
         {children}
       </main>

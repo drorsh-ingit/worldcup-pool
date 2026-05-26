@@ -29,8 +29,8 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
   if (!data) {
     return (
       <div
-        className="text-center"
-        style={{ paddingTop: 80, paddingBottom: 80, paddingLeft: 16, paddingRight: 16 }}
+        className="text-center page-x-pad"
+        style={{ paddingTop: 80, paddingBottom: 80 }}
       >
         <div
           className="inline-flex items-center justify-center rounded-2xl bg-pitch-50"
@@ -174,8 +174,8 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
         {/* Match list */}
         {filteredMatches.length === 0 ? (
           <div
-            className="rounded-xl border border-neutral-200 bg-white text-center text-sm text-neutral-400"
-            style={{ paddingTop: 64, paddingBottom: 64, paddingLeft: 24, paddingRight: 24 }}
+            className="rounded-xl border border-neutral-200 bg-white text-center text-sm text-neutral-400 page-x-pad"
+            style={{ paddingTop: 64, paddingBottom: 64 }}
           >
             No matches scheduled yet for this phase.
           </div>
