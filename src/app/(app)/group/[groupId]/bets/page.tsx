@@ -287,7 +287,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
 
     return (
       <div key={bt.id} className={`rounded-xl border border-neutral-200 bg-white shadow-sm ${isWide ? "w-full" : "max-w-sm"}`}>
-        <div className="px-5 py-4 border-b border-neutral-100 bg-neutral-100 rounded-t-xl">
+        <div className="border-b border-neutral-100 bg-neutral-100 rounded-t-xl" style={{ padding: "16px 20px" }}>
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-neutral-900">{bt.name}</h3>
             <div className="flex items-center gap-3">
