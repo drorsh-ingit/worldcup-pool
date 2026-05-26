@@ -55,7 +55,7 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
         )}
         <GroupTabs groupId={groupId} isAdmin={isAdmin} pendingBets={pendingBets} />
       </div>
-      <div className="pt-5">
+      <div style={{ paddingTop: 20 }}>
         {children}
       </div>
     </div>
