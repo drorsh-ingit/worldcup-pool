@@ -117,7 +117,7 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
     if (!data) return null;
     const props = buildMatchCardProps(data, match);
     return (
-      <div key={match.id} id={`match-${match.id}`}>
+      <div key={match.id} id={`match-${match.id}`} style={{ scrollMarginTop: 200 }}>
       <MatchBetCard
         groupId={groupId}
         tournamentId={tournament.id}
