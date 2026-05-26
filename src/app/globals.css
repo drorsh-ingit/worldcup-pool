@@ -118,13 +118,13 @@ button, a, input, select, textarea {
 
 /* Consistent horizontal page padding — used on main content and nav */
 .page-x-pad {
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
 }
 @media (min-width: 640px) {
   .page-x-pad {
-    padding-left: 2rem;
-    padding-right: 2rem;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
   }
 }
 @media (min-width: 1024px) {
@@ -136,17 +136,17 @@ button, a, input, select, textarea {
 
 /* Bleed helper: negative margin + same padding to extend edge-to-edge */
 .page-x-bleed {
-  margin-left: -1.25rem;
-  margin-right: -1.25rem;
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
+  margin-left: -1.5rem;
+  margin-right: -1.5rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
 }
 @media (min-width: 640px) {
   .page-x-bleed {
-    margin-left: -2rem;
-    margin-right: -2rem;
-    padding-left: 2rem;
-    padding-right: 2rem;
+    margin-left: -2.5rem;
+    margin-right: -2.5rem;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
   }
 }
 @media (min-width: 1024px) {

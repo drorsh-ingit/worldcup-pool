@@ -114,18 +114,19 @@ export default async function AdminPage({ params }: AdminPageProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
       {/* Header */}
       <div>
         <Link
           href={`/group/${groupId}`}
-          className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-700 mb-3 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
+          style={{ marginBottom: 12 }}
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to group
         </Link>
         <h1 className="font-display text-2xl font-semibold tracking-tight text-neutral-900">Manage group</h1>
-        <p className="text-sm text-neutral-500 mt-1">{group.name}</p>
+        <p className="text-sm text-neutral-500" style={{ marginTop: 4 }}>{group.name}</p>
       </div>
 
       {/* Simulation control */}
@@ -137,7 +138,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
       />
 
       {/* Invite code */}
-      <section className="p-4 rounded-xl border border-neutral-200 bg-white space-y-3">
+      <section style={{ padding: 20 }} className="rounded-xl border border-neutral-200 bg-white space-y-3">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-neutral-400" />
           <h2 className="font-display text-sm font-semibold text-neutral-900">Invite code</h2>
@@ -149,21 +150,21 @@ export default async function AdminPage({ params }: AdminPageProps) {
       </section>
 
       {/* Tournament setup */}
-      <section className="space-y-4">
+      <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-pitch-500" />
-          <h2 className="font-display text-sm font-semibold text-neutral-900">Tournament</h2>
+          <h2 className="font-display text-base font-semibold text-neutral-900">Tournament</h2>
         </div>
 
         {!tournament ? (
-          <div className="p-4 rounded-xl border border-neutral-200 bg-white space-y-1">
+          <div style={{ padding: 20 }} className="rounded-xl border border-neutral-200 bg-white space-y-1">
             <p className="text-sm font-medium text-neutral-900 mb-3">No tournament set up yet</p>
             <InitTournamentButton groupId={groupId} />
           </div>
         ) : (
-          <div className="space-y-4">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Status + stats */}
-            <div className="p-4 rounded-xl border border-neutral-200 bg-white space-y-3">
+            <div style={{ padding: 20 }} className="rounded-xl border border-neutral-200 bg-white space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                   <p className="text-sm font-medium text-neutral-900">{tournament.name}</p>
@@ -236,12 +237,12 @@ export default async function AdminPage({ params }: AdminPageProps) {
 
       {/* Bet type controls */}
       {tournament && (
-        <section className="space-y-4">
+        <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-neutral-500" />
-            <h2 className="font-display text-sm font-semibold text-neutral-900">Bet Types</h2>
+            <h2 className="font-display text-base font-semibold text-neutral-900">Bet Types</h2>
           </div>
-          <p className="text-sm text-neutral-500 -mt-2">
+          <p className="text-sm text-neutral-500" style={{ marginTop: -4 }}>
             Open bets so members can place predictions. Lock when bets should close. Resolve with the correct answer to trigger scoring.
           </p>
           <BetTypeControls
@@ -263,7 +264,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
       )}
 
       {/* Danger zone */}
-      <section className="p-4 rounded-xl border border-red-100 bg-red-50 space-y-3">
+      <section style={{ padding: 20 }} className="rounded-xl border border-red-100 bg-red-50 space-y-3">
         <h2 className="text-sm font-semibold text-red-700">Danger zone</h2>
         <DeleteGroupButton groupId={groupId} groupName={group.name} />
       </section>

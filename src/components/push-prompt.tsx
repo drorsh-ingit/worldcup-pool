@@ -20,25 +20,27 @@ export function PushPrompt() {
   }
 
   return (
-    <div className="flex items-center gap-3 page-x-pad py-2.5 bg-amber-50 border-b border-amber-100 text-sm">
-      <Bell className="w-4 h-4 text-amber-500 shrink-0" />
-      <span className="flex-1 text-neutral-700">
-        Get notified when new predictions open
-      </span>
-      <button
-        onClick={subscribe}
-        disabled={loading}
-        className="px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50"
-      >
-        {loading ? "…" : "Enable"}
-      </button>
-      <button
-        onClick={() => setDismissed(true)}
-        className="text-neutral-400 hover:text-neutral-600 transition-colors"
-        aria-label="Dismiss"
-      >
-        <X className="w-4 h-4" />
-      </button>
+    <div className="bg-amber-50 border-b border-amber-100">
+      <div className="max-w-screen-2xl mx-auto page-x-pad flex items-center gap-3 py-2.5 text-sm">
+        <Bell className="w-4 h-4 text-amber-500 shrink-0" />
+        <span className="flex-1 text-neutral-700">
+          Get notified when new predictions open
+        </span>
+        <button
+          onClick={subscribe}
+          disabled={loading}
+          className="px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50"
+        >
+          {loading ? "…" : "Enable"}
+        </button>
+        <button
+          onClick={() => setDismissed(true)}
+          className="text-neutral-400 hover:text-neutral-600 transition-colors"
+          aria-label="Dismiss"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }

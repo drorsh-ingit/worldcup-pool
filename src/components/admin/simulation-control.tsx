@@ -62,7 +62,7 @@ export function SimulationControl({
   }
 
   return (
-    <section className="p-4 rounded-xl border-2 border-dashed border-amber-300 bg-pitch-50/50 space-y-4">
+    <section style={{ padding: 20 }} className="rounded-xl border-2 border-dashed border-amber-300 bg-pitch-50/50 space-y-4">
       <div className="flex items-center gap-2">
         <FlaskConical className="w-4 h-4 text-pitch-700" />
         <h2 className="text-sm font-semibold text-amber-900">Simulation Mode</h2>
