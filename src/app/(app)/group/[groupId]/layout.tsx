@@ -44,7 +44,7 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
 
   return (
     <div className="space-y-6">
-      <div className="sticky top-16 z-20 bg-white shadow-sm page-x-bleed">
+      <div className="sticky top-[69px] z-20 bg-white shadow-sm page-x-bleed">
         {tournament && (
           <TournamentBadge kind={tournament.kind} name={tournament.name} />
         )}

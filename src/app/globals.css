@@ -37,6 +37,10 @@
 
 html {
   scroll-behavior: smooth;
+  /* Clear both the app nav (69px) and the group sub-header (~64px on mobile,
+     ~120px on desktop) so anchor scrolls and scrollIntoView don't land
+     behind the sticky headers. */
+  scroll-padding-top: 200px;
 }
 
 body {
