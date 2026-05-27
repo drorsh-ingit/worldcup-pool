@@ -27,7 +27,8 @@ export function DeleteGroupButton({ groupId, groupName }: { groupId: string; gro
     return (
       <button
         onClick={() => setConfirming(true)}
-        className="inline-flex items-center gap-2 h-9 px-4 rounded-xl border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+        className="inline-flex items-center h-9 rounded-xl border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+        style={{ gap: 8, paddingLeft: 16, paddingRight: 16 }}
       >
         <Trash2 className="w-4 h-4" />
         Delete group
@@ -36,23 +37,25 @@ export function DeleteGroupButton({ groupId, groupName }: { groupId: string; gro
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col" style={{ gap: 12 }}>
       <p className="text-sm text-neutral-700">
         Delete <span className="font-semibold">{groupName}</span>? This removes all members, bets, and results permanently.
       </p>
       {error && <p className="text-sm text-red-500">{error}</p>}
-      <div className="flex gap-2">
+      <div className="flex" style={{ gap: 8 }}>
         <button
           onClick={() => setConfirming(false)}
           disabled={loading}
-          className="h-9 px-4 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+          className="h-9 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+          style={{ paddingLeft: 16, paddingRight: 16 }}
         >
           Cancel
         </button>
         <button
           onClick={handleDelete}
           disabled={loading}
-          className="h-9 px-4 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors inline-flex items-center gap-2"
+          className="h-9 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors inline-flex items-center"
+          style={{ paddingLeft: 16, paddingRight: 16, gap: 8 }}
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
           Yes, delete permanently

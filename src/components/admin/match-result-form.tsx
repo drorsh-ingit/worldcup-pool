@@ -54,8 +54,8 @@ function MatchRow({ groupId, match }: { groupId: string; match: MatchRow }) {
   const timeStr = kickoff.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
   return (
-    <div className={`px-4 py-3 border-b border-neutral-50 last:border-0 ${saved ? "opacity-70" : ""}`}>
-      <div className="flex items-center gap-3 flex-wrap">
+    <div className={`border-b border-neutral-50 last:border-0 ${saved ? "opacity-70" : ""}`} style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 12, paddingBottom: 12 }}>
+      <div className="flex items-center flex-wrap" style={{ gap: 12 }}>
         {/* Date */}
         <div className="w-20 shrink-0 text-xs text-neutral-400">
           <p>{dateStr}</p>
@@ -63,32 +63,33 @@ function MatchRow({ groupId, match }: { groupId: string; match: MatchRow }) {
         </div>
 
         {/* Teams */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center flex-1 min-w-0" style={{ gap: 8 }}>
           <span className="text-sm font-medium text-neutral-900">{match.homeTeamCode}</span>
           <span className="text-xs text-neutral-400">vs</span>
           <span className="text-sm font-medium text-neutral-900">{match.awayTeamCode}</span>
           {match.groupLetter && (
-            <span className="text-xs text-neutral-400 ml-1">Grp {match.groupLetter}</span>
+            <span className="text-xs text-neutral-400" style={{ marginLeft: 4 }}>Grp {match.groupLetter}</span>
           )}
         </div>
 
         {/* Score entry */}
         {saved ? (
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center text-sm" style={{ gap: 8 }}>
             <span className="font-semibold tabular-nums">{match.actualHomeScore}</span>
             <span className="text-neutral-400">–</span>
             <span className="font-semibold tabular-nums">{match.actualAwayScore}</span>
-            <CheckCircle className="w-4 h-4 text-emerald-500 ml-1" />
+            <CheckCircle className="w-4 h-4 text-emerald-500" style={{ marginLeft: 4 }} />
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center" style={{ gap: 8 }}>
             <input
               type="number"
               min={0}
               max={30}
               value={home}
               onChange={(e) => { setHome(e.target.value); setSaved(false); }}
-              className="w-12 h-8 px-2 rounded-lg border border-neutral-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-12 h-8 rounded-lg border border-neutral-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-200"
+              style={{ paddingLeft: 8, paddingRight: 8 }}
               placeholder="0"
             />
             <span className="text-neutral-400 text-sm">–</span>
@@ -98,20 +99,22 @@ function MatchRow({ groupId, match }: { groupId: string; match: MatchRow }) {
               max={30}
               value={away}
               onChange={(e) => { setAway(e.target.value); setSaved(false); }}
-              className="w-12 h-8 px-2 rounded-lg border border-neutral-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-12 h-8 rounded-lg border border-neutral-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-200"
+              style={{ paddingLeft: 8, paddingRight: 8 }}
               placeholder="0"
             />
             <button
               onClick={handleSave}
               disabled={loading || !home || !away}
-              className="h-8 px-3 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors"
+              className="h-8 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors"
+              style={{ paddingLeft: 12, paddingRight: 12 }}
             >
               {loading ? "..." : "Save"}
             </button>
           </div>
         )}
       </div>
-      {error && <p className="text-xs text-red-500 mt-1 ml-24">{error}</p>}
+      {error && <p className="text-xs text-red-500" style={{ marginTop: 4, marginLeft: 96 }}>{error}</p>}
     </div>
   );
 }
@@ -128,15 +131,15 @@ export function MatchResultForm({
   const [showCompleted, setShowCompleted] = useState(false);
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col" style={{ gap: 12 }}>
       {upcoming.length === 0 && (
-        <p className="text-sm text-neutral-400 py-4 text-center">
+        <p className="text-sm text-neutral-400 text-center" style={{ paddingTop: 16, paddingBottom: 16 }}>
           No upcoming matches. Advance tournament status first.
         </p>
       )}
       {upcoming.length > 0 && (
         <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-neutral-100 bg-neutral-50 flex items-center gap-2">
+          <div className="border-b border-neutral-100 bg-neutral-50 flex items-center" style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 10, paddingBottom: 10, gap: 8 }}>
             <Clock className="w-3.5 h-3.5 text-neutral-400" />
             <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
               Upcoming / Enter results
@@ -157,7 +160,7 @@ export function MatchResultForm({
             {showCompleted ? "Hide" : "Show"} {completed.length} completed results
           </button>
           {showCompleted && (
-            <div className="mt-2 rounded-xl border border-neutral-200 bg-white overflow-hidden">
+            <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden" style={{ marginTop: 8 }}>
               {completed.map((m) => (
                 <MatchRow key={m.id} groupId={groupId} match={m} />
               ))}

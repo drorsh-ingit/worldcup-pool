@@ -148,17 +148,17 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col" style={{ gap: 32 }}>
       {nextUpcomingMatch && <ScrollToMatch matchId={nextUpcomingMatch.id} />}
 
         {/* Phase filter */}
         <div className="overflow-x-auto no-scrollbar" style={{ paddingTop: 4, paddingBottom: 4, marginTop: 16 }}>
-          <div className="flex gap-2" style={{ minWidth: "max-content" }}>
+          <div className="flex" style={{ minWidth: "max-content", gap: 8 }}>
             {availablePhases.map((p) => (
               <Link
                 key={p}
                 href={`/group/${groupId}/matches?phase=${p}`}
-                className={`shrink-0 px-4 rounded-full text-sm font-medium transition-colors inline-flex items-center ${
+                className={`shrink-0 rounded-full text-sm font-medium transition-colors inline-flex items-center ${
                   activePhase === p
                     ? "bg-neutral-900 text-white"
                     : "bg-white border border-neutral-200 text-neutral-500 hover:text-neutral-800 hover:border-neutral-300"
@@ -180,7 +180,7 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
             No matches scheduled yet for this phase.
           </div>
         ) : (
-          <div className="flex flex-col gap-12">
+          <div className="flex flex-col" style={{ gap: 48 }}>
             {groups.map(({ label, matches }) => {
               const byDate: Record<string, typeof matches> = {};
               for (const m of matches) {
@@ -194,8 +194,8 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
                 (a, b) => new Date(byDate[a][0].kickoffAt).getTime() - new Date(byDate[b][0].kickoffAt).getTime()
               );
               return (
-                <div key={label} className="flex flex-col gap-8">
-                  <div className="flex items-center gap-3">
+                <div key={label} className="flex flex-col" style={{ gap: 32 }}>
+                  <div className="flex items-center" style={{ gap: 12 }}>
                     <span className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
                       {label}
                     </span>
@@ -204,11 +204,11 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
                       {matches.length} match{matches.length !== 1 ? "es" : ""}
                     </span>
                   </div>
-                  <div className="flex flex-col gap-8">
+                  <div className="flex flex-col" style={{ gap: 32 }}>
                     {dates.map((dateKey) => (
-                      <div key={dateKey} className="flex flex-col gap-4">
+                      <div key={dateKey} className="flex flex-col" style={{ gap: 16 }}>
                         <span className="text-xs font-medium text-neutral-400">{dateKey}</span>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" style={{ gap: 24 }}>
                           {byDate[dateKey].map(renderMatchCard)}
                         </div>
                       </div>

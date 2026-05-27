@@ -46,24 +46,25 @@ export function OptionPickForm({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col" style={{ gap: 12 }}>
       {isLocked && !selected && (
-        <div className="flex items-center gap-1.5 text-sm text-pitch-700">
+        <div className="flex items-center text-sm text-pitch-700" style={{ gap: 6 }}>
           <Lock className="w-3.5 h-3.5" />
           Betting is closed
         </div>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 8 }}>
         {options.map((opt) => (
           <button
             key={opt}
             onClick={() => handlePick(opt)}
             disabled={isLocked || saving}
-            className={`h-10 px-4 rounded-lg border text-sm font-medium text-left transition-colors ${
+            className={`h-10 rounded-lg border text-sm font-medium text-left transition-colors ${
               selected === opt
                 ? "border-amber-400 bg-pitch-50 text-amber-800"
                 : "border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-default"
             }`}
+            style={{ paddingLeft: 16, paddingRight: 16 }}
           >
             <div className="flex items-center justify-between">
               <span>{opt}</span>

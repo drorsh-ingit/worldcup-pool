@@ -42,9 +42,9 @@ export function AppNav({ user, groups }: AppNavProps) {
       {/* Pitch-green accent stripe */}
       <div className="h-1 w-full" style={{ backgroundColor: "#4a8c2a" }} />
 
-      <div className="max-w-screen-2xl mx-auto page-x-pad h-16 flex items-center justify-between gap-4">
+      <div className="max-w-screen-2xl mx-auto page-x-pad h-16 flex items-center justify-between" style={{ gap: 16 }}>
         {/* Brand + current group label */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center min-w-0 flex-1" style={{ gap: 12 }}>
           <Link href="/dashboard" className="shrink-0" aria-label="Home">
             <span className="hidden sm:block">
               <MatchdayLogo size={34} />
@@ -68,7 +68,8 @@ export function AppNav({ user, groups }: AppNavProps) {
         <div className="relative shrink-0" ref={userRef}>
           <button
             onClick={() => setUserMenuOpen((v) => !v)}
-            className="flex items-center gap-2 h-9 px-2 rounded-xl hover:bg-neutral-100 transition-colors"
+            className="flex items-center h-9 rounded-xl hover:bg-neutral-100 transition-colors"
+            style={{ gap: 8, paddingLeft: 8, paddingRight: 8 }}
           >
             <div className="w-8 h-8 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center">
               <span className="text-xs font-semibold text-emerald-700">{userInitial}</span>

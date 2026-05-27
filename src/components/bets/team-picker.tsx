@@ -112,8 +112,8 @@ export function TeamPicker({
         : [];
 
     return (
-      <div className="flex flex-col gap-1.5 py-1">
-        <div className="flex items-center gap-2.5 flex-wrap">
+      <div className="flex flex-col" style={{ gap: 6, paddingTop: 4, paddingBottom: 4 }}>
+        <div className="flex items-center flex-wrap" style={{ gap: 10 }}>
           {selectedTeam ? (
             <>
               <TeamBadge code={selectedTeam.code} tournamentKind={tournamentKind} size="sm" />
@@ -124,10 +124,10 @@ export function TeamPicker({
                 {selectedTeam.name}
               </span>
               {wasCorrect === true && (
-                <span className="text-xs font-bold rounded bg-emerald-500 text-white px-1.5 py-0.5 leading-none">✓</span>
+                <span className="text-xs font-bold rounded bg-emerald-500 text-white leading-none" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>✓</span>
               )}
               {wasCorrect === false && (
-                <span className="text-xs font-bold rounded bg-red-400 text-white px-1.5 py-0.5 leading-none">✗</span>
+                <span className="text-xs font-bold rounded bg-red-400 text-white leading-none" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>✗</span>
               )}
               {isResolved ? (
                 <span className={cn(
@@ -143,30 +143,31 @@ export function TeamPicker({
               )}
             </>
           ) : (
-            <span className="flex items-center gap-1.5 text-sm text-pitch-700">
+            <span className="flex items-center text-sm text-pitch-700" style={{ gap: 6 }}>
               <Lock className="w-3.5 h-3.5" />
               No prediction entered
             </span>
           )}
         </div>
         {isResolved && correctTeam && wasCorrect === false && (
-          <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+          <div className="flex items-center text-xs text-neutral-500" style={{ gap: 6 }}>
             <span>Actual:</span>
             <TeamBadge code={correctTeam.code} tournamentKind={tournamentKind} size="sm" />
             <span className="font-medium text-neutral-700">{correctTeam.name}</span>
           </div>
         )}
         {isResolved && correctTeams.length > 0 && (
-          <div className="flex items-start gap-1.5 text-xs text-neutral-500 flex-wrap">
+          <div className="flex items-start text-xs text-neutral-500 flex-wrap" style={{ gap: 6 }}>
             <span className="shrink-0">Correct picks:</span>
-            <span className="flex items-center gap-1.5 flex-wrap">
+            <span className="flex items-center flex-wrap" style={{ gap: 6 }}>
               {correctTeams.map((t) => (
                 <span
                   key={t.code}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5",
+                    "inline-flex items-center rounded-full bg-neutral-100",
                     selectedTeam?.code === t.code && "bg-emerald-100 text-emerald-800"
                   )}
+                  style={{ gap: 4, paddingLeft: 8, paddingRight: 8, paddingTop: 2, paddingBottom: 2 }}
                 >
                   <TeamBadge code={t.code} tournamentKind={tournamentKind} size="sm" />
                   <span className="font-medium">{t.name}</span>
@@ -185,17 +186,17 @@ export function TeamPicker({
   const selectedPts = selectedTeam ? pointsByTeam?.[selectedTeam.code] : undefined;
 
   return (
-    <div className="space-y-2" ref={ref}>
+    <div className="flex flex-col" style={{ gap: 8 }} ref={ref}>
       <div className="relative">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           disabled={isPending}
           className={cn(
-            "w-full flex items-center gap-2.5 rounded-xl border text-sm transition-colors bg-white",
+            "w-full flex items-center rounded-xl border text-sm transition-colors bg-white",
             open ? "border-pitch-500 ring-2 ring-pitch-500/20" : "border-neutral-200 hover:border-neutral-300"
           )}
-          style={{ paddingLeft: 12, paddingRight: 10, paddingTop: 10, paddingBottom: 10 }}
+          style={{ gap: 10, paddingLeft: 12, paddingRight: 10, paddingTop: 10, paddingBottom: 10 }}
         >
           {selectedTeam ? (
             <>
@@ -238,9 +239,10 @@ export function TeamPicker({
                   type="button"
                   onClick={() => handleSelect(t.code)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 text-sm text-left transition-colors border-b border-neutral-50 last:border-0",
+                    "w-full flex items-center text-sm text-left transition-colors border-b border-neutral-50 last:border-0",
                     isSelected ? "bg-pitch-50" : "bg-white hover:bg-neutral-50"
                   )}
+                  style={{ gap: 12, paddingLeft: 12, paddingRight: 12, paddingTop: 10, paddingBottom: 10 }}
                 >
                   <TeamBadge code={t.code} tournamentKind={tournamentKind} size="sm" />
                   <span className={cn("flex-1 font-medium", isSelected ? "text-amber-900" : "text-neutral-800")}>
@@ -256,10 +258,10 @@ export function TeamPicker({
         )}
       </div>
 
-      <div className="flex items-center gap-2 text-xs">
+      <div className="flex items-center text-xs" style={{ gap: 8 }}>
         {isPending && <span className="text-neutral-400">Saving…</span>}
         {saved && !isPending && (
-          <span className="flex items-center gap-1 text-emerald-600">
+          <span className="flex items-center text-emerald-600" style={{ gap: 4 }}>
             <CheckCircle className="w-3 h-3" /> Saved
           </span>
         )}
@@ -373,28 +375,28 @@ export function GroupPredictionsPicker({
   const qualifiersFull = totalQualifiers >= MAX_QUALIFIERS;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col" style={{ gap: 24 }}>
       {/* Status row */}
-      <div className="flex items-center gap-4 text-xs mb-2 flex-wrap">
+      <div className="flex items-center text-xs flex-wrap" style={{ gap: 16, marginBottom: 8 }}>
         <span className={winnersCount < groups.length ? "text-pitch-700 font-medium" : "text-emerald-600 font-medium"}>
           {winnersCount}/{groups.length} winners picked
         </span>
         <span className={totalQualifiers < MAX_QUALIFIERS ? "text-pitch-700 font-medium" : "text-emerald-600 font-medium"}>
           {totalQualifiers}/{MAX_QUALIFIERS} additional qualifiers picked
         </span>
-        <span className="flex items-center gap-1.5 text-neutral-400">
+        <span className="flex items-center text-neutral-400" style={{ gap: 6 }}>
           <span className="inline-block w-2 h-2 rounded-full bg-pitch-500" />W = winner
         </span>
-        <span className="flex items-center gap-1.5 text-neutral-400">
+        <span className="flex items-center text-neutral-400" style={{ gap: 6 }}>
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />Q = qualifies
         </span>
         {saving && <span className="text-neutral-400">Saving…</span>}
-        {saved && !saving && <span className="flex items-center gap-1 text-emerald-600"><CheckCircle className="w-3 h-3" /> Saved</span>}
+        {saved && !saving && <span className="flex items-center text-emerald-600" style={{ gap: 4 }}><CheckCircle className="w-3 h-3" /> Saved</span>}
         {error && <span className="text-red-500">{error}</span>}
       </div>
 
       {/* Group grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: 24 }}>
         {groups.map(([letter, teams]) => {
           const winner = picks[letter]?.[0] ?? "";
           const advancers = new Set(picks[letter]?.slice(1) ?? []);
@@ -420,7 +422,7 @@ export function GroupPredictionsPicker({
 
           return (
             <div key={letter} className="rounded-xl border border-neutral-200 overflow-hidden">
-              <div className="bg-neutral-800 px-4 py-3.5">
+              <div className="bg-neutral-800" style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 14, paddingBottom: 14 }}>
                 <span className="text-sm font-bold text-white uppercase tracking-wider">Group {letter}</span>
               </div>
 
@@ -483,8 +485,8 @@ export function GroupPredictionsPicker({
                     // Full standings row
                     return (
                       <div key={team.code}
-                        className={cn(gridCls, "items-center divide-x-0 gap-0", rowBg)}
-                        style={{ paddingLeft: 12, paddingRight: 12, paddingTop: 10, paddingBottom: 10 }}>
+                        className={cn(gridCls, "items-center divide-x-0", rowBg)}
+                        style={{ gap: 0, paddingLeft: 12, paddingRight: 12, paddingTop: 10, paddingBottom: 10 }}>
                         {/* Place */}
                         <span className={cn("text-xs font-bold text-center tabular-nums",
                           place === 1 ? "text-amber-500" : place === 2 ? "text-neutral-500" : "text-neutral-300"
@@ -492,9 +494,9 @@ export function GroupPredictionsPicker({
                         {/* Flag */}
                         <span className="flex justify-center"><Flag code={team.code} size="sm" /></span>
                         {/* Name */}
-                        <span className={cn("text-sm font-medium truncate px-1",
+                        <span className={cn("text-sm font-medium truncate",
                           isActualWinner ? "text-amber-800" : isActualQualifier ? "text-emerald-800" : "text-neutral-500"
-                        )}>{team.name}</span>
+                        )} style={{ paddingLeft: 4, paddingRight: 4 }}>{team.name}</span>
                         {/* P */}
                         <span className="hidden sm:block text-xs tabular-nums text-center text-neutral-500">{st.played}</span>
                         {/* W */}
@@ -534,7 +536,7 @@ export function GroupPredictionsPicker({
 
                   // Regular row (no standings data)
                   return (
-                    <div key={team.code} className={cn("flex items-center gap-3 px-4 py-4", rowBg)}>
+                    <div key={team.code} className={cn("flex items-center", rowBg)} style={{ gap: 12, paddingLeft: 16, paddingRight: 16, paddingTop: 16, paddingBottom: 16 }}>
                       {place != null && (
                         <span className="text-xs font-bold text-neutral-400 w-4 text-center shrink-0">{place}</span>
                       )}
@@ -545,10 +547,10 @@ export function GroupPredictionsPicker({
                           ? isActualWinner ? "text-amber-800" : isActualQualifier ? "text-emerald-800" : "text-neutral-500"
                           : isWinner ? "text-amber-800" : isAdvancer ? "text-emerald-800" : "text-neutral-700"
                       )}>{team.name}</span>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="flex flex-col items-center gap-1">
+                      <div className="flex items-center shrink-0" style={{ gap: 12 }}>
+                        <div className="flex flex-col items-center" style={{ gap: 4 }}>
                           {winPts != null && (
-                            <span className="text-xs font-semibold tabular-nums px-1.5 py-0.5 rounded bg-pitch-50 text-pitch-900 leading-none">+{winPts.toFixed(1)}</span>
+                            <span className="text-xs font-semibold tabular-nums rounded bg-pitch-50 text-pitch-900 leading-none" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>+{winPts.toFixed(1)}</span>
                           )}
                           <button onClick={() => handleWinner(letter, team.code)} disabled={isLocked}
                             className={cn("w-8 h-7 rounded text-xs font-bold transition-colors",
@@ -557,9 +559,9 @@ export function GroupPredictionsPicker({
                               !isLocked && !resolution && "hover:bg-neutral-200", isLocked && "cursor-default"
                             )}>W</button>
                         </div>
-                        <div className="flex flex-col items-center gap-1">
+                        <div className="flex flex-col items-center" style={{ gap: 4 }}>
                           {qualPts != null && (
-                            <span className="text-xs font-semibold tabular-nums px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 leading-none">+{qualPts.toFixed(1)}</span>
+                            <span className="text-xs font-semibold tabular-nums rounded bg-emerald-100 text-emerald-700 leading-none" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>+{qualPts.toFixed(1)}</span>
                           )}
                           <button onClick={() => handleAdvancer(letter, team.code)} disabled={isLocked || isWinner || advFull}
                             className={cn("w-8 h-7 rounded text-xs font-bold transition-colors",
@@ -580,7 +582,7 @@ export function GroupPredictionsPicker({
               {standings && (() => {
                 const pickedTeams = sortedTeams.filter(t => picks[letter]?.includes(t.code));
                 return (
-                  <div className="border-t border-neutral-100 bg-neutral-50 flex flex-col gap-2" style={{ padding: "10px" }}>
+                  <div className="border-t border-neutral-100 bg-neutral-50 flex flex-col" style={{ gap: 8, padding: "10px" }}>
                     <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Your predictions</span>
                     {pickedTeams.length === 0 && (
                       <span className="text-xs text-neutral-400">No picks for this group</span>
@@ -603,29 +605,29 @@ export function GroupPredictionsPicker({
                       if (isWinner) {
                         if (resolution) {
                           if (isActualWinner) {
-                            badge = <span className="font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">W {winPts != null ? `+${winPts.toFixed(1)}` : "✓"}</span>;
+                            badge = <span className="font-bold rounded bg-emerald-100 text-emerald-700" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>W {winPts != null ? `+${winPts.toFixed(1)}` : "✓"}</span>;
                           } else if (isActualQualifier) {
-                            badge = <span className="font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">W (Q {qualPts != null ? `+${qualPts.toFixed(1)}` : "✓"})</span>;
+                            badge = <span className="font-bold rounded bg-emerald-100 text-emerald-700" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>W (Q {qualPts != null ? `+${qualPts.toFixed(1)}` : "✓"})</span>;
                           } else {
-                            badge = <span className="font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-600">W ✗</span>;
+                            badge = <span className="font-bold rounded bg-red-100 text-red-600" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>W ✗</span>;
                           }
                         } else {
-                          badge = <span className="font-bold px-1.5 py-0.5 rounded bg-pitch-50 text-pitch-900">W {winPts != null ? `+${winPts.toFixed(1)}` : ""}</span>;
+                          badge = <span className="font-bold rounded bg-pitch-50 text-pitch-900" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>W {winPts != null ? `+${winPts.toFixed(1)}` : ""}</span>;
                         }
                       } else if (isAdvancer) {
                         if (resolution) {
                           if (isActualQualifier) {
-                            badge = <span className="font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Q {qualPts != null ? `+${qualPts.toFixed(1)}` : "✓"}</span>;
+                            badge = <span className="font-bold rounded bg-emerald-100 text-emerald-700" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>Q {qualPts != null ? `+${qualPts.toFixed(1)}` : "✓"}</span>;
                           } else {
-                            badge = <span className="font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-600">Q ✗</span>;
+                            badge = <span className="font-bold rounded bg-red-100 text-red-600" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>Q ✗</span>;
                           }
                         } else {
-                          badge = <span className="font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">Q {qualPts != null ? `+${qualPts.toFixed(1)}` : ""}</span>;
+                          badge = <span className="font-bold rounded bg-emerald-50 text-emerald-700" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>Q {qualPts != null ? `+${qualPts.toFixed(1)}` : ""}</span>;
                         }
                       }
 
                       return (
-                        <div key={team.code} className="flex items-center gap-2 text-xs">
+                        <div key={team.code} className="flex items-center text-xs" style={{ gap: 8 }}>
                           <Flag code={team.code} size="sm" />
                           <span className="text-neutral-700 font-medium flex-1">{team.name}</span>
                           {badge}
@@ -713,8 +715,8 @@ export function SemifinalistsPicker({
     : null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3 text-xs">
+    <div className="flex flex-col" style={{ gap: 16 }}>
+      <div className="flex items-center text-xs" style={{ gap: 12 }}>
         {isResolved ? (
           <span className={cn("font-medium", (correctCount ?? 0) > 0 ? "text-emerald-600" : "text-neutral-500")}>
             {correctCount}/4 correct
@@ -726,14 +728,14 @@ export function SemifinalistsPicker({
         )}
         {saving && <span className="text-neutral-400">Saving…</span>}
         {saved && picks.size === 4 && !isResolved && (
-          <span className="flex items-center gap-1 text-emerald-600">
+          <span className="flex items-center text-emerald-600" style={{ gap: 4 }}>
             <CheckCircle className="w-3 h-3" /> Saved
           </span>
         )}
         {error && <span className="text-red-500">{error}</span>}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: 8 }}>
         {sorted.map((t) => {
           const isSelected = picks.has(t.code);
           const isDisabled = isLocked || (picks.size >= 4 && !isSelected);
@@ -749,7 +751,7 @@ export function SemifinalistsPicker({
               onClick={() => handleToggle(t.code)}
               disabled={isDisabled}
               className={cn(
-                "flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors",
+                "flex items-center rounded-xl border text-sm font-medium transition-colors",
                 isCorrectPick
                   ? "border-emerald-400 bg-emerald-50 text-emerald-800"
                   : isWrongPick
@@ -760,16 +762,17 @@ export function SemifinalistsPicker({
                   ? "border-neutral-100 text-neutral-300 cursor-not-allowed bg-white"
                   : "border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 bg-white"
               )}
+              style={{ gap: 10, paddingLeft: 12, paddingRight: 12, paddingTop: 10, paddingBottom: 10 }}
             >
               <TeamBadge code={t.code} tournamentKind={tournamentKind} size="sm" />
               <span className="flex-1 truncate text-left">{t.name}</span>
               {isCorrectPick && pts != null && (
-                <span className="text-[11px] tabular-nums font-bold text-white bg-emerald-500 rounded px-1.5 py-0.5 shrink-0">
+                <span className="text-[11px] tabular-nums font-bold text-white bg-emerald-500 rounded shrink-0" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>
                   +{pts.toFixed(1)}
                 </span>
               )}
               {isWrongPick && (
-                <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-red-400 text-white leading-none shrink-0">
+                <span className="text-[10px] font-bold rounded bg-red-400 text-white leading-none shrink-0" style={{ paddingLeft: 4, paddingRight: 4, paddingTop: 2, paddingBottom: 2 }}>
                   ✗
                 </span>
               )}

@@ -43,13 +43,13 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
   ]);
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div className="sticky top-16 z-20 bg-white shadow-sm page-x-bleed">
         {tournament && (
           <TournamentBadge kind={tournament.kind} name={tournament.name} />
         )}
         {simulation?.enabled && (
-          <div className="flex items-center gap-2 py-2 border-b border-amber-100 bg-pitch-50 page-x-bleed">
+          <div className="flex items-center border-b border-amber-100 bg-pitch-50 page-x-bleed" style={{ gap: 8, paddingTop: 8, paddingBottom: 8 }}>
             <SimulationBanner simulatedDate={simulation.simulatedDate} />
           </div>
         )}

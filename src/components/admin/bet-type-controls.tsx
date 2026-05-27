@@ -24,7 +24,7 @@ function statusBadge(status: BetTypeRow["status"]) {
     LOCKED: "bg-pitch-50 text-pitch-700",
     RESOLVED: "bg-neutral-100 text-neutral-400",
   };
-  return `text-xs px-2 py-0.5 rounded-full font-medium ${map[status]}`;
+  return `text-xs rounded-full font-medium ${map[status]}`;
 }
 
 function ResolutionForm({
@@ -90,26 +90,29 @@ function ResolutionForm({
   }
 
   return (
-    <div className="mt-3 space-y-2 pt-3 border-t border-neutral-100">
+    <div className="border-t border-neutral-100" style={{ marginTop: 12, paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
       <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">Enter resolution</p>
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder()}
-        className="w-full h-9 px-3 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 bg-white"
+        className="w-full h-9 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 bg-white"
+        style={{ padding: "0 12px" }}
       />
       {error && <p className="text-xs text-red-500">{error}</p>}
-      <div className="flex gap-2">
+      <div className="flex" style={{ gap: 8 }}>
         <button
           onClick={handleResolve}
           disabled={loading || !value.trim()}
-          className="h-8 px-3 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors"
+          className="h-8 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors"
+          style={{ padding: "0 12px" }}
         >
           {loading ? "Resolving..." : "Resolve"}
         </button>
         <button
           onClick={onDone}
-          className="h-8 px-3 rounded-lg border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-50 transition-colors"
+          className="h-8 rounded-lg border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-50 transition-colors"
+          style={{ padding: "0 12px" }}
         >
           Cancel
         </button>
@@ -159,9 +162,9 @@ function BetTypeRow({
     betType.category === "TOURNAMENT" && betType.status === "DRAFT";
 
   return (
-    <div className="px-4 py-3 border-b border-neutral-50 last:border-0">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
+    <div className="border-b border-neutral-50 last:border-0" style={{ padding: "12px 16px" }}>
+      <div className="flex items-start justify-between" style={{ gap: 12 }}>
+        <div className="flex items-center min-w-0" style={{ gap: 10 }}>
           <div className="shrink-0" style={{ marginTop: 2 }}>
             {betType.status === "RESOLVED" ? (
               <CheckCircle className="w-4 h-4 text-emerald-500" />
@@ -179,13 +182,14 @@ function BetTypeRow({
             }
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className={statusBadge(betType.status)}>{betType.status}</span>
+        <div className="flex items-center shrink-0" style={{ gap: 8 }}>
+          <span className={statusBadge(betType.status)} style={{ padding: "2px 8px" }}>{betType.status}</span>
           {betType.status === "DRAFT" && (
             <button
               onClick={handleOpen}
               disabled={loading}
-              className="h-7 px-2.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-emerald-100 disabled:opacity-60 transition-colors"
+              className="h-7 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-emerald-100 disabled:opacity-60 transition-colors"
+              style={{ padding: "0 10px" }}
             >
               Open
             </button>
@@ -194,7 +198,8 @@ function BetTypeRow({
             <button
               onClick={handleLock}
               disabled={loading}
-              className="h-7 px-2.5 rounded-lg bg-pitch-50 text-pitch-900 text-xs font-medium hover:bg-pitch-50 disabled:opacity-60 transition-colors"
+              className="h-7 rounded-lg bg-pitch-50 text-pitch-900 text-xs font-medium hover:bg-pitch-50 disabled:opacity-60 transition-colors"
+              style={{ padding: "0 10px" }}
             >
               Lock
             </button>
@@ -204,13 +209,15 @@ function BetTypeRow({
               <button
                 onClick={handleReopen}
                 disabled={loading}
-                className="h-7 px-2.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-emerald-100 disabled:opacity-60 transition-colors"
+                className="h-7 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-emerald-100 disabled:opacity-60 transition-colors"
+                style={{ padding: "0 10px" }}
               >
                 Reopen
               </button>
               <button
                 onClick={() => setShowResolve((v) => !v)}
-                className="h-7 px-2.5 rounded-lg bg-neutral-100 text-neutral-700 text-xs font-medium hover:bg-neutral-200 transition-colors flex items-center gap-1"
+                className="h-7 rounded-lg bg-neutral-100 text-neutral-700 text-xs font-medium hover:bg-neutral-200 transition-colors flex items-center"
+                style={{ padding: "0 10px", gap: 4 }}
               >
                 Resolve
                 {showResolve ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -225,7 +232,8 @@ function BetTypeRow({
             value={betType.openTrigger ?? "PRE_TOURNAMENT"}
             onChange={(e) => handleTriggerChange(e.target.value as BetOpenTrigger)}
             disabled={loading}
-            className="h-7 px-2 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-700 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-60 w-full max-w-xs"
+            className="h-7 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-700 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-60 w-full max-w-xs"
+            style={{ padding: "0 8px" }}
             title="When this bet opens"
           >
             {BET_OPEN_TRIGGERS.map((t) => (
@@ -237,7 +245,7 @@ function BetTypeRow({
         </div>
       )}
       {triggerError && (
-        <p className="text-xs text-red-500 mt-1">{triggerError}</p>
+        <p className="text-xs text-red-500" style={{ marginTop: 4 }}>{triggerError}</p>
       )}
       {showResolve && (
         <ResolutionForm
@@ -295,10 +303,10 @@ export function BetTypeControls({
   };
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {Object.entries(grouped).map(([category, bts]) => (
         <div key={category} className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-neutral-100 bg-neutral-50">
+          <div className="border-b border-neutral-100 bg-neutral-50" style={{ padding: "10px 16px" }}>
             <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
               {categoryLabel[category] ?? category}
             </p>

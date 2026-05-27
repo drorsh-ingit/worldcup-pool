@@ -32,19 +32,19 @@ function resolveCandidates(
 function statusBadge(status: string) {
   if (status === "RESOLVED")
     return (
-      <span className="inline-flex items-center gap-1 text-xs bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded-full font-medium">
+      <span className="inline-flex items-center text-xs bg-neutral-100 text-neutral-500 rounded-full font-medium" style={{ gap: 4, paddingLeft: 8, paddingRight: 8, paddingTop: 2, paddingBottom: 2 }}>
         <CheckCircle className="w-3 h-3" /> Resolved
       </span>
     );
   if (status === "LOCKED")
     return (
-      <span className="inline-flex items-center gap-1 text-xs bg-pitch-50 text-pitch-700 px-2 py-0.5 rounded-full font-medium">
+      <span className="inline-flex items-center text-xs bg-pitch-50 text-pitch-700 rounded-full font-medium" style={{ gap: 4, paddingLeft: 8, paddingRight: 8, paddingTop: 2, paddingBottom: 2 }}>
         <Lock className="w-3 h-3" /> Locked
       </span>
     );
   if (status === "OPEN")
     return (
-      <span className="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium">
+      <span className="text-xs bg-emerald-50 text-emerald-600 rounded-full font-medium" style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 2, paddingBottom: 2 }}>
         Open
       </span>
     );
@@ -290,7 +290,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
         <div className="border-b border-neutral-100 bg-neutral-100 rounded-t-xl" style={{ padding: "16px 20px" }}>
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-neutral-900">{bt.name}</h3>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center" style={{ gap: 12 }}>
               {groupPredictionsPointsEarned !== null && (
                 <span className="text-base font-bold text-emerald-600 tabular-nums">
                   {groupPredictionsPointsEarned.toFixed(1)} pts earned
@@ -325,12 +325,12 @@ export default async function BetsPage({ params }: BetsPageProps) {
             </div>
           </div>
           {bt.description && (
-            <p className="text-xs text-neutral-500 mt-1 leading-relaxed">{bt.description}</p>
+            <p className="text-xs text-neutral-500 leading-relaxed" style={{ marginTop: 4 }}>{bt.description}</p>
           )}
         </div>
         <div style={{ padding: isWide ? "1rem 1.25rem 1.5rem" : "1.25rem" }} className="bg-white">
           {bt.effectiveStatus === "DRAFT" ? (
-            <div className="flex flex-col items-center justify-center gap-1.5 py-8 text-neutral-400">
+            <div className="flex flex-col items-center justify-center text-neutral-400" style={{ gap: 6, paddingTop: 32, paddingBottom: 32 }}>
               <Lock className="w-5 h-5" />
               <span className="text-sm">Opens soon</span>
             </div>
@@ -459,14 +459,14 @@ export default async function BetsPage({ params }: BetsPageProps) {
   function Section({ title, bets, hideTitle }: { title: string; bets: typeof tournamentBets; hideTitle?: boolean }) {
     if (bets.length === 0) return null;
     return (
-      <section className="flex flex-col gap-6">
+      <section className="flex flex-col" style={{ gap: 24 }}>
         {!hideTitle && (
-          <div className="flex items-center justify-between pb-3 border-b border-neutral-200">
+          <div className="flex items-center justify-between border-b border-neutral-200" style={{ paddingBottom: 12 }}>
             <h2 className="font-display font-semibold text-neutral-900">{title}</h2>
             <span className="text-xs text-neutral-400">{bets.length} bet{bets.length !== 1 ? "s" : ""}</span>
           </div>
         )}
-        <div className="flex flex-col gap-10">
+        <div className="flex flex-col" style={{ gap: 40 }}>
           {bets.map((bt) => renderBetCard(bt, ""))}
         </div>
       </section>
@@ -474,7 +474,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
   }
 
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col" style={{ gap: 48 }}>
       <Section title="Tournament" bets={tournamentBets} />
       <Section title="Bonus Bets" bets={curatedBets} />
     </div>

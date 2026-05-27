@@ -263,7 +263,7 @@ export function BracketPicker({
 
   if (isLocked && totalPicks === 0) {
     return (
-      <div className="flex items-center gap-2 text-sm text-neutral-400 py-2">
+      <div className="flex items-center text-sm text-neutral-400" style={{ gap: 8, paddingTop: 8, paddingBottom: 8 }}>
         <Lock className="w-4 h-4" />
         No prediction entered
       </div>
@@ -271,9 +271,9 @@ export function BracketPicker({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col" style={{ gap: 24 }}>
       {/* Status row */}
-      <div className="flex items-center gap-4 text-xs flex-wrap">
+      <div className="flex items-center text-xs flex-wrap" style={{ gap: 16 }}>
         {totalResolved > 0 ? (
           <span
             className={cn(
@@ -295,7 +295,7 @@ export function BracketPicker({
         )}
         {isPending && <span className="text-neutral-400">Saving…</span>}
         {saved && !isPending && (
-          <span className="flex items-center gap-1 text-emerald-600">
+          <span className="flex items-center text-emerald-600" style={{ gap: 4 }}>
             <CheckCircle className="w-3 h-3" /> Saved
           </span>
         )}
@@ -303,7 +303,7 @@ export function BracketPicker({
       </div>
 
       {!hasAnyMatches ? (
-        <p className="text-sm text-neutral-400 text-center py-4">
+        <p className="text-sm text-neutral-400 text-center" style={{ paddingTop: 16, paddingBottom: 16 }}>
           Knockout matches will appear here once the group stage bracket is set.
         </p>
       ) : (
@@ -311,10 +311,11 @@ export function BracketPicker({
           <div className="overflow-x-auto">
             {/* Phase headers */}
             <div
-              className="grid mb-3 min-w-[900px]"
+              className="grid min-w-[900px]"
               style={{
                 gridTemplateColumns: "repeat(5, 1fr)",
                 gap: "16px",
+                marginBottom: 12,
               }}
             >
               {PHASE_ORDER.map((phase) => (
@@ -374,7 +375,7 @@ export function BracketPicker({
 
           {/* Champion display */}
           {(picks["FINAL-0"] || actualWinners["FINAL-0"]) && (
-            <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-amber-50 border border-amber-200">
+            <div className="flex items-center justify-center rounded-xl bg-amber-50 border border-amber-200" style={{ gap: 8, paddingTop: 12, paddingBottom: 12, paddingLeft: 16, paddingRight: 16 }}>
               <Trophy className="w-4 h-4 text-amber-600" />
               <span className="text-xs uppercase tracking-wider font-bold text-amber-700">
                 {actualWinners["FINAL-0"] ? "Champion" : "Your Champion"}
@@ -385,7 +386,7 @@ export function BracketPicker({
                 const team = teamByCode[code];
                 if (!team) return null;
                 return (
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center" style={{ gap: 8 }}>
                     <TeamBadge code={team.code} tournamentKind={tournamentKind} size="sm" />
                     <span className="text-sm font-semibold text-amber-900">
                       {team.name}
@@ -492,13 +493,14 @@ function BracketSlotCard({
             disabled={disabled}
             onClick={() => !disabled && onPick(team.code)}
             className={cn(
-              "w-full flex items-center gap-2 text-left transition-colors",
+              "w-full flex items-center text-left transition-colors",
               i === 0 ? "border-b border-neutral-100" : "",
               rowBg,
               !disabled && "hover:bg-neutral-50 cursor-pointer",
               disabled && "cursor-default"
             )}
             style={{
+              gap: 8,
               paddingLeft: 14,
               paddingRight: 14,
               paddingTop: 10,
@@ -526,7 +528,7 @@ function BracketSlotCard({
               );
             })()}
             {isUpstreamEliminated && isPicked && (
-              <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-red-400 text-white leading-none">
+              <span className="text-[10px] font-bold rounded bg-red-400 text-white leading-none" style={{ paddingLeft: 4, paddingRight: 4, paddingTop: 2, paddingBottom: 2 }}>
                 ✗
               </span>
             )}
@@ -554,7 +556,7 @@ function BracketSlotCard({
                   </span>
                 );
               })() : isActualLoser ? (
-                <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-red-400 text-white leading-none">
+                <span className="text-[10px] font-bold rounded bg-red-400 text-white leading-none" style={{ paddingLeft: 4, paddingRight: 4, paddingTop: 2, paddingBottom: 2 }}>
                   ✗
                 </span>
               ) : null

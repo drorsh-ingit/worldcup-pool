@@ -23,19 +23,21 @@ export function ResetTournamentButton({ groupId }: { groupId: string }) {
 
   if (confirming) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center" style={{ gap: 8 }}>
         <span className="text-xs text-neutral-600">Delete all tournament data?</span>
         <button
           onClick={handleDelete}
           disabled={loading}
-          className="h-8 px-3 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 disabled:opacity-60 transition-colors"
+          className="h-8 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 disabled:opacity-60 transition-colors"
+          style={{ paddingLeft: 12, paddingRight: 12 }}
         >
           {loading ? "Deleting…" : "Yes, delete"}
         </button>
         <button
           onClick={() => setConfirming(false)}
           disabled={loading}
-          className="h-8 px-3 rounded-lg border border-neutral-200 text-xs text-neutral-600 hover:bg-neutral-50 disabled:opacity-60 transition-colors"
+          className="h-8 rounded-lg border border-neutral-200 text-xs text-neutral-600 hover:bg-neutral-50 disabled:opacity-60 transition-colors"
+          style={{ paddingLeft: 12, paddingRight: 12 }}
         >
           Cancel
         </button>
@@ -47,7 +49,8 @@ export function ResetTournamentButton({ groupId }: { groupId: string }) {
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="h-8 px-3 rounded-lg border border-red-200 text-xs text-red-600 hover:bg-red-50 transition-colors flex items-center gap-1.5"
+      className="h-8 rounded-lg border border-red-200 text-xs text-red-600 hover:bg-red-50 transition-colors flex items-center"
+      style={{ paddingLeft: 12, paddingRight: 12, gap: 6 }}
     >
       <Trash2 className="w-3.5 h-3.5" />
       Reset tournament

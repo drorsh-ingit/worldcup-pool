@@ -27,14 +27,15 @@ export function InitTournamentButton({ groupId }: { groupId: string }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
+    <div className="flex flex-col" style={{ gap: 16 }}>
+      <div className="flex flex-col" style={{ gap: 8 }}>
         <label className="text-sm font-medium text-neutral-700">Tournament type</label>
         <select
           value={kind}
           onChange={(e) => setKind(e.target.value as TournamentKind)}
           disabled={loading}
-          className="w-full h-9 px-3 rounded-lg border border-neutral-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-pitch-500/20 focus:border-pitch-500"
+          className="w-full h-9 rounded-lg border border-neutral-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-pitch-500/20 focus:border-pitch-500"
+          style={{ paddingLeft: 12, paddingRight: 12 }}
         >
           {TOURNAMENT_CATALOG.map((opt) => (
             <option key={opt.id} value={opt.id}>
@@ -50,7 +51,8 @@ export function InitTournamentButton({ groupId }: { groupId: string }) {
       <button
         onClick={handleInit}
         disabled={loading}
-        className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        className="inline-flex items-center h-9 rounded-xl bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        style={{ gap: 8, paddingLeft: 16, paddingRight: 16 }}
       >
         <Trophy className="w-4 h-4" />
         {loading ? "Setting up..." : `Initialize ${selected.displayName}`}

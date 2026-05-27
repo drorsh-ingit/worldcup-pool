@@ -225,18 +225,18 @@ export function MatchBetCard({
       )}
     >
       {/* Header: phase + time, optional stats button */}
-      <div className="flex items-center justify-between gap-3" style={{ padding: "14px 20px 12px" }}>
-        <div className="inline-flex items-center gap-1.5 text-sm text-neutral-600 min-w-0">
+      <div className="flex items-center justify-between" style={{ gap: 12, padding: "14px 20px 12px" }}>
+        <div className="inline-flex items-center text-sm text-neutral-600 min-w-0" style={{ gap: 6 }}>
           <MapPin className="w-4 h-4 text-neutral-400 shrink-0" />
           <span className="font-medium text-neutral-800 truncate">{phaseLabel(match.phase, match.groupLetter, tournamentKind)}</span>
-          <span className="text-neutral-300 px-0.5">·</span>
+          <span className="text-neutral-300" style={{ paddingLeft: 2, paddingRight: 2 }}>·</span>
           <Clock className="w-4 h-4 text-neutral-400 shrink-0" />
           <span className="tabular-nums whitespace-nowrap">
             {formatDate(kickoff)} {formatTime(kickoff)}
           </span>
         </div>
         {isLocked && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-pitch-900 bg-pitch-50 border border-amber-200 rounded-full px-2.5 py-1 shrink-0">
+          <span className="inline-flex items-center text-xs font-semibold text-pitch-900 bg-pitch-50 border border-amber-200 rounded-full shrink-0" style={{ gap: 6, paddingLeft: 10, paddingRight: 10, paddingTop: 4, paddingBottom: 4 }}>
             <Lock className="w-3.5 h-3.5" />
             {effectivelyFinished ? "Played" : "Locked"}
           </span>
@@ -244,9 +244,9 @@ export function MatchBetCard({
       </div>
 
       {/* Teams + score */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3" style={{ padding: "10px 20px 4px" }}>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-start" style={{ gap: 12, padding: "10px 20px 4px" }}>
         {/* Home team */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center" style={{ gap: 8 }}>
           <TeamBadge code={match.homeTeamCode} tournamentKind={tournamentKind} size="md" />
           <span className="text-sm font-semibold text-neutral-800 text-center leading-tight line-clamp-2">
             {match.homeTeamName || match.homeTeamCode}
@@ -254,8 +254,8 @@ export function MatchBetCard({
         </div>
 
         {/* Score area */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center gap-1">
+        <div className="flex flex-col items-center" style={{ gap: 8 }}>
+          <div className="flex items-center" style={{ gap: 4 }}>
             <ScoreCell
               value={homeScore}
               display={shownHome}
@@ -263,7 +263,7 @@ export function MatchBetCard({
               onChange={(v) => { dirtyRef.current = true; setHomeScore(v); setSaved(false); }}
               highlight={isCompleted ? (scoreCorrect ? "emerald" : "grayed") : isLocked ? "grayed" : undefined}
             />
-            <span className="text-base font-medium text-neutral-400 px-1.5 self-center" style={isLocked ? undefined : { marginTop: 4 }}>vs</span>
+            <span className="text-base font-medium text-neutral-400 self-center" style={{ paddingLeft: 6, paddingRight: 6, ...(isLocked ? {} : { marginTop: 4 }) }}>vs</span>
             <ScoreCell
               value={awayScore}
               display={shownAway}
@@ -289,7 +289,7 @@ export function MatchBetCard({
         </div>
 
         {/* Away team */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center" style={{ gap: 8 }}>
           <TeamBadge code={match.awayTeamCode} tournamentKind={tournamentKind} size="md" />
           <span className="text-sm font-semibold text-neutral-800 text-center leading-tight line-clamp-2">
             {match.awayTeamName || match.awayTeamCode}
@@ -299,7 +299,7 @@ export function MatchBetCard({
 
       {/* Live indicator */}
       {isInPlay && (
-        <div className="flex items-center justify-center gap-2 py-2 text-xs font-semibold text-red-500">
+        <div className="flex items-center justify-center text-xs font-semibold text-red-500" style={{ gap: 8, paddingTop: 8, paddingBottom: 8 }}>
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
           <span>{liveScore?.status === "PAUSED" ? "Half-time" : liveScore?.minute ? `LIVE ${liveScore.minute}'` : "LIVE"}</span>
           {displayHome != null && displayAway != null && (
@@ -312,7 +312,7 @@ export function MatchBetCard({
 
       {/* Direction Pts row */}
       <div className="border-t border-neutral-100" style={{ padding: "14px 20px" }}>
-        <div className="grid grid-cols-3 text-center gap-2">
+        <div className="grid grid-cols-3 text-center" style={{ gap: 8 }}>
           <span className={directionCellCls("home")}>1 – {betsNotOpenYet ? "TBD" : directionPts(homeWinPts)}</span>
           <span className={directionCellCls("draw")}>X – {betsNotOpenYet ? "TBD" : directionPts(drawPts)}</span>
           <span className={directionCellCls("away")}>2 – {betsNotOpenYet ? "TBD" : directionPts(awayWinPts)}</span>
@@ -396,7 +396,7 @@ function ScoreCell({
   }
 
   return (
-    <div className="flex flex-col items-center gap-0.5">
+    <div className="flex flex-col items-center" style={{ gap: 2 }}>
       <button
         type="button"
         onClick={increment}
@@ -470,9 +470,10 @@ function StatusPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-xl border bg-white px-4 py-2 text-sm font-semibold whitespace-nowrap min-w-[72px]",
+        "inline-flex items-center justify-center rounded-xl border bg-white text-sm font-semibold whitespace-nowrap min-w-[72px]",
         cls
       )}
+      style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8 }}
     >
       {label}
     </span>

@@ -77,12 +77,12 @@ export default async function GroupPage({ params }: GroupPageProps) {
   const showMyPosition = showHero && myEntry && myEntry.userId !== leader.userId;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6" style={{ paddingTop: 24 }}>
+    <div className="max-w-3xl mx-auto" style={{ paddingTop: 24, display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Slim header row */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between" style={{ gap: 12 }}>
+        <div className="flex items-center" style={{ gap: 12 }}>
           {/* Member count pill */}
-          <div className="inline-flex items-center gap-1.5 text-sm text-neutral-500 bg-neutral-100 px-3 py-1.5 rounded-full">
+          <div className="inline-flex items-center text-sm text-neutral-500 bg-neutral-100 rounded-full" style={{ gap: 6, paddingLeft: 12, paddingRight: 12, paddingTop: 6, paddingBottom: 6 }}>
             <Users className="w-3.5 h-3.5" />
             <span>
               {approvedMembers.length} member
@@ -105,10 +105,10 @@ export default async function GroupPage({ params }: GroupPageProps) {
           className="block pitch-bg rounded-2xl relative overflow-hidden"
           style={{ marginTop: 20, padding: 28 }}
         >
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between" style={{ gap: 16 }}>
             {/* Left: rank + name */}
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center" style={{ gap: 8 }}>
                 <Crown className="w-5 h-5 text-amber-400" />
                 <span className="text-amber-400 text-sm font-semibold uppercase tracking-wider">
                   Leading the group
@@ -121,7 +121,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
               >
                 {leader.name}
                 {leader.userId === currentUserId && (
-                  <span className="text-white/50 font-normal text-xl ml-2">
+                  <span className="text-white/50 font-normal text-xl" style={{ marginLeft: 8 }}>
                     (you)
                   </span>
                 )}
@@ -150,7 +150,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
               <p className="font-display text-5xl font-bold text-white tabular-nums leading-none">
                 {leader.totalPoints.toFixed(1)}
               </p>
-              <p className="text-white/50 text-xs mt-1 uppercase tracking-wider">
+              <p className="text-white/50 text-xs uppercase tracking-wider" style={{ marginTop: 4 }}>
                 pts
               </p>
             </div>
@@ -162,10 +162,11 @@ export default async function GroupPage({ params }: GroupPageProps) {
       {showMyPosition && myEntry && myRank !== null && (
         <Link
           href={`/group/${groupId}/user/${currentUserId}`}
-          className="block border border-amber-200 bg-pitch-50 rounded-2xl px-5 py-4 hover:border-amber-300 transition-colors"
+          className="block border border-amber-200 bg-pitch-50 rounded-2xl hover:border-amber-300 transition-colors"
+          style={{ padding: "16px 20px" }}
         >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center justify-between" style={{ gap: 12 }}>
+            <div className="flex items-center min-w-0" style={{ gap: 12 }}>
               <span className="text-sm font-semibold text-pitch-700 tabular-nums w-6 text-center shrink-0">
                 #{myRank}
               </span>
@@ -207,8 +208,8 @@ export default async function GroupPage({ params }: GroupPageProps) {
           <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
             {/* Table header — desktop shows all cols, mobile shows only rank/name/total */}
             <div
-              className="hidden sm:grid grid-cols-[40px_1fr_80px_88px_80px_80px] gap-2 border-b border-neutral-100 text-xs font-medium text-neutral-400 uppercase tracking-wider"
-              style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 18, paddingBottom: 18, letterSpacing: "0.08em" }}
+              className="hidden sm:grid grid-cols-[40px_1fr_80px_88px_80px_80px] border-b border-neutral-100 text-xs font-medium text-neutral-400 uppercase tracking-wider"
+              style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 18, paddingBottom: 18, letterSpacing: "0.08em", gap: 8 }}
             >
               <span>#</span>
               <span>Player</span>
@@ -218,8 +219,8 @@ export default async function GroupPage({ params }: GroupPageProps) {
               <span className="text-center">Total</span>
             </div>
             <div
-              className="grid sm:hidden grid-cols-[40px_1fr_80px] gap-2 border-b border-neutral-100 text-xs font-medium text-neutral-400 uppercase tracking-wider"
-              style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 18, paddingBottom: 18, letterSpacing: "0.08em" }}
+              className="grid sm:hidden grid-cols-[40px_1fr_80px] border-b border-neutral-100 text-xs font-medium text-neutral-400 uppercase tracking-wider"
+              style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 18, paddingBottom: 18, letterSpacing: "0.08em", gap: 8 }}
             >
               <span>#</span>
               <span>Player</span>
@@ -250,11 +251,11 @@ export default async function GroupPage({ params }: GroupPageProps) {
                   key={s.userId}
                   href={`/group/${groupId}/user/${s.userId}`}
                   className={cn(
-                    "grid grid-cols-[40px_1fr_80px] sm:grid-cols-[40px_1fr_80px_88px_80px_80px] gap-2 items-center border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors",
+                    "grid grid-cols-[40px_1fr_80px] sm:grid-cols-[40px_1fr_80px_88px_80px_80px] items-center border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors",
                     !isMe && podiumRowBg,
                     isMe && "bg-pitch-50 hover:bg-pitch-50/80"
                   )}
-                  style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 6, paddingBottom: 6 }}
+                  style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 6, paddingBottom: 6, gap: 8 }}
                 >
                   {/* Rank */}
                   <span
@@ -275,7 +276,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
                   </span>
 
                   {/* Name */}
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center min-w-0" style={{ gap: 8 }}>
                     <div
                       className={cn(
                         "w-7 h-7 rounded-full flex items-center justify-center shrink-0",

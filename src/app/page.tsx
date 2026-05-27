@@ -44,14 +44,14 @@ function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {error && (
-        <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm">
+        <div className="rounded-xl bg-red-50 text-red-600 text-sm" style={{ padding: 12 }}>
           {error}
         </div>
       )}
 
-      <div className="space-y-1.5">
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <label htmlFor="email" className="block text-sm font-medium text-neutral-700">
           Email
         </label>
@@ -62,11 +62,12 @@ function LoginForm() {
           required
           autoComplete="email"
           placeholder="you@example.com"
-          className="w-full h-11 px-3.5 rounded-xl border border-neutral-300 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+          className="w-full h-11 rounded-xl border border-neutral-300 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+          style={{ paddingLeft: 14, paddingRight: 14 }}
         />
       </div>
 
-      <div className="space-y-1.5" style={{ marginTop: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 16 }}>
         <label htmlFor="password" className="block text-sm font-medium text-neutral-700">
           Password
         </label>
@@ -77,15 +78,16 @@ function LoginForm() {
           required
           autoComplete="current-password"
           placeholder="Your password"
-          className="w-full h-11 px-3.5 rounded-xl border border-neutral-300 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+          className="w-full h-11 rounded-xl border border-neutral-300 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+          style={{ paddingLeft: 14, paddingRight: 14 }}
         />
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        style={{ marginTop: 16 }}
-        className="w-full h-11 rounded-xl bg-pitch-900 text-white font-medium text-sm hover:bg-pitch-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+        className="w-full h-11 rounded-xl bg-pitch-900 text-white font-medium text-sm hover:bg-pitch-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
+        style={{ marginTop: 16, gap: 8 }}
       >
         {loading && <Loader2 className="w-4 h-4 animate-spin" />}
         {loading ? "Signing in..." : "Sign in"}
@@ -113,7 +115,7 @@ function HomePageInner() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 bg-neutral-50">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50" style={{ paddingLeft: 24, paddingRight: 24 }}>
       <div style={{ width: "100%", maxWidth: 440, margin: "0 auto" }}>
         <div
           style={{

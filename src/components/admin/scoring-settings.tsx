@@ -122,10 +122,11 @@ function Section({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-3 text-left"
+        className="w-full flex items-center justify-between text-left"
+        style={{ paddingTop: 12, paddingBottom: 12 }}
       >
         <span className="text-sm font-medium text-neutral-800">{title}</span>
-        <span className="flex items-center gap-2">
+        <span className="flex items-center" style={{ gap: 8 }}>
           {summary && !open && (
             <span className="text-xs text-neutral-400">{summary}</span>
           )}
@@ -134,7 +135,7 @@ function Section({
           />
         </span>
       </button>
-      {open && <div className="pb-4">{children}</div>}
+      {open && <div style={{ paddingBottom: 16 }}>{children}</div>}
     </div>
   );
 }
@@ -145,7 +146,7 @@ function SumIndicator({ values, target = 100 }: { values: Record<string, number>
   const sum = Math.round(sumValues(values) * 10) / 10;
   const ok = Math.abs(sum - target) < 0.2;
   return (
-    <div className={`flex items-center gap-1 text-xs mt-1 ${ok ? "text-emerald-600" : "text-red-500"}`}>
+    <div className={`flex items-center text-xs ${ok ? "text-emerald-600" : "text-red-500"}`} style={{ gap: 4, marginTop: 4 }}>
       {ok ? <Check className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
       Sum: {sum}%{!ok && ` (must be ${target}%)`}
     </div>
@@ -179,8 +180,8 @@ function NumInput({
 }) {
   return (
     <div className={extraClass}>
-      {label && <label className="text-xs text-neutral-500 block mb-0.5">{label}</label>}
-      <div className="flex items-center gap-1">
+      {label && <label className="text-xs text-neutral-500 block" style={{ marginBottom: 2 }}>{label}</label>}
+      <div className="flex items-center" style={{ gap: 4 }}>
         <input
           type="number"
           value={value}
@@ -189,11 +190,12 @@ function NumInput({
           max={max}
           step={step}
           disabled={disabled}
-          className="w-20 h-8 px-2 rounded-lg border border-neutral-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-20 h-8 rounded-lg border border-neutral-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ paddingLeft: 8, paddingRight: 8 }}
         />
         {suffix && <span className="text-xs text-neutral-400">{suffix}</span>}
       </div>
-      {hint && <p className="text-xs text-pitch-700 mt-0.5">{hint}</p>}
+      {hint && <p className="text-xs text-pitch-700" style={{ marginTop: 2 }}>{hint}</p>}
     </div>
   );
 }
@@ -214,11 +216,12 @@ function OddsList({
   const clampedCount = sorted.filter((e) => e.odds > threshold).length;
 
   return (
-    <div className="mt-2">
+    <div style={{ marginTop: 8 }}>
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="text-xs text-neutral-400 hover:text-neutral-600 flex items-center gap-1 transition-colors"
+        className="text-xs text-neutral-400 hover:text-neutral-600 flex items-center transition-colors"
+        style={{ gap: 4 }}
       >
         <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
         {expanded ? "Hide odds" : `Show odds`}
@@ -227,14 +230,14 @@ function OddsList({
         )}
       </button>
       {expanded && (
-        <div className="mt-1.5 max-h-48 overflow-y-auto rounded-lg border border-neutral-100 bg-neutral-50">
+        <div className="max-h-48 overflow-y-auto rounded-lg border border-neutral-100 bg-neutral-50" style={{ marginTop: 6 }}>
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-neutral-200 text-neutral-400">
-                <th className="text-left py-1 px-2 font-medium">Option</th>
-                <th className="text-right py-1 px-2 font-medium">Odds</th>
-                <th className="text-right py-1 px-2 font-medium">Points</th>
-                <th className="text-right py-1 px-2 font-medium">Status</th>
+                <th className="text-left font-medium" style={{ padding: "4px 8px" }}>Option</th>
+                <th className="text-right font-medium" style={{ padding: "4px 8px" }}>Odds</th>
+                <th className="text-right font-medium" style={{ padding: "4px 8px" }}>Points</th>
+                <th className="text-right font-medium" style={{ padding: "4px 8px" }}>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -242,14 +245,14 @@ function OddsList({
                 const isClamped = e.odds > threshold;
                 return (
                   <tr key={e.label} className="border-b border-neutral-100 last:border-b-0">
-                    <td className="py-1 px-2 text-neutral-700">{e.label}</td>
-                    <td className="py-1 px-2 text-right tabular-nums text-neutral-500">
+                    <td className="text-neutral-700" style={{ padding: "4px 8px" }}>{e.label}</td>
+                    <td className="text-right tabular-nums text-neutral-500" style={{ padding: "4px 8px" }}>
                       {Math.round(e.odds / 100)}/1
                     </td>
-                    <td className="py-1 px-2 text-right tabular-nums text-neutral-600 font-medium">
+                    <td className="text-right tabular-nums text-neutral-600 font-medium" style={{ padding: "4px 8px" }}>
                       {e.points !== undefined ? e.points.toFixed(1) : "—"}
                     </td>
-                    <td className={`py-1 px-2 text-right ${isClamped ? "text-pitch-500 font-medium" : "text-neutral-400"}`}>
+                    <td className={`text-right ${isClamped ? "text-pitch-500 font-medium" : "text-neutral-400"}`} style={{ padding: "4px 8px" }}>
                       {isClamped ? "clamped" : "—"}
                     </td>
                   </tr>
@@ -286,12 +289,12 @@ function BetTypeRow({
   const threshold = draft.outlierThresholds[betKey as keyof typeof draft.outlierThresholds] ?? 100000;
 
   return (
-    <div className="rounded-lg border border-neutral-100 bg-neutral-50/50 p-3">
-      <p className={`text-xs font-medium text-neutral-700 ${BET_DESCRIPTIONS[betKey] ? "" : "mb-2"}`}>{BET_LABELS[betKey] ?? betKey}</p>
+    <div className="rounded-lg border border-neutral-100 bg-neutral-50/50" style={{ padding: 12 }}>
+      <p className={`text-xs font-medium text-neutral-700`} style={BET_DESCRIPTIONS[betKey] ? undefined : { marginBottom: 8 }}>{BET_LABELS[betKey] ?? betKey}</p>
       {BET_DESCRIPTIONS[betKey] && (
-        <p className="text-xs text-neutral-400 mt-0.5 mb-2">{BET_DESCRIPTIONS[betKey]}</p>
+        <p className="text-xs text-neutral-400" style={{ marginTop: 2, marginBottom: 8 }}>{BET_DESCRIPTIONS[betKey]}</p>
       )}
-      <div className="flex flex-wrap gap-4 items-start">
+      <div className="flex flex-wrap items-start" style={{ gap: 16 }}>
         <NumInput
           label="Base %"
           value={pct(basePctVal)}
@@ -438,8 +441,8 @@ export function ScoringSettings({
   return (
     <section className="rounded-xl border border-neutral-200 bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between border-b border-neutral-100" style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 12, paddingBottom: 12 }}>
+        <div className="flex items-center" style={{ gap: 8 }}>
           <Sliders className="w-4 h-4 text-neutral-500" />
           <h2 className="text-sm font-semibold text-neutral-900">Scoring Settings</h2>
         </div>
@@ -447,7 +450,8 @@ export function ScoringSettings({
           <button
             type="button"
             onClick={handleReset}
-            className="text-xs text-neutral-400 hover:text-neutral-600 flex items-center gap-1 transition-colors"
+            className="text-xs text-neutral-400 hover:text-neutral-600 flex items-center transition-colors"
+            style={{ gap: 4 }}
           >
             <RotateCcw className="w-3 h-3" />
             Reset to defaults
@@ -456,15 +460,15 @@ export function ScoringSettings({
       </div>
 
       {locked && (
-        <div className="flex items-start gap-2 px-4 py-2.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-800">
-          <Lock className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+        <div className="flex items-start bg-amber-50 border-b border-amber-100 text-xs text-amber-800" style={{ gap: 8, paddingLeft: 16, paddingRight: 16, paddingTop: 10, paddingBottom: 10 }}>
+          <Lock className="w-3.5 h-3.5 shrink-0" style={{ marginTop: 2 }} />
           <span>
             Scoring settings are locked once the first bet of the tournament has been opened, so points already in play don&apos;t shift retroactively.
           </span>
         </div>
       )}
 
-      <div className={`px-4 ${locked ? "opacity-60" : ""}`}>
+      <div className={`${locked ? "opacity-60" : ""}`} style={{ paddingLeft: 16, paddingRight: 16 }}>
         {/* Total Pool */}
         <Section title="Total Pool" summary={`${draft.totalPool} pts`}>
           <NumInput
@@ -476,17 +480,17 @@ export function ScoringSettings({
             suffix="pts"
             disabled={locked}
           />
-          <p className="text-xs text-neutral-400 mt-1">
+          <p className="text-xs text-neutral-400" style={{ marginTop: 4 }}>
             Total points distributed across all bet types. Higher = bigger spreads between players.
           </p>
         </Section>
 
         {/* Tier Weights */}
         <Section title="Tier Weights" summary={tierSumOk ? "100%" : `${Math.round(sumValues(tierPcts))}%`}>
-          <p className="text-xs text-neutral-400 mb-3">
+          <p className="text-xs text-neutral-400" style={{ marginBottom: 12 }}>
             How much of the total pool goes to each category. Must sum to 100%.
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4" style={{ gap: 12 }}>
             {TIER_KEYS.map((k) => {
               const tierPool = draft.totalPool * draft.tierWeights[k];
               return (
@@ -510,7 +514,7 @@ export function ScoringSettings({
 
         {/* Sub-Weights */}
         <Section title="Sub-Weights" summary="per bet type within each tier">
-          <p className="text-xs text-neutral-400 mb-3">
+          <p className="text-xs text-neutral-400" style={{ marginBottom: 12 }}>
             How each tier's pool is split among its bet types. Must sum to 100% within each tier.
           </p>
           {TIER_KEYS.map((tier) => {
@@ -518,12 +522,12 @@ export function ScoringSettings({
             const pctVals = Object.fromEntries(entries.map(([k, v]) => [k, pct(v)]));
             const tierPool = draft.totalPool * draft.tierWeights[tier];
             return (
-              <div key={tier} className="mb-4 last:mb-0">
-                <p className="text-xs font-medium text-neutral-700 mb-2">
+              <div key={tier} style={{ marginBottom: 16 }}>
+                <p className="text-xs font-medium text-neutral-700" style={{ marginBottom: 8 }}>
                   {TIER_LABELS[tier]}
-                  <span className="text-neutral-400 font-normal ml-1">({tierPool.toFixed(1)} pts)</span>
+                  <span className="text-neutral-400 font-normal" style={{ marginLeft: 4 }}>({tierPool.toFixed(1)} pts)</span>
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3" style={{ gap: 12 }}>
                   {entries.map(([key, val]) => {
                     const budget = tierPool * val;
                     return (
@@ -550,14 +554,14 @@ export function ScoringSettings({
 
         {/* Base + Bonus & Outlier Clamping — combined per bet type */}
         <Section title="Base + Bonus & Clamping" summary="per bet type scoring rules">
-          <p className="text-xs text-neutral-400 mb-3">
+          <p className="text-xs text-neutral-400" style={{ marginBottom: 12 }}>
             Each correct pick earns base points (guaranteed floor) + bonus points (odds-scaled).
             The outlier cap sets the maximum odds beyond which all picks get the same max bonus.
           </p>
           {TIER_KEYS.map((tier) => (
-            <div key={tier} className="mb-4 last:mb-0">
-              <p className="text-xs font-medium text-neutral-700 mb-2">{TIER_LABELS[tier]}</p>
-              <div className="space-y-2">
+            <div key={tier} style={{ marginBottom: 16 }}>
+              <p className="text-xs font-medium text-neutral-700" style={{ marginBottom: 8 }}>{TIER_LABELS[tier]}</p>
+              <div className="flex flex-col" style={{ gap: 8 }}>
                 {BET_TYPES_BY_TIER[tier].map((key) => (
                   <BetTypeRow
                     key={key}
@@ -576,10 +580,10 @@ export function ScoringSettings({
 
         {/* Knockout Multipliers */}
         <Section title="Knockout Multipliers" summary="per-game scaling by round">
-          <p className="text-xs text-neutral-400 mb-3">
+          <p className="text-xs text-neutral-400" style={{ marginBottom: 12 }}>
             Per-game bet points are multiplied by these values in knockout stages.
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3" style={{ gap: 12 }}>
             {Object.entries(draft.knockoutMultipliers).map(([key, val]) => (
               <NumInput
                 key={key}
@@ -599,16 +603,16 @@ export function ScoringSettings({
 
       {/* Footer: Save / status */}
       {!locked && (
-      <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-100">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between border-t border-neutral-100" style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 12, paddingBottom: 12 }}>
+        <div className="flex items-center" style={{ gap: 8 }}>
           {error && <span className="text-xs text-red-500">{error}</span>}
           {saved && !dirty && (
-            <span className="text-xs text-emerald-600 flex items-center gap-1">
+            <span className="text-xs text-emerald-600 flex items-center" style={{ gap: 4 }}>
               <Check className="w-3 h-3" /> Saved
             </span>
           )}
           {dirty && !valid && (
-            <span className="text-xs text-red-500 flex items-center gap-1">
+            <span className="text-xs text-red-500 flex items-center" style={{ gap: 4 }}>
               <AlertTriangle className="w-3 h-3" /> Fix validation errors before saving
             </span>
           )}
@@ -617,7 +621,8 @@ export function ScoringSettings({
           type="button"
           onClick={handleSave}
           disabled={!dirty || !valid || saving}
-          className="h-9 px-4 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+          className="h-9 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center"
+          style={{ paddingLeft: 16, paddingRight: 16, gap: 6 }}
         >
           <Save className="w-3.5 h-3.5" />
           {saving ? "Saving..." : "Save changes"}

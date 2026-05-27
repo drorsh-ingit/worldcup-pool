@@ -17,11 +17,12 @@ export function SyncResultsButton({ groupId }: { groupId: string }) {
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center" style={{ gap: 12 }}>
       <button
         onClick={handleSync}
         disabled={loading}
-        className="h-8 px-3 rounded-lg border border-neutral-200 text-xs text-neutral-700 hover:bg-neutral-50 disabled:opacity-60 transition-colors flex items-center gap-1.5"
+        className="h-8 rounded-lg border border-neutral-200 text-xs text-neutral-700 hover:bg-neutral-50 disabled:opacity-60 transition-colors flex items-center"
+        style={{ paddingLeft: 12, paddingRight: 12, gap: 6 }}
       >
         <Download className={`w-3.5 h-3.5 ${loading ? "animate-pulse" : ""}`} />
         {loading ? "Syncing results…" : "Sync past results"}

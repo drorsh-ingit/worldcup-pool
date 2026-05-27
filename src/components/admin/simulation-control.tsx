@@ -62,12 +62,12 @@ export function SimulationControl({
   }
 
   return (
-    <section style={{ padding: 20 }} className="rounded-xl border-2 border-dashed border-amber-300 bg-pitch-50/50 space-y-4">
-      <div className="flex items-center gap-2">
+    <section className="rounded-xl border-2 border-dashed border-amber-300 bg-pitch-50/50 flex flex-col" style={{ padding: 20, gap: 16 }}>
+      <div className="flex items-center" style={{ gap: 8 }}>
         <FlaskConical className="w-4 h-4 text-pitch-700" />
         <h2 className="text-sm font-semibold text-amber-900">Simulation Mode</h2>
         {simulationEnabled && (
-          <span className="ml-auto text-xs font-medium text-pitch-900 bg-pitch-50 px-2 py-0.5 rounded-full">
+          <span className="text-xs font-medium text-pitch-900 bg-pitch-50 rounded-full" style={{ marginLeft: "auto", paddingLeft: 8, paddingRight: 8, paddingTop: 2, paddingBottom: 2 }}>
             Active
           </span>
         )}
@@ -81,7 +81,7 @@ export function SimulationControl({
 
       {/* Current simulated date */}
       {simulationEnabled && simulatedDate && (
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center text-sm" style={{ gap: 8 }}>
           <span className="text-amber-800/60 text-xs">Now:</span>
           <span className="font-medium text-amber-900">
             {new Date(simulatedDate).toLocaleString("en-GB", {
@@ -93,14 +93,15 @@ export function SimulationControl({
       )}
 
       {/* Date picker */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="flex items-center gap-2 flex-1">
+      <div className="flex flex-col sm:flex-row" style={{ gap: 8 }}>
+        <div className="flex items-center flex-1" style={{ gap: 8 }}>
           <CalendarClock className="w-4 h-4 text-neutral-400 shrink-0" />
           <input
             type="datetime-local"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="flex-1 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
+            className="flex-1 h-9 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
+            style={{ paddingLeft: 12, paddingRight: 12 }}
             min={
               simulationEnabled && simulatedDate
                 ? simulatedDate.slice(0, 16)
@@ -110,12 +111,13 @@ export function SimulationControl({
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex" style={{ gap: 8 }}>
           {!simulationEnabled ? (
             <button
               onClick={handleActivate}
               disabled={loading}
-              className="h-9 px-4 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors flex items-center gap-1.5"
+              className="h-9 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors flex items-center"
+              style={{ paddingLeft: 16, paddingRight: 16, gap: 6 }}
             >
               <Play className="w-3.5 h-3.5" />
               {loading ? "Activating..." : "Activate"}
@@ -125,7 +127,8 @@ export function SimulationControl({
               <button
                 onClick={handleUpdateDate}
                 disabled={loading}
-                className="h-9 px-4 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors flex items-center gap-1.5"
+                className="h-9 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors flex items-center"
+                style={{ paddingLeft: 16, paddingRight: 16, gap: 6 }}
               >
                 <CalendarClock className="w-3.5 h-3.5" />
                 {loading ? "Updating..." : "Update Date"}
@@ -133,7 +136,8 @@ export function SimulationControl({
               <button
                 onClick={handleReset}
                 disabled={loading}
-                className="h-9 px-4 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-60 transition-colors flex items-center gap-1.5"
+                className="h-9 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-60 transition-colors flex items-center"
+                style={{ paddingLeft: 16, paddingRight: 16, gap: 6 }}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 {loading ? "Resetting..." : "Reset"}
@@ -144,20 +148,21 @@ export function SimulationControl({
       </div>
 
       {/* Awards — can't derive from match scores */}
-      <div className="pt-1 border-t border-amber-200/60 space-y-2">
+      <div className="border-t border-amber-200/60 flex flex-col" style={{ paddingTop: 4, gap: 8 }}>
         <p className="text-xs font-medium text-amber-900">Awards (optional)</p>
         <p className="text-xs text-amber-800/60">
           These can't be derived from match scores — set them to auto-resolve the award bets.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <div className="space-y-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 8 }}>
+          <div className="flex flex-col" style={{ gap: 4 }}>
             <label className="text-xs text-neutral-500">Golden Boot</label>
             <input
               list="golden-boot-list"
               value={goldenBoot}
               onChange={(e) => setGoldenBoot(e.target.value)}
               placeholder="Player name"
-              className="w-full h-8 px-2 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
+              className="w-full h-8 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
+              style={{ paddingLeft: 8, paddingRight: 8 }}
             />
             <datalist id="golden-boot-list">
               {GOLDEN_BOOT_CANDIDATES.map((c) => (
@@ -165,22 +170,24 @@ export function SimulationControl({
               ))}
             </datalist>
           </div>
-          <div className="space-y-1">
+          <div className="flex flex-col" style={{ gap: 4 }}>
             <label className="text-xs text-neutral-500">Golden Ball</label>
             <input
               value={goldenBall}
               onChange={(e) => setGoldenBall(e.target.value)}
               placeholder="Player name"
-              className="w-full h-8 px-2 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
+              className="w-full h-8 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
+              style={{ paddingLeft: 8, paddingRight: 8 }}
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex flex-col" style={{ gap: 4 }}>
             <label className="text-xs text-neutral-500">Golden Glove</label>
             <input
               value={goldenGlove}
               onChange={(e) => setGoldenGlove(e.target.value)}
               placeholder="Goalkeeper name"
-              className="w-full h-8 px-2 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
+              className="w-full h-8 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-pitch-500/30 focus:border-amber-400"
+              style={{ paddingLeft: 8, paddingRight: 8 }}
             />
           </div>
         </div>

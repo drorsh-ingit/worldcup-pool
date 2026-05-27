@@ -75,11 +75,11 @@ export function PlayerNameForm({
   if (isLocked) {
     const pts = selected ? pointsByCandidate?.[selected] : undefined;
     return (
-      <div className="flex items-center gap-2.5 py-1">
+      <div className="flex items-center" style={{ gap: 10, paddingTop: 4, paddingBottom: 4 }}>
         {selectedCandidate ? (
           <>
             <CircleFlag code={selectedCandidate.teamCode} size="xs" />
-            <div className="flex items-baseline gap-2 min-w-0">
+            <div className="flex items-baseline min-w-0" style={{ gap: 8 }}>
               <span className="text-sm font-medium text-neutral-900">{selectedCandidate.playerName}</span>
               <span className="text-xs text-neutral-400">{selectedCandidate.teamCode}</span>
             </div>
@@ -88,7 +88,7 @@ export function PlayerNameForm({
             )}
           </>
         ) : (
-          <span className="flex items-center gap-1.5 text-sm text-pitch-700">
+          <span className="flex items-center text-sm text-pitch-700" style={{ gap: 6 }}>
             <Lock className="w-3.5 h-3.5" />
             No prediction entered
           </span>
@@ -100,17 +100,17 @@ export function PlayerNameForm({
   const selectedPts = selected ? pointsByCandidate?.[selected] : undefined;
 
   return (
-    <div className="space-y-2" ref={ref}>
+    <div className="flex flex-col" style={{ gap: 8 }} ref={ref}>
       <div className="relative">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           disabled={saving}
           className={cn(
-            "w-full flex items-center gap-2.5 rounded-xl border text-sm transition-colors bg-white",
+            "w-full flex items-center rounded-xl border text-sm transition-colors bg-white",
             open ? "border-pitch-500 ring-2 ring-pitch-500/20" : "border-neutral-200 hover:border-neutral-300"
           )}
-          style={{ paddingLeft: 12, paddingRight: 10, paddingTop: 10, paddingBottom: 10 }}
+          style={{ gap: 10, paddingLeft: 12, paddingRight: 10, paddingTop: 10, paddingBottom: 10 }}
         >
           {selectedCandidate ? (
             <>
@@ -155,9 +155,10 @@ export function PlayerNameForm({
                   type="button"
                   onClick={() => handleSelect(key)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors border-b border-neutral-50 last:border-0",
+                    "w-full flex items-center text-left transition-colors border-b border-neutral-50 last:border-0",
                     isSelected ? "bg-pitch-50" : "bg-white hover:bg-neutral-50"
                   )}
+                  style={{ gap: 12, paddingLeft: 12, paddingRight: 12, paddingTop: 10, paddingBottom: 10 }}
                 >
                   <Flag code={c.teamCode} size="sm" />
                   <span className={cn("flex-1 text-sm font-medium", isSelected ? "text-amber-900" : "text-neutral-800")}>
@@ -174,10 +175,10 @@ export function PlayerNameForm({
         )}
       </div>
 
-      <div className="flex items-center gap-2 text-xs">
+      <div className="flex items-center text-xs" style={{ gap: 8 }}>
         {saving && <span className="text-neutral-400">Saving…</span>}
         {saved && !saving && (
-          <span className="flex items-center gap-1 text-emerald-600">
+          <span className="flex items-center text-emerald-600" style={{ gap: 4 }}>
             <CheckCircle className="w-3 h-3" /> Saved
           </span>
         )}

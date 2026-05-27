@@ -22,22 +22,23 @@ export function PendingMembers({ members }: { members: PendingMember[] }) {
   }
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-medium text-pitch-700 uppercase tracking-wider flex items-center gap-1.5">
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <h2 className="text-sm font-medium text-pitch-700 uppercase tracking-wider flex items-center" style={{ gap: 6 }}>
         <Clock className="w-3.5 h-3.5" />
         Pending requests ({members.length})
       </h2>
-      <div className="space-y-3">
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {members.map((m) => (
           <div
             key={m.id}
-            className="flex items-center justify-between p-4 rounded-xl border border-amber-200 bg-pitch-50"
+            className="flex items-center justify-between rounded-xl border border-amber-200 bg-pitch-50"
+            style={{ padding: 16 }}
           >
             <div>
               <p className="text-sm font-medium text-neutral-900">{m.user.name}</p>
               <p className="text-sm text-neutral-500">{m.user.email}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center" style={{ gap: 8 }}>
               {loadingId === m.id ? (
                 <Loader2 className="w-4 h-4 text-neutral-400 animate-spin" />
               ) : (

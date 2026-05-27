@@ -73,13 +73,14 @@ export function CreateGroupDialog() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ padding: 16 }}>
       <div
         className="absolute inset-0 bg-black/20"
         onClick={() => !loading && setOpen(false)}
       />
       <div
-        className="relative w-full max-w-sm bg-white rounded-2xl border border-neutral-200 shadow-lg p-5 sm:p-6"
+        className="relative w-full max-w-sm bg-white rounded-2xl border border-neutral-200 shadow-lg"
+        style={{ padding: 20 }}
       >
         <button
           onClick={() => !loading && setOpen(false)}
@@ -164,8 +165,8 @@ export function CreateGroupDialog() {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 h-10 rounded-xl text-white text-sm font-medium active:scale-[0.98] transition-all disabled:opacity-50 inline-flex items-center justify-center gap-2"
-              style={{ backgroundColor: "#4a8c2a" }}
+              className="flex-1 h-10 rounded-xl text-white text-sm font-medium active:scale-[0.98] transition-all disabled:opacity-50 inline-flex items-center justify-center"
+              style={{ backgroundColor: "#4a8c2a", gap: 8 }}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {loading ? "Creating..." : "Create"}

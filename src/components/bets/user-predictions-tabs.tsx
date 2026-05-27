@@ -35,8 +35,8 @@ export function UserPredictionsTabs({
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex gap-8 border-b border-neutral-200">
+    <div className="flex flex-col" style={{ gap: 32 }}>
+      <div className="flex border-b border-neutral-200" style={{ gap: 32 }}>
         {tabs.map((t) => {
           const isActive = active === t.id;
           const Icon = t.icon;
@@ -46,19 +46,20 @@ export function UserPredictionsTabs({
               type="button"
               onClick={() => setActive(t.id)}
               className={cn(
-                "inline-flex items-center gap-2 px-2 py-3 text-sm border-b-2 -mb-px transition-colors",
+                "inline-flex items-center text-sm border-b-2 transition-colors",
                 isActive
                   ? "border-emerald-600 text-neutral-900 font-semibold"
                   : "border-transparent text-neutral-500 hover:text-neutral-800 font-medium"
               )}
+              style={{ gap: 8, paddingLeft: 8, paddingRight: 8, paddingTop: 12, paddingBottom: 12, marginBottom: -1 }}
             >
               <Icon className={cn("w-4 h-4", isActive ? "text-emerald-600" : "text-neutral-400")} />
               {t.label}
               {t.count != null && (
                 <span className={cn(
-                  "text-xs tabular-nums rounded-full px-2 py-0.5",
+                  "text-xs tabular-nums rounded-full",
                   isActive ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-500"
-                )}>
+                )} style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 2, paddingBottom: 2 }}>
                   {t.count}
                 </span>
               )}

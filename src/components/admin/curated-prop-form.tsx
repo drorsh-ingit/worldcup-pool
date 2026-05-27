@@ -63,7 +63,8 @@ export function CuratedPropForm({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 h-9 px-4 rounded-xl border border-neutral-200 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+        className="inline-flex items-center h-9 rounded-xl border border-neutral-200 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+        style={{ gap: 8, paddingLeft: 16, paddingRight: 16 }}
       >
         <Plus className="w-4 h-4" />
         Add bonus bet
@@ -72,7 +73,7 @@ export function CuratedPropForm({
   }
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4 space-y-4">
+    <div className="rounded-xl border border-neutral-200 bg-white flex flex-col" style={{ padding: 16, gap: 16 }}>
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-neutral-900">New bonus bet</p>
         <button onClick={() => setOpen(false)} className="text-neutral-400 hover:text-neutral-600">
@@ -80,28 +81,31 @@ export function CuratedPropForm({
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div className="flex flex-col" style={{ gap: 12 }}>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Question (e.g. Will there be a red card in the final?)"
-          className="w-full h-9 px-3 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+          className="w-full h-9 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+          style={{ paddingLeft: 12, paddingRight: 12 }}
         />
         <input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Description (optional)"
-          className="w-full h-9 px-3 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+          className="w-full h-9 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+          style={{ paddingLeft: 12, paddingRight: 12 }}
         />
-        <div className="space-y-2">
+        <div className="flex flex-col" style={{ gap: 8 }}>
           <p className="text-xs font-medium text-neutral-500">Options</p>
           {options.map((opt, i) => (
-            <div key={i} className="flex gap-2">
+            <div key={i} className="flex" style={{ gap: 8 }}>
               <input
                 value={opt}
                 onChange={(e) => setOption(i, e.target.value)}
                 placeholder={`Option ${i + 1}`}
-                className="flex-1 h-9 px-3 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+                className="flex-1 h-9 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+                style={{ paddingLeft: 12, paddingRight: 12 }}
               />
               {options.length > 2 && (
                 <button onClick={() => removeOption(i)} className="text-neutral-400 hover:text-red-500 transition-colors">
@@ -111,35 +115,38 @@ export function CuratedPropForm({
             </div>
           ))}
           {options.length < 6 && (
-            <button onClick={addOption} className="text-xs text-pitch-700 hover:text-pitch-900 flex items-center gap-1">
+            <button onClick={addOption} className="text-xs text-pitch-700 hover:text-pitch-900 flex items-center" style={{ gap: 4 }}>
               <Plus className="w-3 h-3" /> Add option
             </button>
           )}
         </div>
-        <div className="space-y-1">
+        <div className="flex flex-col" style={{ gap: 4 }}>
           <p className="text-xs font-medium text-neutral-500">Locks at</p>
           <input
             type="datetime-local"
             value={locksAt}
             onChange={(e) => setLocksAt(e.target.value)}
-            className="h-9 px-3 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+            className="h-9 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+            style={{ paddingLeft: 12, paddingRight: 12 }}
           />
         </div>
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      <div className="flex gap-2">
+      <div className="flex" style={{ gap: 8 }}>
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="h-9 px-4 rounded-xl bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors"
+          className="h-9 rounded-xl bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors"
+          style={{ paddingLeft: 16, paddingRight: 16 }}
         >
           {loading ? "Creating..." : "Create bonus bet"}
         </button>
         <button
           onClick={() => setOpen(false)}
-          className="h-9 px-4 rounded-xl border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-50 transition-colors"
+          className="h-9 rounded-xl border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-50 transition-colors"
+          style={{ paddingLeft: 16, paddingRight: 16 }}
         >
           Cancel
         </button>

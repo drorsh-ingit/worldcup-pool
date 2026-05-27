@@ -19,10 +19,11 @@ export function CopySlugButton({ slug }: { slug: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
+      className="inline-flex items-center text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
+      style={{ gap: 6 }}
       title="Copy invite code"
     >
-      <code className="text-xs bg-neutral-100 px-2 py-0.5 rounded font-mono">
+      <code className="text-xs bg-neutral-100 rounded font-mono" style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 2, paddingBottom: 2 }}>
         {slug}
       </code>
       {copied ? (

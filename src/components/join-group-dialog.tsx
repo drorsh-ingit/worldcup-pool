@@ -59,7 +59,8 @@ export function JoinGroupDialog() {
         onClick={() => !loading && setOpen(false)}
       />
       <div
-        className="relative w-full max-w-sm bg-white rounded-2xl border border-neutral-200 shadow-lg p-5 sm:p-6"
+        className="relative w-full max-w-sm bg-white rounded-2xl border border-neutral-200 shadow-lg"
+        style={{ padding: 20 }}
       >
         <button
           onClick={() => !loading && setOpen(false)}
