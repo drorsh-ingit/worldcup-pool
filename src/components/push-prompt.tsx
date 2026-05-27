@@ -29,7 +29,8 @@ export function PushPrompt() {
         <button
           onClick={subscribe}
           disabled={loading}
-          className="px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50"
+          className="rounded-full bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50 shrink-0"
+          style={{ padding: "6px 16px" }}
         >
           {loading ? "…" : "Enable"}
         </button>
