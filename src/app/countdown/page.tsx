@@ -64,6 +64,32 @@ export default function CountdownPage() {
         }}
       />
 
+      {/* Title at top */}
+      <div
+        style={{
+          position: "absolute",
+          top: 48,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <h1
+          style={{
+            fontFamily: "'Space Grotesk', 'Inter', sans-serif",
+            fontSize: 42,
+            fontWeight: 700,
+            color: "#ffffff",
+            textShadow: "0 3px 20px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)",
+            direction: "rtl",
+          }}
+        >
+          הולכים על דאבל
+        </h1>
+      </div>
+
       {/* Countdown content */}
       <div
         style={{
@@ -76,19 +102,6 @@ export default function CountdownPage() {
           gap: 24,
         }}
       >
-        <h1
-          style={{
-            fontFamily: "'Space Grotesk', 'Inter', sans-serif",
-            fontSize: 18,
-            fontWeight: 600,
-            color: "rgba(255,255,255,0.85)",
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            textShadow: "0 2px 12px rgba(0,0,0,0.5)",
-          }}
-        >
-          {isOver ? "The World Cup has begun!" : "Kickoff in"}
-        </h1>
 
         {!isOver && (
           <div
