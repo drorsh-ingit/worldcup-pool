@@ -21,14 +21,15 @@ function pad(n: number) {
 }
 
 export default function CountdownPage() {
-  const [time, setTime] = useState(calcTimeLeft);
+  const [time, setTime] = useState<ReturnType<typeof calcTimeLeft> | null>(null);
 
   useEffect(() => {
+    setTime(calcTimeLeft());
     const id = setInterval(() => setTime(calcTimeLeft()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const isOver = time.days === 0 && time.hours === 0 && time.minutes === 0 && time.seconds === 0;
+  const isOver = time !== null && time.days === 0 && time.hours === 0 && time.minutes === 0 && time.seconds === 0;
 
   return (
     <div
@@ -103,7 +104,7 @@ export default function CountdownPage() {
         }}
       >
 
-        {!isOver && (
+        {time && !isOver && (
           <div
             style={{
               display: "flex",
