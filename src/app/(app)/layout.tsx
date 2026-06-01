@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { AppNav } from "@/components/app-nav";
-import { PushPrompt } from "@/components/push-prompt";
 
 export default async function AppLayout({
   children,
@@ -22,7 +21,6 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen bg-neutral-50 pb-16 sm:pb-0">
       <AppNav user={session.user} groups={groups} />
-      <PushPrompt />
       <main
         className="max-w-screen-2xl mx-auto page-x-pad"
         style={{ paddingBottom: "8rem" }}

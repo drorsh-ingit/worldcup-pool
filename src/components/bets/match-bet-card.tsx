@@ -451,11 +451,11 @@ function StatusPill({
   let label = "–";
   let cls = "text-neutral-400 border-neutral-200";
   if (isCompleted) {
-    label = hasSavedBet ? "Done" : "No bet";
-    cls = "text-neutral-500 border-neutral-200";
+    label = hasSavedBet ? "Done" : "Missed";
+    cls = hasSavedBet ? "text-neutral-500 border-neutral-200" : "text-neutral-400 border-neutral-200";
   } else if (isLocked) {
-    label = hasSavedBet ? "Locked" : betsNotOpenYet ? "–" : "No bet";
-    cls = "text-neutral-500 border-neutral-200";
+    label = hasSavedBet ? "Locked" : betsNotOpenYet ? "–" : "Missed";
+    cls = hasSavedBet ? "text-neutral-500 border-neutral-200" : "text-neutral-400 border-neutral-200";
   } else if (saving) {
     label = "Saving…";
     cls = "text-neutral-500 border-neutral-200";
