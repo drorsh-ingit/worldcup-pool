@@ -244,7 +244,7 @@ export function MatchBetCard({
       </div>
 
       {/* Teams + score */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-start" style={{ gap: 12, padding: "10px 20px 4px" }}>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center" style={{ gap: 12, padding: "10px 20px 4px" }}>
         {/* Home team */}
         <div className="flex flex-col items-center" style={{ gap: 8 }}>
           <TeamBadge code={match.homeTeamCode} tournamentKind={tournamentKind} size="md" />
@@ -254,7 +254,7 @@ export function MatchBetCard({
         </div>
 
         {/* Score area */}
-        <div className="flex flex-col items-center" style={{ gap: 8 }}>
+        <div className="flex flex-col items-center" style={{ gap: 4 }}>
           <div className="flex items-center" style={{ gap: 4 }}>
             <ScoreCell
               value={homeScore}
@@ -263,7 +263,7 @@ export function MatchBetCard({
               onChange={(v) => { dirtyRef.current = true; setHomeScore(v); setSaved(false); }}
               highlight={isCompleted ? (scoreCorrect ? "emerald" : "grayed") : isLocked ? "grayed" : undefined}
             />
-            <span className="text-base font-medium text-neutral-400 self-center" style={{ paddingLeft: 6, paddingRight: 6, ...(isLocked ? {} : { marginTop: 4 }) }}>vs</span>
+            <span className="text-base font-medium text-neutral-400 self-center" style={{ paddingLeft: 6, paddingRight: 6 }}>vs</span>
             <ScoreCell
               value={awayScore}
               display={shownAway}
@@ -396,14 +396,15 @@ function ScoreCell({
   }
 
   return (
-    <div className="flex flex-col items-center" style={{ gap: 2 }}>
+    <div className="flex flex-col items-center">
       <button
         type="button"
         onClick={increment}
-        className="sm:hidden w-[52px] h-8 flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 transition-colors touch-manipulation"
+        className="sm:hidden w-[52px] flex items-center justify-center rounded-t-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 transition-colors touch-manipulation"
+        style={{ height: 24 }}
         aria-label="Increase score"
       >
-        <ChevronUp className="w-4 h-4 text-neutral-600" />
+        <ChevronUp className="w-4 h-4 text-neutral-500" />
       </button>
       <input
         type="number"
@@ -414,16 +415,17 @@ function ScoreCell({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="–"
-        className="w-[52px] h-[52px] rounded-2xl border border-neutral-200 bg-white text-2xl font-bold text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-400/60 focus:border-amber-300 tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-neutral-300"
+        className="w-[52px] h-[52px] rounded-2xl border border-neutral-200 bg-white text-2xl font-bold text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-400/60 focus:border-amber-300 tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-neutral-300 sm:rounded-2xl"
       />
       <button
         type="button"
         onClick={decrement}
         disabled={numVal == null || numVal <= 0}
-        className="sm:hidden w-[52px] h-8 flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 disabled:opacity-30 transition-colors touch-manipulation"
+        className="sm:hidden w-[52px] flex items-center justify-center rounded-b-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 disabled:opacity-30 transition-colors touch-manipulation"
+        style={{ height: 24 }}
         aria-label="Decrease score"
       >
-        <ChevronDown className="w-4 h-4 text-neutral-600" />
+        <ChevronDown className="w-4 h-4 text-neutral-500" />
       </button>
     </div>
   );
@@ -464,8 +466,8 @@ function StatusPill({
     label = "Saved";
     cls = "text-emerald-700 border-emerald-200 bg-emerald-50";
   } else {
-    label = "Pick";
-    cls = "text-neutral-400 border-neutral-200";
+    label = "";
+    cls = "hidden";
   }
   return (
     <span
