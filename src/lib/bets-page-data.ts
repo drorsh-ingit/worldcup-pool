@@ -4,7 +4,7 @@ import { getEffectiveDate } from "@/lib/simulation";
 import { calculatePoints, bracketPickPotential } from "@/lib/scoring";
 import { deriveMatchOdds, deriveScoreOdds } from "@/lib/match-odds";
 import { GOLDEN_BOOT_CANDIDATES, GOLDEN_BALL_CANDIDATES, GOLDEN_GLOVE_CANDIDATES } from "@/lib/data/wc2026";
-import { snapshotOddsForBetType, refreshOddsForBetType } from "@/lib/actions/refresh-odds";
+import { promoteBetTypeGlobally, refreshOddsForBetType, refreshAllMatchOdds } from "@/lib/actions/refresh-odds";
 import { Prisma } from "@prisma/client";
 
 export const PHASE_LABELS: Record<string, string> = {
@@ -57,34 +57,34 @@ export async function loadBetsPageData(groupId: string, userId: string) {
   if (!tournament) return null;
 
   // Auto-promote bet types whose opensAt has passed but DB still says DRAFT.
-  // Refresh live odds from the API first, then freeze them onto the bet type
-  // so subsequent refreshes don't retroactively change points for placed bets.
-  for (const bt of tournament.betTypes) {
-    const shouldPromote =
-      bt.status === "DRAFT" &&
-      bt.opensAt != null &&
-      effectiveNow >= bt.opensAt &&
-      bt.frozenOdds == null;
-    if (!shouldPromote) continue;
+  // All groups running the same tournament kind share identical odds, so promotion
+  // is a single atomic operation: fetch odds once → freeze → open across ALL groups.
+  const toPromote = tournament.betTypes.filter(
+    (bt) => bt.status === "DRAFT" && bt.opensAt != null && effectiveNow >= bt.opensAt && bt.frozenOdds == null
+  );
 
-    // Best-effort live odds refresh right before opening — same as manual openBetType
-    await refreshOddsForBetType(tournament.id, bt.category, bt.subType).catch(() => null);
+  if (toPromote.length > 0) {
+    // Pre-refresh odds ONCE before promoting any bet types (avoids redundant API calls).
+    const hasTournamentBets = toPromote.some((bt) => bt.category === "TOURNAMENT");
+    const hasPerGameBets = toPromote.some((bt) => bt.category === "PER_GAME");
+    if (hasTournamentBets) {
+      await refreshOddsForBetType(tournament.id, "TOURNAMENT", "winner").catch(() => null);
+    }
+    if (hasPerGameBets) {
+      await refreshAllMatchOdds(tournament.id).catch(() => null);
+    }
 
-    // Snapshot the now-current odds so future refreshes don't drift scoring
-    const frozen = bt.category === "TOURNAMENT"
-      ? await snapshotOddsForBetType(tournament.id, bt.category, bt.subType)
-      : null;
+    for (const bt of toPromote) {
+      // skipRefresh: odds were already refreshed above in bulk.
+      await promoteBetTypeGlobally(tournament.id, tournament.kind, bt, { skipRefresh: true });
 
-    await db.betType.update({
-      where: { id: bt.id },
-      data: {
-        status: "OPEN",
-        opensAt: bt.opensAt,
-        ...(frozen != null && { frozenOdds: frozen }),
-      },
-    });
-    bt.status = "OPEN";
-    if (frozen != null) bt.frozenOdds = frozen as Prisma.JsonValue;
+      // Refresh local state so the rest of this page load sees the updated values.
+      const updated = await db.betType.findUnique({ where: { id: bt.id } });
+      if (updated) {
+        bt.status = updated.status;
+        bt.frozenOdds = updated.frozenOdds;
+      }
+    }
   }
 
   const betTypesWithEffectiveStatus = tournament.betTypes.map((bt) => ({
@@ -200,8 +200,12 @@ export async function loadBetsPageData(groupId: string, userId: string) {
 
   // Tournament-bets points maps — read odds from each bet type's frozen snapshot when available.
   const teamPointsMap: Record<string, Record<string, number>> = {};
+  // Frozen-aware odds maps for the team picker — ensures prediction.odds matches the
+  // frozen snapshot used for display and scoring (not the live Team.odds which could drift).
+  const teamPickerOdds: Record<string, Record<string, number>> = {};
   for (const subType of ["winner", "runner_up", "dark_horse", "reverse_dark_horse"] as const) {
     teamPointsMap[subType] = {};
+    teamPickerOdds[subType] = {};
     const bt = tournament.betTypes.find((b) => b.subType === subType);
     for (const team of tournament.teams) {
       const odds = teamOddsFor(bt, team.code);
@@ -212,6 +216,10 @@ export async function loadBetsPageData(groupId: string, userId: string) {
           ? Math.max(1, 400000 / odds.qualifyOdds)
           : odds.winnerOdds;
       teamPointsMap[subType][team.code] = potentialPoints(subType, effectiveOdds);
+      // Store the raw odds value that will be saved in prediction.odds at placement time.
+      // This must match the value used in scoring (checkBetCorrectness reads prediction.odds).
+      teamPickerOdds[subType][team.code] =
+        subType === "reverse_dark_horse" ? odds.qualifyOdds : odds.winnerOdds;
     }
   }
   // The groupPredictions bet is a bundle of 12 winner picks + up to 20 qualifier picks,
@@ -225,18 +233,20 @@ export async function loadBetsPageData(groupId: string, userId: string) {
   const groupPredBt = tournament.betTypes.find((b) => b.subType === "group_predictions");
   for (const team of tournament.teams) {
     const odds = teamOddsFor(groupPredBt, team.code);
-    groupPredictionPoints[team.code] =
-      potentialPoints("group_predictions", odds.groupWinnerOdds) * 0.6 / WINNER_GROUPS;
-    groupQualifierPoints[team.code] =
-      potentialPoints("group_predictions", odds.qualifyOdds) * 0.4 / QUALIFIER_SLOTS;
+    groupPredictionPoints[team.code] = parseFloat(
+      (potentialPoints("group_predictions", odds.groupWinnerOdds) * 0.6 / WINNER_GROUPS).toFixed(1));
+    groupQualifierPoints[team.code] = parseFloat(
+      (potentialPoints("group_predictions", odds.qualifyOdds) * 0.4 / QUALIFIER_SLOTS).toFixed(1));
   }
   const semifinalistPointsMap: Record<string, number> = {};
   const semifinalistBt = tournament.betTypes.find((b) => b.subType === "semifinalists");
   for (const team of tournament.teams) {
     const odds = teamOddsFor(semifinalistBt, team.code);
-    // Each of the 4 semi picks is scored by qualify odds, split equally across 4 slots.
-    semifinalistPointsMap[team.code] =
-      potentialPoints("semifinalists", odds.qualifyOdds) / 4;
+    // Each of the 4 semi picks is scored by winner odds — reflects how likely
+    // the team is to go deep in the tournament. qualifyOdds would be meaningless
+    // here since this bet opens after the group stage.
+    semifinalistPointsMap[team.code] = parseFloat(
+      (potentialPoints("semifinalists", odds.winnerOdds) / 4).toFixed(1));
   }
 
   const goldenBootPoints: Record<string, number> = {};
@@ -283,7 +293,7 @@ export async function loadBetsPageData(groupId: string, userId: string) {
       }
       max += bestForPhase * PHASE_COUNTS[phase];
     }
-    return parseFloat(max.toFixed(2));
+    return parseFloat(max.toFixed(1));
   })();
 
   return {
@@ -301,6 +311,7 @@ export async function loadBetsPageData(groupId: string, userId: string) {
     matchWinnerBetType,
     correctScoreBetType,
     teamPointsMap,
+    teamPickerOdds,
     semifinalistPointsMap,
     groupPredictionPoints,
     groupQualifierPoints,

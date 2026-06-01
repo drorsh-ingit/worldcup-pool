@@ -96,6 +96,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
     tournamentBets,
     curatedBets,
     teamPointsMap,
+    teamPickerOdds,
     semifinalistPointsMap,
     groupPredictionPoints,
     groupQualifierPoints,
@@ -352,7 +353,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
                 betTypeId={bt.id}
                 isLocked={isLocked}
                 teams={filteredTeams}
-                teamOdds={bt.subType === "reverse_dark_horse" ? teamQualifyOdds : teamWinnerOdds}
+                teamOdds={teamPickerOdds[bt.subType] ?? (bt.subType === "reverse_dark_horse" ? teamQualifyOdds : teamWinnerOdds)}
                 currentPrediction={currentBet?.prediction as { teamCode?: string } | undefined}
                 pointsByTeam={teamPointsMap[bt.subType]}
                 tournamentKind={tournament.kind}

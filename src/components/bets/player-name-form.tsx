@@ -62,10 +62,13 @@ export function PlayerNameForm({
     setSaving(true);
     setError(null);
     const [playerName, teamCode] = value.split("|");
+    const candidate = candidates.find(
+      (c) => c.playerName === playerName && c.teamCode === teamCode
+    );
     const result = await placeBet(groupId, {
       tournamentId,
       betTypeId,
-      prediction: { playerName, teamCode },
+      prediction: { playerName, teamCode, ...(candidate?.odds != null && { odds: candidate.odds }) },
     });
     setSaving(false);
     if (result.error) setError(result.error);

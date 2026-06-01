@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { scoreBets, scoreBracketPerPick, calculatePoints } from "@/lib/scoring";
+import { scoreBets, scoreBracketPerPick, scoreSemifinalistsPerPick, calculatePoints } from "@/lib/scoring";
 import { resolveGroupSettings } from "@/lib/settings";
 import { z } from "zod";
 
@@ -181,30 +181,32 @@ export async function scoreProgressiveTournamentBets(groupId: string, tournament
 
     if (sfTeams.size >= 4) {
       const effectiveTeams = [...sfTeams].slice(0, 4);
+      // Build team odds lookup from frozen snapshot (same pattern as bracket)
+      const frozenSemiOdds =
+        (semiBetType.frozenOdds as { teams?: Record<string, unknown> } | null)?.teams ?? {};
+      const semiTeams = await db.team.findMany({ where: { tournamentId } });
+      const semiTeamByCode: Record<string, typeof semiTeams[number]> = {};
+      for (const t of semiTeams) {
+        semiTeamByCode[t.code] = { ...t, odds: (frozenSemiOdds[t.code] ?? t.odds) as typeof t.odds };
+      }
+
       const semiBets = await db.bet.findMany({ where: { betTypeId: semiBetType.id } });
       for (const bet of semiBets) {
-        const predTeams = new Set((bet.prediction as { teams?: string[] })?.teams ?? []);
-        let correct = 0;
-        for (const t of effectiveTeams) {
-          if (predTeams.has(t)) correct++;
-        }
-        const partialScore = correct / 4;
-        const pts = calculatePoints(
-          partialScore > 0,
-          "semifinalists",
-          Math.max(partialScore, 0.05),
+        const per = scoreSemifinalistsPerPick(
+          bet.prediction as { teams?: string[] },
+          { teams: effectiveTeams },
+          semiTeamByCode,
           settings,
-          "GROUP",
           totalPool,
           memberCount
         );
         await db.bet.update({
           where: { id: bet.id },
           data: {
-            isCorrect: partialScore > 0,
-            basePoints: pts.basePoints,
-            bonusPoints: pts.bonusPoints,
-            totalPoints: pts.totalPoints,
+            isCorrect: per.totalPoints > 0,
+            basePoints: per.basePoints,
+            bonusPoints: per.bonusPoints,
+            totalPoints: per.totalPoints,
             scoredAt: new Date(),
           },
         });

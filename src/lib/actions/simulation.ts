@@ -35,7 +35,7 @@ async function requireAdmin(groupId: string) {
  * Core simulation logic: complete matches, progress through knockout stages,
  * and auto-resolve bet types. Used by both activate and update.
  */
-async function simulateTournamentProgression(
+export async function simulateTournamentProgression(
   groupId: string,
   tournamentId: string,
   simulatedDate: Date,
@@ -607,7 +607,7 @@ export async function resetSimulation(groupId: string) {
 
 // ─── Helpers ───
 
-async function applyBetTypeTransitions(
+export async function applyBetTypeTransitions(
   betTypes: Array<{
     id: string;
     status: string;

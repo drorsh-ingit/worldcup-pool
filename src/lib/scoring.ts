@@ -12,7 +12,7 @@
 
 import { db } from "@/lib/db";
 import { DEFAULT_GROUP_SETTINGS, resolveGroupSettings, type GroupSettings } from "@/lib/settings";
-import { deriveMatchOdds } from "@/lib/match-odds";
+import { deriveMatchOdds, deriveScoreOdds } from "@/lib/match-odds";
 
 /** Implied probability from decimal odds (e.g., 500 → 1/500 = 0.002) */
 function impliedProb(decimalOdds: number): number {
@@ -94,9 +94,9 @@ export function calculatePoints(
     tierKey === "perGame" ? (settings.knockoutMultipliers[phase] ?? 1.0) : 1.0;
 
   return {
-    basePoints: parseFloat((basePoints * multiplier).toFixed(2)),
-    bonusPoints: parseFloat((bonusPoints * multiplier).toFixed(2)),
-    totalPoints: parseFloat(((basePoints + bonusPoints) * multiplier).toFixed(2)),
+    basePoints: parseFloat((basePoints * multiplier).toFixed(1)),
+    bonusPoints: parseFloat((bonusPoints * multiplier).toFixed(1)),
+    totalPoints: parseFloat(((basePoints + bonusPoints) * multiplier).toFixed(1)),
   };
 }
 
@@ -170,6 +170,10 @@ export async function scoreBets(
         let impliedProbability = 0.1;
         let subType = "";
 
+        // Team winner odds used by both match_winner and correct_score fallbacks
+        const homeOdds = (match.homeTeam.odds as { winnerOdds?: number } | null)?.winnerOdds ?? 1000;
+        const awayOdds = (match.awayTeam.odds as { winnerOdds?: number } | null)?.winnerOdds ?? 1000;
+
         if (bt.subType === "match_winner") {
           subType = "match_winner";
           const actualOutcome =
@@ -178,8 +182,6 @@ export async function scoreBets(
           // odds from match oddsData; fall back to odds derived from team winnerOdds
           const oddsData = match.oddsData as Record<string, number>;
           const oddsKey = actualOutcome === "home" ? "homeWin" : actualOutcome === "away" ? "awayWin" : "draw";
-          const homeOdds = (match.homeTeam.odds as { winnerOdds?: number } | null)?.winnerOdds ?? 1000;
-          const awayOdds = (match.awayTeam.odds as { winnerOdds?: number } | null)?.winnerOdds ?? 1000;
           const derived = deriveMatchOdds(homeOdds, awayOdds);
           const fallback = oddsKey === "homeWin" ? derived.homeWin : oddsKey === "awayWin" ? derived.awayWin : derived.draw;
           impliedProbability = impliedProb(oddsData[oddsKey] ?? fallback);
@@ -188,12 +190,17 @@ export async function scoreBets(
           isCorrect =
             Number(pred.homeScore) === actualHome &&
             Number(pred.awayScore) === actualAway;
-          // correct score odds can be very long; use a default
           const oddsData = match.oddsData as Record<string, Record<string, number>>;
           const clampedHome = Math.min(Number(pred.homeScore), 6);
           const clampedAway = Math.min(Number(pred.awayScore), 6);
           const scoreKey = `${clampedHome}-${clampedAway}`;
-          const rawOdds = oddsData.correctScores?.[scoreKey] ?? 1500;
+          // Prefer stored correct-score odds; fall back to Poisson-derived odds
+          // (matching the display logic in bets-page-data.ts).
+          const storedOdds = oddsData.correctScores?.[scoreKey];
+          const rawOdds = storedOdds ?? (() => {
+            const derived = deriveScoreOdds(homeOdds, awayOdds);
+            return derived[scoreKey] ?? 1500;
+          })();
           impliedProbability = impliedProb(rawOdds);
         }
 
@@ -227,7 +234,7 @@ export async function scoreBets(
 
     // Pre-fetch tournament teams when needed for per-slot scoring.
     const needsTeams =
-      betType.subType === "group_predictions" || betType.subType === "bracket";
+      betType.subType === "group_predictions" || betType.subType === "bracket" || betType.subType === "semifinalists";
     const teams = needsTeams
       ? await db.team.findMany({ where: { tournamentId } })
       : [];
@@ -266,6 +273,19 @@ export async function scoreBets(
         const per = scoreBracketPerPick(
           pred as { picks?: Record<string, string> },
           resolution as { winners?: Record<string, string> },
+          teamByCode,
+          settings,
+          totalPool,
+          memberCount
+        );
+        isCorrect = per.totalPoints > 0;
+        basePoints = per.basePoints;
+        bonusPoints = per.bonusPoints;
+        totalPoints = per.totalPoints;
+      } else if (subType === "semifinalists") {
+        const per = scoreSemifinalistsPerPick(
+          pred as { teams?: string[] },
+          resolution as { teams?: string[] },
           teamByCode,
           settings,
           totalPool,
@@ -344,9 +364,12 @@ function scoreGroupPredictionsPerSlot(
     if (winnerPick && actualWinners[letter] === winnerPick) {
       const odds = teamOddsForGroupWinner(teamByCode[winnerPick]?.odds);
       const pts = calculatePoints(true, "group_predictions", impliedProb(odds), settings, "GROUP", totalPool, memberCount);
-      base += pts.basePoints * WINNER_SHARE;
-      bonus += pts.bonusPoints * WINNER_SHARE;
-      total += pts.totalPoints * WINNER_SHARE;
+      const slotBase = parseFloat((pts.basePoints * WINNER_SHARE).toFixed(1));
+      const slotBonus = parseFloat((pts.bonusPoints * WINNER_SHARE).toFixed(1));
+      const slotTotal = parseFloat((pts.totalPoints * WINNER_SHARE).toFixed(1));
+      base += slotBase;
+      bonus += slotBonus;
+      total += slotTotal;
     }
 
     for (const code of advancerPicks) {
@@ -354,14 +377,17 @@ function scoreGroupPredictionsPerSlot(
       if (actualAdvancing.has(code)) {
         const odds = teamOddsForQualify(teamByCode[code]?.odds);
         const pts = calculatePoints(true, "group_predictions", impliedProb(odds), settings, "GROUP", totalPool, memberCount);
-        base += pts.basePoints * QUALIFIER_SHARE;
-        bonus += pts.bonusPoints * QUALIFIER_SHARE;
-        total += pts.totalPoints * QUALIFIER_SHARE;
+        const slotBase = parseFloat((pts.basePoints * QUALIFIER_SHARE).toFixed(1));
+        const slotBonus = parseFloat((pts.bonusPoints * QUALIFIER_SHARE).toFixed(1));
+        const slotTotal = parseFloat((pts.totalPoints * QUALIFIER_SHARE).toFixed(1));
+        base += slotBase;
+        bonus += slotBonus;
+        total += slotTotal;
       }
     }
   }
 
-  const round = (n: number) => parseFloat(n.toFixed(2));
+  const round = (n: number) => parseFloat(n.toFixed(1));
   return {
     basePoints: round(base),
     bonusPoints: round(bonus),
@@ -424,12 +450,12 @@ function bracketPickAward(
   const maxScaler = oddsScaler(1 / threshold, threshold, 30);
   const bonusFactor = Math.min(scaler / Math.max(maxScaler, 1e-6), 1);
 
-  const basePoints = perPickAllocation * basePct;
-  const bonusPoints = perPickAllocation * (1 - basePct) * bonusFactor;
+  const basePoints = parseFloat((perPickAllocation * basePct).toFixed(1));
+  const bonusPoints = parseFloat((perPickAllocation * (1 - basePct) * bonusFactor).toFixed(1));
   return {
     basePoints,
     bonusPoints,
-    totalPoints: basePoints + bonusPoints,
+    totalPoints: parseFloat((basePoints + bonusPoints).toFixed(1)),
   };
 }
 
@@ -475,7 +501,7 @@ export function scoreBracketPerPick(
     total += pts.totalPoints;
   }
 
-  const round = (n: number) => parseFloat(n.toFixed(2));
+  const round = (n: number) => parseFloat(n.toFixed(1));
   return {
     basePoints: round(base),
     bonusPoints: round(bonus),
@@ -483,6 +509,53 @@ export function scoreBracketPerPick(
   };
 }
 
+
+/**
+ * Per-pick additive scoring for semifinalists.
+ * Each correct pick (out of 4) earns points proportional to the team's winnerOdds.
+ * Uses calculatePoints with odds-derived implied probability, then divides by 4
+ * (matching the display potential in bets-page-data.ts).
+ */
+export function scoreSemifinalistsPerPick(
+  prediction: { teams?: string[] },
+  resolution: { teams?: string[] },
+  teamByCode: Record<string, { code: string; odds: unknown } | undefined>,
+  settings: GroupSettings,
+  totalPool: number,
+  memberCount: number
+): { basePoints: number; bonusPoints: number; totalPoints: number } {
+  const predTeams = new Set(prediction.teams ?? []);
+  const resTeams = new Set(resolution.teams ?? []);
+
+  let base = 0;
+  let bonus = 0;
+  let total = 0;
+
+  for (const teamCode of resTeams) {
+    if (!predTeams.has(teamCode)) continue;
+    const odds = teamOddsForWinner(teamByCode[teamCode]?.odds);
+    const pts = calculatePoints(
+      true,
+      "semifinalists",
+      impliedProb(odds),
+      settings,
+      "GROUP",
+      totalPool,
+      memberCount
+    );
+    // Each of 4 picks contributes 1/4 of the full semifinalists allocation
+    base += parseFloat((pts.basePoints / 4).toFixed(1));
+    bonus += parseFloat((pts.bonusPoints / 4).toFixed(1));
+    total += parseFloat((pts.totalPoints / 4).toFixed(1));
+  }
+
+  const round = (n: number) => parseFloat(n.toFixed(1));
+  return {
+    basePoints: round(base),
+    bonusPoints: round(bonus),
+    totalPoints: round(total),
+  };
+}
 
 /** Determine if a tournament bet is correct */
 function checkBetCorrectness(

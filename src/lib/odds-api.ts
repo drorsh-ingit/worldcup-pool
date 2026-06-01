@@ -11,6 +11,28 @@
 
 const API_BASE = "https://api.the-odds-api.com/v4";
 
+/**
+ * In-memory cache for API responses. All groups share the same tournament data,
+ * so we cache responses for CACHE_TTL_MS to avoid burning the 500 req/month quota
+ * when multiple groups auto-open bets at the same time.
+ */
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const cache: Record<string, { data: unknown; fetchedAt: number }> = {};
+
+function getCached<T>(key: string): T | undefined {
+  const entry = cache[key];
+  if (!entry) return undefined;
+  if (Date.now() - entry.fetchedAt > CACHE_TTL_MS) {
+    delete cache[key];
+    return undefined;
+  }
+  return entry.data as T;
+}
+
+function setCache(key: string, data: unknown): void {
+  cache[key] = { data, fetchedAt: Date.now() };
+}
+
 export interface BookmakerOutcome {
   name: string; // Team name, e.g. "Brazil"
   price: number; // Decimal odds, e.g. 7.5
@@ -55,6 +77,9 @@ async function get<T>(path: string, params: Record<string, string>): Promise<T |
  * across all bookmakers, or null if unavailable.
  */
 export async function fetchTournamentWinnerOdds(): Promise<Record<string, number> | null> {
+  const cached = getCached<Record<string, number>>("tournament_winner");
+  if (cached) return cached;
+
   const events = await get<OddsApiEvent[]>("/sports/soccer_fifa_world_cup_winner/odds", {
     regions: "uk,eu,us",
     markets: "outrights",
@@ -80,7 +105,9 @@ export async function fetchTournamentWinnerOdds(): Promise<Record<string, number
     prices.sort((a, b) => a - b);
     medians[name] = prices[Math.floor(prices.length / 2)];
   }
-  return Object.keys(medians).length > 0 ? medians : null;
+  const result = Object.keys(medians).length > 0 ? medians : null;
+  if (result) setCache("tournament_winner", result);
+  return result;
 }
 
 /**
@@ -98,6 +125,9 @@ export interface LiveMatchOdds {
 }
 
 export async function fetchMatchOdds(): Promise<Record<string, LiveMatchOdds> | null> {
+  const cached = getCached<Record<string, LiveMatchOdds>>("match_odds");
+  if (cached) return cached;
+
   const events = await get<OddsApiEvent[]>("/sports/soccer_fifa_world_cup/odds", {
     regions: "uk,eu,us",
     markets: "h2h,totals",
@@ -173,7 +203,9 @@ export async function fetchMatchOdds(): Promise<Record<string, LiveMatchOdds> | 
       overProb,
     };
   }
-  return Object.keys(out).length > 0 ? out : null;
+  const result = Object.keys(out).length > 0 ? out : null;
+  if (result) setCache("match_odds", result);
+  return result;
 }
 
 export function isConfigured(): boolean {

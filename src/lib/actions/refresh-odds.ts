@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { Prisma } from "@prisma/client";
+import { Prisma, BetCategory } from "@prisma/client";
 import { fetchTournamentWinnerOdds, fetchMatchOdds, isConfigured } from "@/lib/odds-api";
 import { deriveScoreOdds, impliedTotalGoals } from "@/lib/match-odds";
 import { WC2026_API_NAME_TO_CODE, GOLDEN_BALL_CANDIDATES, GOLDEN_GLOVE_CANDIDATES, GOLDEN_BOOT_CANDIDATES } from "@/lib/data/wc2026";
@@ -55,19 +55,20 @@ export async function refreshTournamentWinnerOdds(tournamentId: string): Promise
   // group-stage outcomes to get win-group and qualify (top-2-in-group) probabilities.
   const derived = deriveGroupOdds(teamsWithLive);
 
-  await db.$transaction(
-    teamsWithLive.map((team) => {
-      const groupOdds = derived[team.code];
-      const merged = {
-        ...team.odds,
-        ...(groupOdds ?? {}),
-      };
-      return db.team.update({
-        where: { id: team.id },
-        data: { odds: merged as unknown as Prisma.InputJsonValue },
-      });
-    })
-  );
+  // Update teams individually (no wrapping transaction) to avoid deadlocks when
+  // concurrent page loads both trigger odds refresh. Each update is idempotent
+  // so partial completion is harmless.
+  for (const team of teamsWithLive) {
+    const groupOdds = derived[team.code];
+    const merged = {
+      ...team.odds,
+      ...(groupOdds ?? {}),
+    };
+    await db.team.update({
+      where: { id: team.id },
+      data: { odds: merged as unknown as Prisma.InputJsonValue },
+    });
+  }
 
   return { refreshed: true, updated };
 }
@@ -214,7 +215,6 @@ export async function refreshAllMatchOdds(tournamentId: string): Promise<Refresh
     include: { homeTeam: true, awayTeam: true },
   });
 
-  const updates: Prisma.PrismaPromise<unknown>[] = [];
   let updated = 0;
 
   for (const m of matches) {
@@ -245,16 +245,13 @@ export async function refreshAllMatchOdds(tournamentId: string): Promise<Refresh
       fetchedAt: new Date().toISOString(),
     };
 
-    updates.push(
-      db.match.update({
-        where: { id: m.id },
-        data: { oddsData: oddsData as unknown as Prisma.InputJsonValue },
-      })
-    );
+    await db.match.update({
+      where: { id: m.id },
+      data: { oddsData: oddsData as unknown as Prisma.InputJsonValue },
+    });
     updated++;
   }
 
-  if (updates.length > 0) await db.$transaction(updates);
   return { refreshed: true, updated };
 }
 
@@ -329,4 +326,60 @@ export async function refreshOddsForBetType(
     console.error("[refresh-odds] failed:", err);
     return { refreshed: false, reason: "Refresh threw — see logs" };
   }
+}
+
+/**
+ * Atomically promote a bet subType across ALL groups running the same tournament kind.
+ *
+ * Flow:
+ *  1. Fetch live odds (one API call, cached for 30 min)
+ *  2. Snapshot/freeze the odds for this bet subType
+ *  3. Mark every matching DRAFT bet type as OPEN with the frozen snapshot
+ *
+ * This ensures all groups see identical frozen odds and open at the same time,
+ * regardless of which group's page load triggered the promotion.
+ */
+export async function promoteBetTypeGlobally(
+  triggeringTournamentId: string,
+  tournamentKind: string,
+  betType: { category: string; subType: string; opensAt: Date | null },
+  options?: { skipRefresh?: boolean }
+): Promise<void> {
+  let frozen: Prisma.InputJsonValue | null = null;
+
+  if (betType.category === "TOURNAMENT") {
+    if (!options?.skipRefresh) {
+      // Refresh odds on the triggering tournament's teams (API fetch + Bradley-Terry derivation).
+      await refreshOddsForBetType(triggeringTournamentId, betType.category, betType.subType).catch(() => null);
+    }
+    // Snapshot the refreshed odds.
+    frozen = await snapshotOddsForBetType(triggeringTournamentId, betType.category, betType.subType);
+  } else if (betType.category === "PER_GAME") {
+    if (!options?.skipRefresh) {
+      // Match odds are per-tournament (different groups may have different match schedules
+      // in theory), so refresh each tournament's matches individually.
+      const tournaments = await db.tournament.findMany({
+        where: { kind: tournamentKind },
+        select: { id: true },
+      });
+      for (const t of tournaments) {
+        await refreshOddsForBetType(t.id, betType.category, betType.subType).catch(() => null);
+      }
+    }
+  }
+
+  // Find all DRAFT bet types of this subType across all groups with the same tournament kind,
+  // and promote them all at once with the same frozen odds.
+  await db.betType.updateMany({
+    where: {
+      subType: betType.subType,
+      category: betType.category as BetCategory,
+      status: "DRAFT",
+      tournament: { kind: tournamentKind },
+    },
+    data: {
+      status: "OPEN",
+      ...(frozen != null && { frozenOdds: frozen }),
+    },
+  });
 }
