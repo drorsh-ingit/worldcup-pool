@@ -4,7 +4,7 @@ import { getEffectiveDate } from "@/lib/simulation";
 import { calculatePoints, bracketPickPotential } from "@/lib/scoring";
 import { deriveMatchOdds, deriveScoreOdds } from "@/lib/match-odds";
 import { GOLDEN_BOOT_CANDIDATES, GOLDEN_BALL_CANDIDATES, GOLDEN_GLOVE_CANDIDATES } from "@/lib/data/wc2026";
-import { snapshotOddsForBetType } from "@/lib/actions/refresh-odds";
+import { snapshotOddsForBetType, refreshOddsForBetType } from "@/lib/actions/refresh-odds";
 import { Prisma } from "@prisma/client";
 
 export const PHASE_LABELS: Record<string, string> = {
@@ -56,21 +56,30 @@ export async function loadBetsPageData(groupId: string, userId: string) {
 
   if (!tournament) return null;
 
-  // Auto-promote tournament bet types whose opensAt has passed but DB still says DRAFT,
-  // freezing the live Team.odds onto the bet type so subsequent refreshes don't drift it.
+  // Auto-promote bet types whose opensAt has passed but DB still says DRAFT.
+  // Refresh live odds from the API first, then freeze them onto the bet type
+  // so subsequent refreshes don't retroactively change points for placed bets.
   for (const bt of tournament.betTypes) {
     const shouldPromote =
-      bt.category === "TOURNAMENT" &&
       bt.status === "DRAFT" &&
       bt.opensAt != null &&
       effectiveNow >= bt.opensAt &&
       bt.frozenOdds == null;
     if (!shouldPromote) continue;
-    const frozen = await snapshotOddsForBetType(tournament.id, bt.category, bt.subType);
+
+    // Best-effort live odds refresh right before opening — same as manual openBetType
+    await refreshOddsForBetType(tournament.id, bt.category, bt.subType).catch(() => null);
+
+    // Snapshot the now-current odds so future refreshes don't drift scoring
+    const frozen = bt.category === "TOURNAMENT"
+      ? await snapshotOddsForBetType(tournament.id, bt.category, bt.subType)
+      : null;
+
     await db.betType.update({
       where: { id: bt.id },
       data: {
         status: "OPEN",
+        opensAt: bt.opensAt,
         ...(frozen != null && { frozenOdds: frozen }),
       },
     });
