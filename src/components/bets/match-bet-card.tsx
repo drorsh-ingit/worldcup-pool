@@ -33,6 +33,12 @@ interface MatchBetCardProps {
   scorePointsMap?: Record<string, number>;
 }
 
+function teamNameSize(name: string): number {
+  if (name.length <= 9) return 14;   // text-sm
+  if (name.length <= 13) return 13;
+  return 12;                          // minimum for readability
+}
+
 function outcomeFromScore(h: number, a: number): "home" | "draw" | "away" {
   return h > a ? "home" : a > h ? "away" : "draw";
 }
@@ -248,7 +254,7 @@ export function MatchBetCard({
         {/* Home team */}
         <div className="flex flex-col items-center min-w-0 overflow-hidden" style={{ gap: 8 }}>
           <TeamBadge code={match.homeTeamCode} tournamentKind={tournamentKind} size="md" />
-          <span className="text-sm font-semibold text-neutral-800 text-center leading-tight line-clamp-2 w-full">
+          <span className="font-semibold text-neutral-800 text-center leading-tight line-clamp-2 w-full" style={{ fontSize: teamNameSize(match.homeTeamName || match.homeTeamCode) }}>
             {match.homeTeamName || match.homeTeamCode}
           </span>
         </div>
@@ -291,7 +297,7 @@ export function MatchBetCard({
         {/* Away team */}
         <div className="flex flex-col items-center min-w-0 overflow-hidden" style={{ gap: 8 }}>
           <TeamBadge code={match.awayTeamCode} tournamentKind={tournamentKind} size="md" />
-          <span className="text-sm font-semibold text-neutral-800 text-center leading-tight line-clamp-2 w-full">
+          <span className="font-semibold text-neutral-800 text-center leading-tight line-clamp-2 w-full" style={{ fontSize: teamNameSize(match.awayTeamName || match.awayTeamCode) }}>
             {match.awayTeamName || match.awayTeamCode}
           </span>
         </div>
