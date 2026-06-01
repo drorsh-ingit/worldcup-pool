@@ -34,9 +34,10 @@ interface MatchBetCardProps {
 }
 
 function teamNameSize(name: string): number {
-  if (name.length <= 9) return 14;   // text-sm
-  if (name.length <= 13) return 13;
-  return 12;                          // minimum for readability
+  if (name.length <= 7) return 14;    // Spain, France, Japan
+  if (name.length <= 9) return 13;    // Paraguay, Argentina
+  if (name.length <= 13) return 12;   // Switzerland, South Africa
+  return 11;                           // Bosnia-Herzegovina, Cape Verde Islands
 }
 
 function outcomeFromScore(h: number, a: number): "home" | "draw" | "away" {
