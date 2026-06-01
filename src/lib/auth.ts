@@ -46,7 +46,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.userVerifiedAt = Date.now();
       }
+
+      // Periodically verify the user still exists in the DB (every 5 minutes)
+      // This handles stale JWTs surviving database resets
+      if (token.id && typeof token.userVerifiedAt === "number") {
+        const FIVE_MINUTES = 5 * 60 * 1000;
+        if (Date.now() - token.userVerifiedAt > FIVE_MINUTES) {
+          try {
+            const dbUser = await db.user.findUnique({
+              where: { id: token.id as string },
+              select: { id: true },
+            });
+            if (!dbUser) {
+              token.id = undefined;
+              token.userVerifiedAt = undefined;
+            } else {
+              token.userVerifiedAt = Date.now();
+            }
+          } catch {
+            // DB error — don't invalidate, let it retry next time
+          }
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
