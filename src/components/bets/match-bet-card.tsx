@@ -246,9 +246,9 @@ export function MatchBetCard({
       {/* Teams + score */}
       <div className="grid grid-cols-[1fr_auto_1fr] items-center" style={{ gap: 12, padding: "10px 20px 4px" }}>
         {/* Home team */}
-        <div className="flex flex-col items-center" style={{ gap: 8 }}>
+        <div className="flex flex-col items-center min-w-0 overflow-hidden" style={{ gap: 8 }}>
           <TeamBadge code={match.homeTeamCode} tournamentKind={tournamentKind} size="md" />
-          <span className="text-sm font-semibold text-neutral-800 text-center leading-tight line-clamp-2">
+          <span className="text-sm font-semibold text-neutral-800 text-center leading-tight line-clamp-2 w-full">
             {match.homeTeamName || match.homeTeamCode}
           </span>
         </div>
@@ -289,9 +289,9 @@ export function MatchBetCard({
         </div>
 
         {/* Away team */}
-        <div className="flex flex-col items-center" style={{ gap: 8 }}>
+        <div className="flex flex-col items-center min-w-0 overflow-hidden" style={{ gap: 8 }}>
           <TeamBadge code={match.awayTeamCode} tournamentKind={tournamentKind} size="md" />
-          <span className="text-sm font-semibold text-neutral-800 text-center leading-tight line-clamp-2">
+          <span className="text-sm font-semibold text-neutral-800 text-center leading-tight line-clamp-2 w-full">
             {match.awayTeamName || match.awayTeamCode}
           </span>
         </div>
