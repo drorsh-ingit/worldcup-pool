@@ -39,17 +39,29 @@ export async function refreshTournamentWinnerOdds(tournamentId: string): Promise
     }
   }
 
-  await db.$transaction(
-    teams.map((team) => {
-      // Match by code first, then by name
-      const liveOdds = liveByCode[team.code] ?? liveByCode[`name:${team.name}`] ?? null;
-      if (liveOdds == null) {
-        return db.team.update({ where: { id: team.id }, data: {} }); // no-op
-      }
+  // First pass: update winnerOdds from live API data
+  const teamsWithLive = teams.map((team) => {
+    const liveOdds = liveByCode[team.code] ?? liveByCode[`name:${team.name}`] ?? null;
+    const existing = (team.odds as Record<string, unknown>) ?? {};
+    if (liveOdds != null) {
       updated++;
-      const existing = (team.odds as Record<string, unknown>) ?? {};
-      // Static seed stores winnerOdds as decimal × 100 (e.g., Spain=600 means 6.00 decimal).
-      const merged = { ...existing, winnerOdds: Math.round(liveOdds * 100) };
+      return { ...team, odds: { ...existing, winnerOdds: Math.round(liveOdds * 100) } };
+    }
+    return { ...team, odds: existing };
+  });
+
+  // Second pass: derive groupWinnerOdds and qualifyOdds using Bradley-Terry model.
+  // Groups teams by groupLetter, computes relative strengths, then simulates
+  // group-stage outcomes to get win-group and qualify (top-2-in-group) probabilities.
+  const derived = deriveGroupOdds(teamsWithLive);
+
+  await db.$transaction(
+    teamsWithLive.map((team) => {
+      const groupOdds = derived[team.code];
+      const merged = {
+        ...team.odds,
+        ...(groupOdds ?? {}),
+      };
       return db.team.update({
         where: { id: team.id },
         data: { odds: merged as unknown as Prisma.InputJsonValue },
@@ -58,6 +70,132 @@ export async function refreshTournamentWinnerOdds(tournamentId: string): Promise
   );
 
   return { refreshed: true, updated };
+}
+
+/**
+ * Bradley-Terry derivation of groupWinnerOdds and qualifyOdds from winnerOdds.
+ *
+ * The Odds API only provides tournament-winner outright odds. We derive the
+ * two group-stage odds (win group, qualify from group) by:
+ *  1. Computing a relative "strength" for each team: s_i = (100 / winnerOdds_i)^α
+ *     where α = 0.5 flattens the power gap (a 100x favourite isn't 100x stronger in a group).
+ *  2. Within each 4-team group, running a round-robin simulation using pairwise
+ *     Bradley-Terry win probabilities: P(i beats j) = s_i / (s_i + s_j).
+ *  3. Enumerating all possible group outcomes (3^6 = 729 for 6 matches between 4 teams)
+ *     to compute P(win group) and P(top 2 = qualify) for each team.
+ *  4. Converting probabilities back to odds × 100 format.
+ *
+ * This produces reasonable odds that move in lockstep with the live winner market.
+ */
+function deriveGroupOdds(
+  teams: { code: string; groupLetter: string; odds: Record<string, unknown> }[]
+): Record<string, { groupWinnerOdds: number; qualifyOdds: number }> {
+  const ALPHA = 0.5;
+  const result: Record<string, { groupWinnerOdds: number; qualifyOdds: number }> = {};
+
+  // Group teams by letter
+  const groups: Record<string, typeof teams> = {};
+  for (const t of teams) {
+    if (!t.groupLetter) continue;
+    if (!groups[t.groupLetter]) groups[t.groupLetter] = [];
+    groups[t.groupLetter].push(t);
+  }
+
+  for (const groupTeams of Object.values(groups)) {
+    if (groupTeams.length < 2) continue;
+
+    // Compute strengths
+    const strengths: Record<string, number> = {};
+    for (const t of groupTeams) {
+      const wo = (t.odds.winnerOdds as number) ?? 100000;
+      strengths[t.code] = Math.pow(100 / Math.max(wo, 1), ALPHA);
+    }
+
+    // For a 4-team group, enumerate all 3^6 = 729 outcomes of 6 pairwise matches.
+    // Each match has 3 outcomes: team i wins, draw, team j wins.
+    // Points: win=3, draw=1, loss=0.
+    const codes = groupTeams.map((t) => t.code);
+    const n = codes.length;
+    const pairs: [number, number][] = [];
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        pairs.push([i, j]);
+      }
+    }
+
+    // Pairwise probabilities: P(i beats j), P(draw), P(j beats i)
+    // Draw probability ~ 25% for group matches, adjusted slightly by strength gap
+    const pairProbs: { pWin: number; pDraw: number; pLoss: number }[] = [];
+    for (const [i, j] of pairs) {
+      const si = strengths[codes[i]];
+      const sj = strengths[codes[j]];
+      const rawP = si / (si + sj); // Bradley-Terry P(i beats j)
+      // Allocate ~25% base draw probability, slightly less for lopsided matchups
+      const gap = Math.abs(rawP - 0.5);
+      const drawProb = Math.max(0.15, 0.28 - 0.3 * gap);
+      const pWin = rawP * (1 - drawProb);
+      const pLoss = (1 - rawP) * (1 - drawProb);
+      pairProbs.push({ pWin, pDraw: drawProb, pLoss });
+    }
+
+    // Accumulate probabilities for each team finishing in each position
+    const winGroupProb: Record<string, number> = {};
+    const qualifyProb: Record<string, number> = {};
+    for (const code of codes) {
+      winGroupProb[code] = 0;
+      qualifyProb[code] = 0;
+    }
+
+    // Enumerate all outcomes: each match has 3 possible results
+    const totalCombos = Math.pow(3, pairs.length);
+    for (let combo = 0; combo < totalCombos; combo++) {
+      // Decode combo into per-match outcomes (0=i wins, 1=draw, 2=j wins)
+      const points = new Array(n).fill(0);
+      let prob = 1;
+      let temp = combo;
+      for (let m = 0; m < pairs.length; m++) {
+        const outcome = temp % 3;
+        temp = Math.floor(temp / 3);
+        const [i, j] = pairs[m];
+        const pp = pairProbs[m];
+        if (outcome === 0) {
+          points[i] += 3;
+          prob *= pp.pWin;
+        } else if (outcome === 1) {
+          points[i] += 1;
+          points[j] += 1;
+          prob *= pp.pDraw;
+        } else {
+          points[j] += 3;
+          prob *= pp.pLoss;
+        }
+      }
+
+      if (prob < 1e-12) continue; // skip negligible
+
+      // Rank by points (ties broken by strength as proxy for goal difference)
+      const ranked = codes
+        .map((code, idx) => ({ code, pts: points[idx], str: strengths[code] }))
+        .sort((a, b) => b.pts - a.pts || b.str - a.str);
+
+      winGroupProb[ranked[0].code] += prob;
+      // Top 2 qualify (FIFA 2026: top 2 from each group of 4, plus best 3rds — we approximate as top 2)
+      qualifyProb[ranked[0].code] += prob;
+      qualifyProb[ranked[1].code] += prob;
+    }
+
+    // Convert to odds × 100 format: odds = 100 / probability
+    for (const t of groupTeams) {
+      const wp = winGroupProb[t.code];
+      const qp = qualifyProb[t.code];
+      result[t.code] = {
+        groupWinnerOdds: Math.round(100 / Math.max(wp, 0.005)),
+        qualifyOdds: Math.round(100 / Math.max(qp, 0.005)),
+      };
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -175,7 +313,12 @@ export async function refreshOddsForBetType(
   subType: string
 ): Promise<RefreshResult> {
   try {
-    if (category === "TOURNAMENT" && subType === "winner") {
+    // All TOURNAMENT bet types ultimately depend on team odds (winnerOdds,
+    // groupWinnerOdds, qualifyOdds), so refresh the outright market for any
+    // tournament-level bet — not just "winner". The derivation step inside
+    // refreshTournamentWinnerOdds computes group/qualify odds from the live
+    // winner market, benefiting group_predictions, semifinalists, dark_horse, etc.
+    if (category === "TOURNAMENT") {
       return await refreshTournamentWinnerOdds(tournamentId);
     }
     if (category === "PER_GAME") {
