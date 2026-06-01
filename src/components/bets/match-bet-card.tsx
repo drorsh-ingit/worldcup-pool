@@ -234,7 +234,7 @@ export function MatchBetCard({
       <div className="flex items-center justify-between" style={{ gap: 12, padding: "14px 20px 12px" }}>
         <div className="inline-flex items-center text-sm text-neutral-600 min-w-0" style={{ gap: 6 }}>
           <MapPin className="w-4 h-4 text-neutral-400 shrink-0" />
-          <span className="font-medium text-neutral-800 truncate">{phaseLabel(match.phase, match.groupLetter, tournamentKind)}</span>
+          <span className="font-medium text-neutral-800 whitespace-nowrap">{phaseLabel(match.phase, match.groupLetter, tournamentKind)}</span>
           <span className="text-neutral-300" style={{ paddingLeft: 2, paddingRight: 2 }}>·</span>
           <Clock className="w-4 h-4 text-neutral-400 shrink-0" />
           <span className="tabular-nums whitespace-nowrap">
