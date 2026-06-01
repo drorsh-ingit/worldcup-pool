@@ -10,6 +10,7 @@ import { GOLDEN_BOOT_CANDIDATES, GOLDEN_BALL_CANDIDATES, GOLDEN_GLOVE_CANDIDATES
 import type { BetsPageData } from "@/lib/bets-page-data";
 import { loadBetsPageData } from "@/lib/bets-page-data";
 import { calculateGroupStandings } from "@/lib/tournament-engine";
+import { normalizeGroupPrediction } from "@/lib/scoring";
 
 interface BetsPageProps {
   params: Promise<{ groupId: string }>;
@@ -251,7 +252,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
     }
     if (bt.subType === "group_predictions") {
       const resolution = bt.resolution as { winners?: Record<string, string>; advancing?: string[] } | undefined;
-      const picks = (currentBet?.prediction as Record<string, string[]> | undefined) ?? {};
+      const picks = normalizeGroupPrediction(currentBet?.prediction);
       if (resolution) {
         const actualWinners = resolution.winners ?? {};
         const actualAdvancing = new Set(resolution.advancing ?? []);
@@ -381,7 +382,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
               description={bt.description}
               isLocked={isLocked}
               teamsByGroup={teamsByGroup}
-              currentPrediction={currentBet?.prediction as Record<string, string[]> | undefined}
+              currentPrediction={(() => { const p = normalizeGroupPrediction(currentBet?.prediction); return Object.keys(p).length > 0 ? p : undefined; })()}
               pointsByTeam={groupPredictionPoints}
               qualifierPointsByTeam={groupQualifierPoints}
               resolution={bt.resolution as { winners?: Record<string, string>; advancing?: string[] } | undefined}

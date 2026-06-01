@@ -14,6 +14,29 @@ import { db } from "@/lib/db";
 import { DEFAULT_GROUP_SETTINGS, resolveGroupSettings, type GroupSettings } from "@/lib/settings";
 import { deriveMatchOdds, deriveScoreOdds } from "@/lib/match-odds";
 
+/**
+ * Normalize group_predictions prediction from either legacy or current format.
+ *   Legacy:  { winners: { A: "MEX", ... }, qualifiers: { A: ["MEX","CZE"], ... } }
+ *   Current: { A: ["MEX","CZE","BRA"], B: [...], ... }
+ * Returns: Record<groupLetter, [winner, ...advancers]>
+ */
+export function normalizeGroupPrediction(raw: unknown): Record<string, string[]> {
+  if (!raw || typeof raw !== "object") return {};
+  const obj = raw as Record<string, unknown>;
+  if ("winners" in obj) {
+    const w = obj.winners as Record<string, string> | undefined;
+    const q = obj.qualifiers as Record<string, string[]> | undefined;
+    const result: Record<string, string[]> = {};
+    for (const letter of Object.keys(w ?? {})) {
+      const winner = w?.[letter] ?? "";
+      const quals = (q?.[letter] ?? []).filter((c: string) => c !== winner);
+      result[letter] = [winner, ...quals];
+    }
+    return result;
+  }
+  return obj as Record<string, string[]>;
+}
+
 /** Implied probability from decimal odds (e.g., 500 → 1/500 = 0.002) */
 function impliedProb(decimalOdds: number): number {
   return 1 / Math.max(decimalOdds, 1);
@@ -258,7 +281,7 @@ export async function scoreBets(
 
       if (subType === "group_predictions") {
         const per = scoreGroupPredictionsPerSlot(
-          pred as Record<string, string[]>,
+          normalizeGroupPrediction(pred),
           resolution as { winners?: Record<string, string>; advancing?: string[] },
           teamByCode,
           settings,
@@ -603,7 +626,7 @@ function checkBetCorrectness(
       // prediction: { A: ["FRA", "MEX"], B: ["USA", "URU", "BOL"], ... }
       //   first element = group winner, rest = advancing teams
       // resolution: { winners: { A: "FRA", ... }, advancing: ["FRA", "MEX", "USA", ...] }
-      const pred = prediction as Record<string, string[]>;
+      const pred = normalizeGroupPrediction(prediction);
       const res = resolution as { winners: Record<string, string>; advancing: string[] };
       const resAdvancing = new Set(res.advancing ?? []);
       let correctWinners = 0;
