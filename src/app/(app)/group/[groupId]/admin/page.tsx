@@ -4,7 +4,6 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Trophy, Users, Sliders } from "lucide-react";
 import { CopySlugButton } from "@/components/copy-slug-button";
-import { InitTournamentButton } from "@/components/admin/init-tournament-button";
 import { RefreshOddsButton } from "@/components/admin/refresh-odds-button";
 import { BetTypeControls } from "@/components/admin/bet-type-controls";
 import { CuratedPropForm } from "@/components/admin/curated-prop-form";
@@ -157,9 +156,11 @@ export default async function AdminPage({ params }: AdminPageProps) {
         </div>
 
         {!tournament ? (
-          <div style={{ padding: 20 }} className="rounded-xl border border-neutral-200 bg-white space-y-1">
-            <p className="text-sm font-medium text-neutral-900 mb-3">No tournament set up yet</p>
-            <InitTournamentButton groupId={groupId} />
+          <div style={{ padding: 20 }} className="rounded-xl border border-red-100 bg-red-50 space-y-1">
+            <p className="text-sm font-medium text-red-700">Tournament failed to initialize</p>
+            <p className="text-sm text-red-600">
+              Something went wrong during group creation. Try deleting and re-creating the group.
+            </p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

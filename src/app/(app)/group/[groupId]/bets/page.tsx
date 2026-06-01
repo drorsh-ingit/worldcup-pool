@@ -81,7 +81,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
           className="text-sm text-neutral-500"
           style={{ maxWidth: 384, marginLeft: "auto", marginRight: "auto" }}
         >
-          The admin needs to initialize the tournament first.
+          Something went wrong during group setup. Ask the group admin to check the admin panel.
         </p>
       </div>
     );
