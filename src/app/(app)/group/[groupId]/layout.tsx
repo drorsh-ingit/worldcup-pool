@@ -58,6 +58,9 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
       <div style={{ paddingTop: 20 }}>
         {children}
       </div>
+      {/* Spacer for fixed bottom nav on mobile */}
+      <div className="sm:hidden" style={{ height: 144 }} aria-hidden="true" />
+
     </div>
   );
 }
