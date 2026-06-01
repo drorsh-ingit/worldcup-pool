@@ -65,7 +65,7 @@ export function GroupTabs({ groupId, isAdmin, pendingBets }: GroupTabsProps) {
         className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-neutral-200"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="grid grid-cols-3">
+        <div className={cn("grid", tabs.length > 3 ? "grid-cols-4" : "grid-cols-3")}>
           {tabs.map((t) => {
             const active = isActive(t.href, t.exact);
             const Icon = t.icon;
