@@ -112,7 +112,7 @@ async function main() {
     const bt = await db.betType.create({
       data: {
         tournamentId: tournament.id, category: "TOURNAMENT", subType, name: subType,
-        status: "OPEN", frozenOdds: frozenOdds,
+        status: "OPEN", frozenOdds: frozenOdds ?? undefined,
       },
     });
 
@@ -158,7 +158,7 @@ async function main() {
     const bt = await db.betType.create({
       data: {
         tournamentId: tournament.id, category: "TOURNAMENT", subType: "reverse_dark_horse", name: "Reverse Dark Horse",
-        status: "OPEN", frozenOdds: frozenOdds,
+        status: "OPEN", frozenOdds: frozenOdds ?? undefined,
       },
     });
 
@@ -204,7 +204,7 @@ async function main() {
     const bt = await db.betType.create({
       data: {
         tournamentId: tournament.id, category: "TOURNAMENT", subType, name: subType,
-        status: "OPEN", frozenOdds: frozenPlayerOdds,
+        status: "OPEN", frozenOdds: frozenPlayerOdds ?? undefined,
       },
     });
 
@@ -342,7 +342,7 @@ async function main() {
     const bt = await db.betType.create({
       data: {
         tournamentId: tournament.id, category: "TOURNAMENT", subType: "group_predictions", name: "Group Predictions",
-        status: "OPEN", frozenOdds: frozenOdds,
+        status: "OPEN", frozenOdds: frozenOdds ?? undefined,
       },
     });
 
@@ -401,7 +401,7 @@ async function main() {
     const bt = await db.betType.create({
       data: {
         tournamentId: tournament.id, category: "TOURNAMENT", subType: "bracket", name: "Bracket",
-        status: "OPEN", frozenOdds: frozenOdds,
+        status: "OPEN", frozenOdds: frozenOdds ?? undefined,
       },
     });
 
@@ -452,7 +452,7 @@ async function main() {
     const bt = await db.betType.create({
       data: {
         tournamentId: tournament.id, category: "TOURNAMENT", subType: "semifinalists", name: "Semifinalists",
-        status: "OPEN", frozenOdds: frozenOdds,
+        status: "OPEN", frozenOdds: frozenOdds ?? undefined,
       },
     });
 

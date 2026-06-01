@@ -121,7 +121,7 @@ async function main() {
   const bt = await db.betType.create({
     data: {
       tournamentId: tournament.id, category: "TOURNAMENT", subType: "group_predictions",
-      name: "Group Predictions", status: "OPEN", frozenOdds: frozenOdds,
+      name: "Group Predictions", status: "OPEN", frozenOdds: frozenOdds ?? undefined,
     },
   });
 
