@@ -7,7 +7,7 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith("/login") ||
     req.nextUrl.pathname.startsWith("/signup");
   const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
-  const isPublic = req.nextUrl.pathname === "/";
+  const isPublic = req.nextUrl.pathname === "/" || req.nextUrl.pathname === "/countdown";
 
   // Allow API auth routes through
   if (isApiAuth) {
