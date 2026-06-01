@@ -320,8 +320,8 @@ export function MatchBetCard({
       </div>
 
       {/* Footer */}
-      <div className="relative flex items-center justify-end border-t border-neutral-100 bg-neutral-50 rounded-b-3xl" style={{ padding: "14px 20px", minHeight: 67 }}>
-        <span className="absolute inset-x-0 text-center text-sm font-bold text-neutral-900 tabular-nums pointer-events-none">
+      <div className="flex items-center justify-between border-t border-neutral-100 bg-neutral-50 rounded-b-3xl" style={{ padding: "14px 20px", minHeight: 67, gap: 12 }}>
+        <span className="flex-1 text-sm font-bold text-neutral-900 tabular-nums text-center">
           {isCompleted ? (
             noBetCompleted ? (
               <span className="text-neutral-400">0 points earned</span>
