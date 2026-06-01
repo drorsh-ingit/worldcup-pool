@@ -34,10 +34,9 @@ interface MatchBetCardProps {
 }
 
 function teamNameSize(name: string): number {
-  if (name.length <= 7) return 14;    // Spain, France, Japan
-  if (name.length <= 9) return 13;    // Paraguay, Argentina
-  if (name.length <= 13) return 12;   // Switzerland, South Africa
-  return 11;                           // Bosnia-Herzegovina, Cape Verde Islands
+  if (name.length <= 7) return 14;    // Spain, France, Japan, Brazil
+  if (name.length <= 10) return 12;   // Paraguay, Scotland, Argentina
+  return 11;                           // Switzerland, South Africa, Bosnia-Herzegovina
 }
 
 function outcomeFromScore(h: number, a: number): "home" | "draw" | "away" {
@@ -253,9 +252,9 @@ export function MatchBetCard({
       {/* Teams + score */}
       <div className="grid grid-cols-[1fr_auto_1fr] items-center" style={{ gap: 12, padding: "10px 20px 4px" }}>
         {/* Home team */}
-        <div className="flex flex-col items-center min-w-0 overflow-hidden" style={{ gap: 8 }}>
+        <div className="flex flex-col items-center min-w-0" style={{ gap: 8 }}>
           <TeamBadge code={match.homeTeamCode} tournamentKind={tournamentKind} size="md" />
-          <span className="font-semibold text-neutral-800 text-center leading-tight line-clamp-2 w-full" style={{ fontSize: teamNameSize(match.homeTeamName || match.homeTeamCode) }}>
+          <span className="font-semibold text-neutral-800 text-center leading-tight w-full line-clamp-2" style={{ fontSize: teamNameSize(match.homeTeamName || match.homeTeamCode) }}>
             {match.homeTeamName || match.homeTeamCode}
           </span>
         </div>
@@ -296,9 +295,9 @@ export function MatchBetCard({
         </div>
 
         {/* Away team */}
-        <div className="flex flex-col items-center min-w-0 overflow-hidden" style={{ gap: 8 }}>
+        <div className="flex flex-col items-center min-w-0" style={{ gap: 8 }}>
           <TeamBadge code={match.awayTeamCode} tournamentKind={tournamentKind} size="md" />
-          <span className="font-semibold text-neutral-800 text-center leading-tight line-clamp-2 w-full" style={{ fontSize: teamNameSize(match.awayTeamName || match.awayTeamCode) }}>
+          <span className="font-semibold text-neutral-800 text-center leading-tight w-full line-clamp-2" style={{ fontSize: teamNameSize(match.awayTeamName || match.awayTeamCode) }}>
             {match.awayTeamName || match.awayTeamCode}
           </span>
         </div>
