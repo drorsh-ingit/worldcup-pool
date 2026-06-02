@@ -22,7 +22,7 @@ export function SimulationControl({
   simulatedDate,
   awards: initialAwards,
 }: SimulationControlProps) {
-  const [date, setDate] = useState(simulatedDate ?? "2026-06-15T12:00");
+  const [date, setDate] = useState(simulatedDate ?? "2026-06-10T12:00");
   const [goldenBoot, setGoldenBoot] = useState(initialAwards?.goldenBoot ?? "");
   const [goldenBall, setGoldenBall] = useState(initialAwards?.goldenBall ?? "");
   const [goldenGlove, setGoldenGlove] = useState(initialAwards?.goldenGlove ?? "");
