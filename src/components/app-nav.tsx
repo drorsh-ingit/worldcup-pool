@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, ChevronDown, Check, Plus, Trophy, CalendarDays, BarChart2, Settings, type LucideProps } from "lucide-react";
+import { LogOut, ChevronDown, Check, Plus, Trophy, CalendarDays, BarChart2, Settings, UserPen, type LucideProps } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
   Trophy, CalendarDays, BarChart2, Settings,
@@ -194,16 +194,19 @@ function AppNavInner({ user, groups }: AppNavProps) {
 
               <div style={{ padding: 6, display: "flex", flexDirection: "column", gap: 2 }}>
                 <Link
+                  href="/settings"
+                  onClick={() => setUserMenuOpen(false)}
+                  className="flex items-center rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                  style={{ gap: 10, paddingTop: 10, paddingBottom: 10, paddingLeft: 12, paddingRight: 12 }}
+                >
+                  <UserPen className="w-4 h-4 text-neutral-400" />
+                  Edit profile
+                </Link>
+                <Link
                   href="/dashboard?new=1"
                   onClick={() => setUserMenuOpen(false)}
                   className="flex items-center rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
-                  style={{
-                    gap: 10,
-                    paddingTop: 10,
-                    paddingBottom: 10,
-                    paddingLeft: 12,
-                    paddingRight: 12,
-                  }}
+                  style={{ gap: 10, paddingTop: 10, paddingBottom: 10, paddingLeft: 12, paddingRight: 12 }}
                 >
                   <Plus className="w-4 h-4 text-neutral-400" />
                   Join or create a group
