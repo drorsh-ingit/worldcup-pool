@@ -1,14 +1,20 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSetNavTabs, type NavTab } from "@/lib/nav-tabs-context";
+import { useSetNavMeta, type NavTab } from "@/lib/nav-tabs-context";
 
-export function SetNavTabs({ tabs }: { tabs: NavTab[] }) {
-  const setTabs = useSetNavTabs();
+interface SetNavTabsProps {
+  tabs: NavTab[];
+  tournamentLogo?: string | null;
+  tournamentName?: string | null;
+}
+
+export function SetNavTabs({ tabs, tournamentLogo, tournamentName }: SetNavTabsProps) {
+  const setMeta = useSetNavMeta();
 
   useEffect(() => {
-    setTabs(tabs);
-    return () => setTabs([]); // clear on unmount (leaving group)
+    setMeta({ tabs, tournamentLogo, tournamentName });
+    return () => setMeta({ tabs: [] }); // clear on unmount (leaving group)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

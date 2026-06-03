@@ -11,22 +11,42 @@ export type NavTab = {
   pending?: number;
 };
 
-type NavTabsContextType = {
+export type NavMeta = {
   tabs: NavTab[];
-  setTabs: (tabs: NavTab[]) => void;
+  tournamentLogo?: string | null;
+  tournamentName?: string | null;
 };
 
-const NavTabsContext = createContext<NavTabsContextType>({ tabs: [], setTabs: () => {} });
+type NavTabsContextType = {
+  meta: NavMeta;
+  setMeta: (meta: NavMeta) => void;
+};
+
+const NavTabsContext = createContext<NavTabsContextType>({
+  meta: { tabs: [] },
+  setMeta: () => {},
+});
 
 export function NavTabsProvider({ children }: { children: React.ReactNode }) {
-  const [tabs, setTabs] = useState<NavTab[]>([]);
-  return <NavTabsContext.Provider value={{ tabs, setTabs }}>{children}</NavTabsContext.Provider>;
+  const [meta, setMeta] = useState<NavMeta>({ tabs: [] });
+  return <NavTabsContext.Provider value={{ meta, setMeta }}>{children}</NavTabsContext.Provider>;
 }
 
+export function useNavMeta() {
+  return useContext(NavTabsContext).meta;
+}
+
+export function useSetNavMeta() {
+  return useContext(NavTabsContext).setMeta;
+}
+
+// Backwards-compat shims
 export function useNavTabs() {
-  return useContext(NavTabsContext).tabs;
+  return useContext(NavTabsContext).meta.tabs;
 }
 
 export function useSetNavTabs() {
-  return useContext(NavTabsContext).setTabs;
+  const setMeta = useContext(NavTabsContext).setMeta;
+  const meta = useContext(NavTabsContext).meta;
+  return (tabs: NavTab[]) => setMeta({ ...meta, tabs });
 }

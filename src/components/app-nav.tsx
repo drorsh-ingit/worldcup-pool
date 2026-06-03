@@ -6,7 +6,7 @@ import { signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
 import { LogOut, ChevronDown, Check, Plus } from "lucide-react";
 import { MatchdayLogo } from "@/components/matchday-logo";
-import { NavTabsProvider, useNavTabs } from "@/lib/nav-tabs-context";
+import { useNavMeta } from "@/lib/nav-tabs-context";
 import { cn } from "@/lib/utils";
 
 interface GroupOption {
@@ -24,7 +24,7 @@ function AppNavInner({ user, groups }: AppNavProps) {
   const pathname = usePathname();
   const currentGroupId = params?.groupId;
   const currentGroup = groups.find((g) => g.id === currentGroupId);
-  const tabs = useNavTabs();
+  const { tabs, tournamentLogo, tournamentName } = useNavMeta();
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
@@ -50,8 +50,8 @@ function AppNavInner({ user, groups }: AppNavProps) {
       <div className="h-1 w-full" style={{ backgroundColor: "#4a8c2a" }} />
 
       <div className="max-w-screen-2xl mx-auto page-x-pad h-14 flex items-center justify-between" style={{ gap: 16 }}>
-        {/* Brand + current group label */}
-        <div className="flex items-center shrink-0" style={{ gap: 12 }}>
+        {/* Brand + group + tournament badge */}
+        <div className="flex items-center shrink-0" style={{ gap: 10 }}>
           <Link href="/dashboard" className="shrink-0" aria-label="Home">
             <span className="hidden sm:block">
               <MatchdayLogo size={30} />
@@ -64,9 +64,27 @@ function AppNavInner({ user, groups }: AppNavProps) {
           {currentGroup && (
             <>
               <span className="text-neutral-200 text-xl font-light hidden sm:inline">/</span>
-              <span className="text-sm font-medium text-neutral-700 truncate hidden sm:inline max-w-[140px]">
+              <span className="text-sm font-medium text-neutral-700 truncate hidden sm:inline max-w-[120px]">
                 {currentGroup.name}
               </span>
+            </>
+          )}
+
+          {tournamentLogo && (
+            <>
+              <span className="text-neutral-200 text-xl font-light hidden sm:inline">/</span>
+              <div className="hidden sm:flex items-center" style={{ gap: 7 }}>
+                <img
+                  src={tournamentLogo}
+                  alt=""
+                  style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }}
+                />
+                {tournamentName && (
+                  <span className="text-xs font-medium text-neutral-500 truncate max-w-[110px]">
+                    {tournamentName}
+                  </span>
+                )}
+              </div>
             </>
           )}
         </div>

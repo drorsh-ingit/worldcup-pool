@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { SimulationBanner } from "@/components/simulation-banner";
 import { GroupTabs } from "@/components/group-tabs";
 import { SetNavTabs } from "@/components/set-nav-tabs";
-import { TournamentBadge } from "@/components/tournament-badge";
 import { getPendingBetCounts } from "@/lib/pending-bets";
 import type { GroupSettings } from "@/lib/settings";
 import { Trophy, CalendarDays, Target, Settings } from "lucide-react";
@@ -34,6 +33,11 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
   const settings = group.settings as GroupSettings;
   const simulation = settings?.simulation;
 
+  const LOGO_SRCS: Record<string, string> = {
+    WC_2026: "/logos/wc2026.webp",
+    UCL_2026: "/logos/ucl2026.svg",
+  };
+
   const [tournament, pendingBets] = await Promise.all([
     db.tournament.findFirst({
       where: { groupId },
@@ -43,6 +47,8 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
       ? getPendingBetCounts(groupId, session.user.id)
       : { matches: 0, tournament: 0 },
   ]);
+
+  const tournamentLogo = tournament ? (LOGO_SRCS[tournament.kind] ?? null) : null;
 
   const base = `/group/${groupId}`;
   const navTabs = [
@@ -54,20 +60,19 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {/* Inject tabs into the AppNav header via context */}
-      <SetNavTabs tabs={navTabs} />
+      {/* Inject tabs + tournament badge into AppNav header via context */}
+      <SetNavTabs
+        tabs={navTabs}
+        tournamentLogo={tournamentLogo}
+        tournamentName={tournament?.name ?? null}
+      />
 
-      {/* Sub-header: only tournament badge + simulation banner (no desktop tabs here) */}
-      {(tournament || simulation?.enabled) && (
+      {/* Sub-header: simulation banner only (tournament badge moved into top bar) */}
+      {simulation?.enabled && (
         <div className="sticky top-14 z-20 bg-white shadow-sm page-x-bleed">
-          {tournament && (
-            <TournamentBadge kind={tournament.kind} name={tournament.name} />
-          )}
-          {simulation?.enabled && (
-            <div className="flex items-center border-b border-amber-100 bg-pitch-50 page-x-bleed" style={{ gap: 8, paddingTop: 8, paddingBottom: 8 }}>
-              <SimulationBanner simulatedDate={simulation.simulatedDate} />
-            </div>
-          )}
+          <div className="flex items-center border-b border-amber-100 bg-pitch-50 page-x-bleed" style={{ gap: 8, paddingTop: 8, paddingBottom: 8 }}>
+            <SimulationBanner simulatedDate={simulation.simulatedDate} />
+          </div>
         </div>
       )}
 
