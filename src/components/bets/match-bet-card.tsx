@@ -328,24 +328,24 @@ export function MatchBetCard({
       </div>
 
       {/* Footer */}
-      <div className="relative flex items-center justify-end border-t border-neutral-100 bg-neutral-50 rounded-b-3xl" style={{ padding: "14px 20px", minHeight: 67 }}>
-        <span className="absolute inset-x-0 text-center text-sm font-bold text-neutral-900 tabular-nums pointer-events-none" style={{ zIndex: 1 }}>
+      <div className="flex items-center justify-between border-t border-neutral-100 bg-neutral-50 rounded-b-3xl" style={{ padding: "10px 16px", gap: 8 }}>
+        <span className="text-sm font-semibold text-neutral-900 tabular-nums">
           {isCompleted ? (
             noBetCompleted ? (
-              <span className="text-neutral-400">0 points earned</span>
+              <span className="text-neutral-400">0 pts earned</span>
             ) : (
               <span className={earnedPts != null && earnedPts > 0 ? "text-pitch-700" : "text-neutral-700"}>
-                {earnedPts != null && earnedPts > 0 ? `${earnedPts.toFixed(1)} points earned` : "0 points earned"}
+                {earnedPts != null && earnedPts > 0 ? `${earnedPts.toFixed(1)} pts earned` : "0 pts earned"}
               </span>
             )
           ) : betsNotOpenYet ? (
-            <span className="text-neutral-400">Potential points TBD</span>
+            <span className="text-neutral-400 font-normal text-xs">Potential points TBD</span>
           ) : isPastKickoff && !hasSavedBet ? (
-            <span className="text-neutral-400">No bet placed</span>
+            <span className="text-neutral-400 font-normal text-xs">No bet placed</span>
           ) : potentialPts != null ? (
-            `${potentialPts.toFixed(1)} potential points`
+            <span className="text-neutral-500 font-normal text-xs">{potentialPts.toFixed(1)} potential pts</span>
           ) : (
-            <span className="text-neutral-400">0 potential points</span>
+            <span className="text-neutral-400 font-normal text-xs">0 potential pts</span>
           )}
         </span>
         {!(betsNotOpenYet && !hasSavedBet) && (
@@ -480,10 +480,10 @@ function StatusPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-xl border bg-white text-sm font-semibold whitespace-nowrap min-w-[72px]",
+        "inline-flex items-center justify-center rounded-lg border bg-white text-xs font-semibold whitespace-nowrap",
         cls
       )}
-      style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8 }}
+      style={{ paddingLeft: 10, paddingRight: 10, paddingTop: 4, paddingBottom: 4 }}
     >
       {label}
     </span>
