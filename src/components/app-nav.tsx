@@ -49,9 +49,7 @@ function AppNavInner({ user, groups }: AppNavProps) {
   const userInitial = user.name?.charAt(0).toUpperCase() ?? "?";
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-neutral-200 shadow-sm">
-      {/* Pitch-green accent stripe */}
-      <div className="h-1 w-full" style={{ backgroundColor: "#4a8c2a" }} />
+    <header className="sticky top-0 z-30 bg-neutral-50 border-b border-neutral-200 shadow-sm">
 
       <div className="max-w-screen-2xl mx-auto page-x-pad h-16 flex items-center justify-between" style={{ gap: 24 }}>
         {/* Logo + label */}
