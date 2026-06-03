@@ -78,16 +78,13 @@ export default async function GroupPage({ params }: GroupPageProps) {
 
   return (
     <div className="max-w-3xl mx-auto" style={{ paddingTop: 24, display: "flex", flexDirection: "column", gap: 24 }}>
-      {/* Slim header row */}
-      <div className="flex items-center justify-between" style={{ gap: 12 }}>
-        <div className="flex items-center" style={{ gap: 12 }}>
-          {/* Member count pill */}
+      {/* Page header */}
+      <div className="flex items-end justify-between" style={{ gap: 12 }}>
+        <h1 className="text-4xl font-black tracking-tight text-neutral-900">Standings</h1>
+        <div className="flex items-center" style={{ gap: 10, paddingBottom: 6 }}>
           <div className="inline-flex items-center text-sm text-neutral-500 bg-neutral-100 rounded-full" style={{ gap: 6, paddingLeft: 12, paddingRight: 12, paddingTop: 6, paddingBottom: 6 }}>
             <Users className="w-3.5 h-3.5" />
-            <span>
-              {approvedMembers.length} member
-              {approvedMembers.length !== 1 ? "s" : ""}
-            </span>
+            <span>{approvedMembers.length} member{approvedMembers.length !== 1 ? "s" : ""}</span>
           </div>
           <CopySlugButton slug={group.slug} />
         </div>

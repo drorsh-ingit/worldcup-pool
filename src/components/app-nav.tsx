@@ -54,21 +54,39 @@ function AppNavInner({ user, groups }: AppNavProps) {
       <div className="h-1 w-full" style={{ backgroundColor: "#4a8c2a" }} />
 
       <div className="max-w-screen-2xl mx-auto page-x-pad h-14 flex items-center justify-between" style={{ gap: 24 }}>
-        {/* Logo — tournament logo when inside a group, otherwise Matchday logo */}
-        <Link href="/dashboard" className="shrink-0" aria-label="Home">
-          {tournamentLogo ? (
-            <img
-              src={tournamentLogo}
-              alt={tournamentName ?? "Tournament"}
-              style={{ width: 36, height: 36, objectFit: "contain" }}
-            />
-          ) : (
-            <>
-              <span className="hidden sm:block"><MatchdayLogo size={30} /></span>
-              <span className="sm:hidden"><MatchdayLogo variant="icon" size={30} /></span>
-            </>
+        {/* Logo + label */}
+        <div className="flex items-center shrink-0" style={{ gap: 10 }}>
+          <Link href="/dashboard" className="shrink-0" aria-label="Home">
+            {tournamentLogo ? (
+              <img
+                src={tournamentLogo}
+                alt={tournamentName ?? "Tournament"}
+                style={{ width: 36, height: 36, objectFit: "contain" }}
+              />
+            ) : (
+              <>
+                <span className="hidden sm:block"><MatchdayLogo size={30} /></span>
+                <span className="sm:hidden"><MatchdayLogo variant="icon" size={30} /></span>
+              </>
+            )}
+          </Link>
+
+          {/* Text label next to logo — tournament name + group name */}
+          {(tournamentName || currentGroup) && (
+            <div className="hidden sm:flex flex-col justify-center leading-tight">
+              {tournamentName && (
+                <span className="text-[11px] font-medium text-neutral-400 uppercase tracking-wide">
+                  {tournamentName}
+                </span>
+              )}
+              {currentGroup && (
+                <span className="text-sm font-bold text-neutral-900">
+                  {currentGroup.name}
+                </span>
+              )}
+            </div>
           )}
-        </Link>
+        </div>
 
         {/* Desktop tabs — left-aligned, injected from group layout via context */}
         {tabs.length > 0 ? (
@@ -81,14 +99,14 @@ function AppNavInner({ user, groups }: AppNavProps) {
                   key={t.href}
                   href={t.href}
                   className={cn(
-                    "relative h-14 inline-flex items-center text-sm transition-colors border-b-2",
+                    "inline-flex items-center text-sm font-medium transition-all rounded-full",
                     active
-                      ? "border-emerald-600 text-neutral-900 font-semibold"
-                      : "border-transparent text-neutral-500 hover:text-neutral-800 font-medium"
+                      ? "bg-neutral-900 text-white"
+                      : "text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100"
                   )}
-                  style={{ gap: 7, paddingLeft: 20, paddingRight: 20 }}
+                  style={{ gap: 7, paddingLeft: 14, paddingRight: 14, paddingTop: 7, paddingBottom: 7 }}
                 >
-                  {Icon && <Icon className={cn("w-4 h-4 shrink-0", active ? "text-emerald-600" : "text-neutral-400")} />}
+                  {Icon && <Icon className={cn("w-4 h-4 shrink-0", active ? "text-white" : "text-neutral-400")} />}
                   {t.label}
                   {(t.pending ?? 0) > 0 && (
                     <span className="inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-semibold leading-none" style={{ paddingLeft: 5, paddingRight: 5 }}>

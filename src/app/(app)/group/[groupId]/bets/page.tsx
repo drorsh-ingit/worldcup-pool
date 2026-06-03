@@ -477,6 +477,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
 
   return (
     <div className="flex flex-col" style={{ gap: 48 }}>
+      <h1 className="text-4xl font-black tracking-tight text-neutral-900">Tournament Bets</h1>
       <Section title="Tournament" bets={tournamentBets} />
       <Section title="Bonus Bets" bets={curatedBets} />
     </div>

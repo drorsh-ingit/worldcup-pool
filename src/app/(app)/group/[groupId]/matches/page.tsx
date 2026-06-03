@@ -151,6 +151,8 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
     <div className="flex flex-col" style={{ gap: 32 }}>
       {nextUpcomingMatch && <ScrollToMatch matchId={nextUpcomingMatch.id} />}
 
+      <h1 className="text-4xl font-black tracking-tight text-neutral-900">Matches</h1>
+
         {/* Phase filter */}
         <div className="overflow-x-auto no-scrollbar" style={{ paddingTop: 4, paddingBottom: 4, marginTop: 16 }}>
           <div className="flex" style={{ minWidth: "max-content", gap: 8 }}>
