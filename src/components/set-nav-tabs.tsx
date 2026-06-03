@@ -12,11 +12,14 @@ interface SetNavTabsProps {
 export function SetNavTabs({ tabs, tournamentLogo, tournamentName }: SetNavTabsProps) {
   const setMeta = useSetNavMeta();
 
+  // Re-run whenever pending counts change (router.refresh() passes new props)
+  const pendingKey = tabs.map((t) => t.pending ?? 0).join(",");
+
   useEffect(() => {
     setMeta({ tabs, tournamentLogo, tournamentName });
-    return () => setMeta({ tabs: [] }); // clear on unmount (leaving group)
+    return () => setMeta({ tabs: [] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pendingKey]);
 
   return null;
 }
