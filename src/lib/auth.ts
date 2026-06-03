@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import { compare } from "bcryptjs";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -15,6 +16,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
   },
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     Credentials({
       name: "credentials",
       credentials: {
@@ -29,7 +34,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: parsed.data.email },
         });
 
-        if (!user) return null;
+        if (!user || !user.passwordHash) return null;
 
         const isValid = await compare(parsed.data.password, user.passwordHash);
         if (!isValid) return null;
@@ -43,9 +48,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      // For Google OAuth: auto-create user if they don't exist yet
+      if (account?.provider === "google" && user.email) {
+        const existing = await db.user.findUnique({ where: { email: user.email } });
+        if (!existing) {
+          const created = await db.user.create({
+            data: {
+              email: user.email,
+              name: user.name ?? user.email.split("@")[0],
+              passwordHash: null,
+            },
+          });
+          user.id = created.id;
+        } else {
+          user.id = existing.id;
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        // For Google users, user.id may not be set by NextAuth — look up by email
+        if (!user.id && user.email) {
+          const dbUser = await db.user.findUnique({ where: { email: user.email } });
+          token.id = dbUser?.id;
+        } else {
+          token.id = user.id;
+        }
       }
       return token;
     },
