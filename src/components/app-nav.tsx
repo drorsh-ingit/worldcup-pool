@@ -53,7 +53,7 @@ function AppNavInner({ user, groups }: AppNavProps) {
       {/* Pitch-green accent stripe */}
       <div className="h-1 w-full" style={{ backgroundColor: "#4a8c2a" }} />
 
-      <div className="max-w-screen-2xl mx-auto page-x-pad h-14 flex items-center justify-between" style={{ gap: 24 }}>
+      <div className="max-w-screen-2xl mx-auto page-x-pad h-16 flex items-center justify-between" style={{ gap: 24 }}>
         {/* Logo + label */}
         <div className="flex items-center shrink-0" style={{ gap: 10 }}>
           <Link href="/dashboard" className="shrink-0" aria-label="Home">
@@ -90,7 +90,7 @@ function AppNavInner({ user, groups }: AppNavProps) {
 
         {/* Desktop tabs — left-aligned, injected from group layout via context */}
         {tabs.length > 0 ? (
-          <nav className="hidden sm:flex items-center h-full flex-1" style={{ gap: 0 }}>
+          <nav className="hidden sm:flex items-center h-16 flex-1" style={{ gap: 0 }}>
             {tabs.map((t) => {
               const active = isActive(t.href, t.exact);
               const Icon = ICON_MAP[t.iconName];

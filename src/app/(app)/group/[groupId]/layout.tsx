@@ -68,7 +68,7 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
 
       {/* Sub-header: simulation banner only (tournament badge moved into top bar) */}
       {simulation?.enabled && (
-        <div className="sticky top-14 z-20 bg-white shadow-sm page-x-bleed">
+        <div className="sticky top-16 z-20 bg-white shadow-sm page-x-bleed">
           <div className="flex items-center border-b border-amber-100 bg-pitch-50 page-x-bleed" style={{ gap: 8, paddingTop: 8, paddingBottom: 8 }}>
             <SimulationBanner simulatedDate={simulation.simulatedDate} />
           </div>
