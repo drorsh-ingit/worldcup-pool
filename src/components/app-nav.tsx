@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, ChevronDown, Check, Plus, Trophy, CalendarDays, Target, Settings, type LucideProps } from "lucide-react";
+import { LogOut, ChevronDown, Check, Plus, Trophy, CalendarDays, BarChart2, Settings, type LucideProps } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
-  Trophy, CalendarDays, Target, Settings,
+  Trophy, CalendarDays, BarChart2, Settings,
 };
 import { MatchdayLogo } from "@/components/matchday-logo";
 import { useNavMeta } from "@/lib/nav-tabs-context";
@@ -53,49 +53,26 @@ function AppNavInner({ user, groups }: AppNavProps) {
       {/* Pitch-green accent stripe */}
       <div className="h-1 w-full" style={{ backgroundColor: "#4a8c2a" }} />
 
-      <div className="max-w-screen-2xl mx-auto page-x-pad h-14 flex items-center justify-between" style={{ gap: 16 }}>
-        {/* Brand + group + tournament badge */}
-        <div className="flex items-center shrink-0" style={{ gap: 10 }}>
-          <Link href="/dashboard" className="shrink-0" aria-label="Home">
-            <span className="hidden sm:block">
-              <MatchdayLogo size={30} />
-            </span>
-            <span className="sm:hidden">
-              <MatchdayLogo variant="icon" size={30} />
-            </span>
-          </Link>
-
-          {currentGroup && (
+      <div className="max-w-screen-2xl mx-auto page-x-pad h-14 flex items-center justify-between" style={{ gap: 24 }}>
+        {/* Logo — tournament logo when inside a group, otherwise Matchday logo */}
+        <Link href="/dashboard" className="shrink-0" aria-label="Home">
+          {tournamentLogo ? (
+            <img
+              src={tournamentLogo}
+              alt={tournamentName ?? "Tournament"}
+              style={{ width: 36, height: 36, objectFit: "contain" }}
+            />
+          ) : (
             <>
-              <span className="text-neutral-200 text-xl font-light hidden sm:inline">/</span>
-              <span className="text-sm font-medium text-neutral-700 truncate hidden sm:inline max-w-[120px]">
-                {currentGroup.name}
-              </span>
+              <span className="hidden sm:block"><MatchdayLogo size={30} /></span>
+              <span className="sm:hidden"><MatchdayLogo variant="icon" size={30} /></span>
             </>
           )}
+        </Link>
 
-          {tournamentLogo && (
-            <>
-              <span className="text-neutral-200 text-xl font-light hidden sm:inline">/</span>
-              <div className="hidden sm:flex items-center" style={{ gap: 7 }}>
-                <img
-                  src={tournamentLogo}
-                  alt=""
-                  style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }}
-                />
-                {tournamentName && (
-                  <span className="text-xs font-medium text-neutral-500 truncate max-w-[110px]">
-                    {tournamentName}
-                  </span>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Desktop tabs — injected from group layout via context */}
-        {tabs.length > 0 && (
-          <nav className="hidden sm:flex items-center h-full flex-1 justify-center" style={{ gap: 4 }}>
+        {/* Desktop tabs — left-aligned, injected from group layout via context */}
+        {tabs.length > 0 ? (
+          <nav className="hidden sm:flex items-center h-full flex-1" style={{ gap: 0 }}>
             {tabs.map((t) => {
               const active = isActive(t.href, t.exact);
               const Icon = ICON_MAP[t.iconName];
@@ -104,14 +81,14 @@ function AppNavInner({ user, groups }: AppNavProps) {
                   key={t.href}
                   href={t.href}
                   className={cn(
-                    "relative h-14 inline-flex items-center text-sm transition-colors border-b-2 px-4",
+                    "relative h-14 inline-flex items-center text-sm transition-colors border-b-2",
                     active
                       ? "border-emerald-600 text-neutral-900 font-semibold"
                       : "border-transparent text-neutral-500 hover:text-neutral-800 font-medium"
                   )}
-                  style={{ gap: 7 }}
+                  style={{ gap: 7, paddingLeft: 20, paddingRight: 20 }}
                 >
-                  <Icon className={cn("w-4 h-4 shrink-0", active ? "text-emerald-600" : "text-neutral-400")} />
+                  {Icon && <Icon className={cn("w-4 h-4 shrink-0", active ? "text-emerald-600" : "text-neutral-400")} />}
                   {t.label}
                   {(t.pending ?? 0) > 0 && (
                     <span className="inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-semibold leading-none" style={{ paddingLeft: 5, paddingRight: 5 }}>
@@ -122,6 +99,8 @@ function AppNavInner({ user, groups }: AppNavProps) {
               );
             })}
           </nav>
+        ) : (
+          <div className="flex-1" />
         )}
 
         {/* User menu */}
