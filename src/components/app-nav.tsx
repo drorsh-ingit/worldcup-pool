@@ -48,7 +48,7 @@ function AppNavInner({ user, groups }: AppNavProps) {
 
   const userInitial = user.name?.charAt(0).toUpperCase() ?? "?";
 
-  // Shared tab renderer used on both desktop and mobile
+  // Desktop tab — icon + label always visible
   function renderTab(t: typeof tabs[number]) {
     const active = isActive(t.href, t.exact);
     const Icon = ICON_MAP[t.iconName];
@@ -70,6 +70,42 @@ function AppNavInner({ user, groups }: AppNavProps) {
           <span className="inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-semibold leading-none" style={{ paddingLeft: 5, paddingRight: 5 }}>
             {t.pending}
           </span>
+        )}
+      </Link>
+    );
+  }
+
+  // Mobile tab — icon only when inactive, icon + label when active
+  function renderMobileTab(t: typeof tabs[number]) {
+    const active = isActive(t.href, t.exact);
+    const Icon = ICON_MAP[t.iconName];
+    return (
+      <Link
+        key={t.href}
+        href={t.href}
+        className={cn(
+          "inline-flex items-center font-medium transition-all rounded-full shrink-0",
+          active
+            ? "bg-neutral-900 text-white text-sm"
+            : "text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100"
+        )}
+        style={{
+          gap: active ? 6 : 0,
+          paddingLeft: active ? 12 : 9,
+          paddingRight: active ? 12 : 9,
+          paddingTop: 8,
+          paddingBottom: 8,
+        }}
+      >
+        {Icon && <Icon className="w-4 h-4 shrink-0" />}
+        {active && <span className="whitespace-nowrap">{t.label}</span>}
+        {active && (t.pending ?? 0) > 0 && (
+          <span className="inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-semibold leading-none" style={{ paddingLeft: 5, paddingRight: 5 }}>
+            {t.pending}
+          </span>
+        )}
+        {!active && (t.pending ?? 0) > 0 && (
+          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500" />
         )}
       </Link>
     );
@@ -226,8 +262,8 @@ function AppNavInner({ user, groups }: AppNavProps) {
       {/* Mobile tab row — scrollable, shown only on small screens when tabs exist */}
       {tabs.length > 0 && (
         <div className="sm:hidden border-t border-neutral-100 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-          <nav className="flex page-x-pad" style={{ gap: 4, paddingTop: 8, paddingBottom: 8, minWidth: "max-content" }}>
-            {tabs.map(renderTab)}
+          <nav className="flex page-x-pad" style={{ gap: 2, paddingTop: 6, paddingBottom: 6 }}>
+            {tabs.map(renderMobileTab)}
           </nav>
         </div>
       )}
