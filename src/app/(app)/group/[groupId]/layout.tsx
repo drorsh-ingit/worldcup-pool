@@ -6,7 +6,6 @@ import { GroupTabs } from "@/components/group-tabs";
 import { SetNavTabs } from "@/components/set-nav-tabs";
 import { getPendingBetCounts } from "@/lib/pending-bets";
 import type { GroupSettings } from "@/lib/settings";
-import { Trophy, CalendarDays, Target, Settings } from "lucide-react";
 
 interface GroupLayoutProps {
   children: React.ReactNode;
@@ -52,10 +51,10 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
 
   const base = `/group/${groupId}`;
   const navTabs = [
-    { href: base, label: "Standings", icon: Trophy, exact: true, pending: 0 },
-    { href: `${base}/matches`, label: "Matches", icon: CalendarDays, pending: pendingBets?.matches ?? 0 },
-    { href: `${base}/bets`, label: "Tournament", icon: Target, pending: pendingBets?.tournament ?? 0 },
-    ...(isAdmin ? [{ href: `${base}/admin`, label: "Admin", icon: Settings, exact: false as const, pending: 0 }] : []),
+    { href: base, label: "Standings", iconName: "Trophy", exact: true, pending: 0 },
+    { href: `${base}/matches`, label: "Matches", iconName: "CalendarDays", pending: pendingBets?.matches ?? 0 },
+    { href: `${base}/bets`, label: "Tournament", iconName: "Target", pending: pendingBets?.tournament ?? 0 },
+    ...(isAdmin ? [{ href: `${base}/admin`, label: "Admin", iconName: "Settings", exact: false as const, pending: 0 }] : []),
   ];
 
   return (

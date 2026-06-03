@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, ChevronDown, Check, Plus } from "lucide-react";
+import { LogOut, ChevronDown, Check, Plus, Trophy, CalendarDays, Target, Settings, type LucideProps } from "lucide-react";
+
+const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
+  Trophy, CalendarDays, Target, Settings,
+};
 import { MatchdayLogo } from "@/components/matchday-logo";
 import { useNavMeta } from "@/lib/nav-tabs-context";
 import { cn } from "@/lib/utils";
@@ -94,7 +98,7 @@ function AppNavInner({ user, groups }: AppNavProps) {
           <nav className="hidden sm:flex items-center h-full flex-1 justify-center" style={{ gap: 4 }}>
             {tabs.map((t) => {
               const active = isActive(t.href, t.exact);
-              const Icon = t.icon;
+              const Icon = ICON_MAP[t.iconName];
               return (
                 <Link
                   key={t.href}

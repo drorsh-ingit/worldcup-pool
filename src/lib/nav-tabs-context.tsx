@@ -1,12 +1,11 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
-import type { ComponentType } from "react";
 
 export type NavTab = {
   href: string;
   label: string;
-  icon: ComponentType<{ className?: string }>;
+  iconName: string; // string name — resolved to component on the client
   exact?: boolean;
   pending?: number;
 };
@@ -40,13 +39,6 @@ export function useSetNavMeta() {
   return useContext(NavTabsContext).setMeta;
 }
 
-// Backwards-compat shims
 export function useNavTabs() {
   return useContext(NavTabsContext).meta.tabs;
-}
-
-export function useSetNavTabs() {
-  const setMeta = useContext(NavTabsContext).setMeta;
-  const meta = useContext(NavTabsContext).meta;
-  return (tabs: NavTab[]) => setMeta({ ...meta, tabs });
 }
