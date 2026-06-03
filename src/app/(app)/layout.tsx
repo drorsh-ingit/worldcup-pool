@@ -21,7 +21,7 @@ export default async function AppLayout({
 
   return (
     <NavShell>
-      <div className="min-h-screen bg-neutral-50">
+      <div className="min-h-screen bg-neutral-50 pb-16 sm:pb-0">
         <AppNav user={session.user} groups={groups} />
         <main
           className="max-w-screen-2xl mx-auto page-x-pad"

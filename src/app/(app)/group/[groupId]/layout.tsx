@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { SimulationBanner } from "@/components/simulation-banner";
+import { GroupTabs } from "@/components/group-tabs";
 import { SetNavTabs } from "@/components/set-nav-tabs";
 import { getPendingBetCounts } from "@/lib/pending-bets";
 import type { GroupSettings } from "@/lib/settings";
@@ -74,9 +75,14 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
         </div>
       )}
 
+      {/* Mobile bottom tab bar */}
+      <GroupTabs groupId={groupId} isAdmin={isAdmin} pendingBets={pendingBets} mobileOnly />
+
       <div style={{ paddingTop: 20 }}>
         {children}
       </div>
+      {/* Spacer for fixed bottom nav on mobile */}
+      <div className="sm:hidden" style={{ height: 80 }} aria-hidden="true" />
     </div>
   );
 }
