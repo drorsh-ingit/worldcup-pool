@@ -9,9 +9,10 @@ interface GroupTabsProps {
   groupId: string;
   isAdmin?: boolean;
   pendingBets?: { matches: number; tournament: number };
+  mobileOnly?: boolean;
 }
 
-export function GroupTabs({ groupId, isAdmin, pendingBets }: GroupTabsProps) {
+export function GroupTabs({ groupId, isAdmin, pendingBets, mobileOnly }: GroupTabsProps) {
   const pathname = usePathname();
   const base = `/group/${groupId}`;
 
@@ -27,8 +28,8 @@ export function GroupTabs({ groupId, isAdmin, pendingBets }: GroupTabsProps) {
 
   return (
     <>
-      {/* Desktop / tablet: unified header tab row */}
-      <div className="hidden sm:flex" style={{ gap: 32 }}>
+      {/* Desktop / tablet: unified header tab row — hidden when mobileOnly */}
+      <div className={mobileOnly ? "hidden" : "hidden sm:flex"} style={{ gap: 32 }}>
         {tabs.map((t) => {
           const active = isActive(t.href, t.exact);
           const Icon = t.icon;

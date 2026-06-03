@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { AppNav } from "@/components/app-nav";
+import { NavShell } from "@/components/nav-shell";
 
 export default async function AppLayout({
   children,
@@ -19,14 +20,16 @@ export default async function AppLayout({
   const groups = memberships.map((m) => ({ id: m.group.id, name: m.group.name }));
 
   return (
-    <div className="min-h-screen bg-neutral-50 pb-16 sm:pb-0">
-      <AppNav user={session.user} groups={groups} />
-      <main
-        className="max-w-screen-2xl mx-auto page-x-pad"
-        style={{ paddingBottom: "8rem" }}
-      >
-        {children}
-      </main>
-    </div>
+    <NavShell>
+      <div className="min-h-screen bg-neutral-50 pb-16 sm:pb-0">
+        <AppNav user={session.user} groups={groups} />
+        <main
+          className="max-w-screen-2xl mx-auto page-x-pad"
+          style={{ paddingBottom: "8rem" }}
+        >
+          {children}
+        </main>
+      </div>
+    </NavShell>
   );
 }

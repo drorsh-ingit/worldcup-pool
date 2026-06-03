@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
 import { LogOut, ChevronDown, Check, Plus } from "lucide-react";
 import { MatchdayLogo } from "@/components/matchday-logo";
+import { NavTabsProvider, useNavTabs } from "@/lib/nav-tabs-context";
+import { cn } from "@/lib/utils";
 
 interface GroupOption {
   id: string;
@@ -17,10 +19,15 @@ interface AppNavProps {
   groups: GroupOption[];
 }
 
-export function AppNav({ user, groups }: AppNavProps) {
+function AppNavInner({ user, groups }: AppNavProps) {
   const params = useParams<{ groupId?: string }>();
+  const pathname = usePathname();
   const currentGroupId = params?.groupId;
   const currentGroup = groups.find((g) => g.id === currentGroupId);
+  const tabs = useNavTabs();
+
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userRef = useRef<HTMLDivElement>(null);
@@ -42,27 +49,58 @@ export function AppNav({ user, groups }: AppNavProps) {
       {/* Pitch-green accent stripe */}
       <div className="h-1 w-full" style={{ backgroundColor: "#4a8c2a" }} />
 
-      <div className="max-w-screen-2xl mx-auto page-x-pad h-16 flex items-center justify-between" style={{ gap: 16 }}>
+      <div className="max-w-screen-2xl mx-auto page-x-pad h-14 flex items-center justify-between" style={{ gap: 16 }}>
         {/* Brand + current group label */}
-        <div className="flex items-center min-w-0 flex-1" style={{ gap: 12 }}>
+        <div className="flex items-center shrink-0" style={{ gap: 12 }}>
           <Link href="/dashboard" className="shrink-0" aria-label="Home">
             <span className="hidden sm:block">
-              <MatchdayLogo size={34} />
+              <MatchdayLogo size={30} />
             </span>
             <span className="sm:hidden">
-              <MatchdayLogo variant="icon" size={34} />
+              <MatchdayLogo variant="icon" size={30} />
             </span>
           </Link>
 
           {currentGroup && (
             <>
               <span className="text-neutral-200 text-xl font-light hidden sm:inline">/</span>
-              <span className="text-sm font-medium text-neutral-700 truncate">
+              <span className="text-sm font-medium text-neutral-700 truncate hidden sm:inline max-w-[140px]">
                 {currentGroup.name}
               </span>
             </>
           )}
         </div>
+
+        {/* Desktop tabs — injected from group layout via context */}
+        {tabs.length > 0 && (
+          <nav className="hidden sm:flex items-center h-full flex-1 justify-center" style={{ gap: 4 }}>
+            {tabs.map((t) => {
+              const active = isActive(t.href, t.exact);
+              const Icon = t.icon;
+              return (
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  className={cn(
+                    "relative h-14 inline-flex items-center text-sm transition-colors border-b-2 px-4",
+                    active
+                      ? "border-emerald-600 text-neutral-900 font-semibold"
+                      : "border-transparent text-neutral-500 hover:text-neutral-800 font-medium"
+                  )}
+                  style={{ gap: 7 }}
+                >
+                  <Icon className={cn("w-4 h-4 shrink-0", active ? "text-emerald-600" : "text-neutral-400")} />
+                  {t.label}
+                  {(t.pending ?? 0) > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-semibold leading-none" style={{ paddingLeft: 5, paddingRight: 5 }}>
+                      {t.pending}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
 
         {/* User menu */}
         <div className="relative shrink-0" ref={userRef}>
@@ -172,4 +210,8 @@ export function AppNav({ user, groups }: AppNavProps) {
       </div>
     </header>
   );
+}
+
+export function AppNav(props: AppNavProps) {
+  return <AppNavInner {...props} />;
 }
