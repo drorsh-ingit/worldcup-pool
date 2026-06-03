@@ -48,39 +48,58 @@ function AppNavInner({ user, groups }: AppNavProps) {
 
   const userInitial = user.name?.charAt(0).toUpperCase() ?? "?";
 
+  // Shared tab renderer used on both desktop and mobile
+  function renderTab(t: typeof tabs[number]) {
+    const active = isActive(t.href, t.exact);
+    const Icon = ICON_MAP[t.iconName];
+    return (
+      <Link
+        key={t.href}
+        href={t.href}
+        className={cn(
+          "inline-flex items-center text-sm font-medium transition-all rounded-full whitespace-nowrap shrink-0",
+          active
+            ? "bg-neutral-900 text-white"
+            : "text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100"
+        )}
+        style={{ gap: 7, paddingLeft: 13, paddingRight: 13, paddingTop: 7, paddingBottom: 7 }}
+      >
+        {Icon && <Icon className={cn("w-4 h-4 shrink-0", active ? "text-white" : "text-neutral-400")} />}
+        {t.label}
+        {(t.pending ?? 0) > 0 && (
+          <span className="inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-semibold leading-none" style={{ paddingLeft: 5, paddingRight: 5 }}>
+            {t.pending}
+          </span>
+        )}
+      </Link>
+    );
+  }
+
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-neutral-200 shadow-sm">
       {/* Pitch-green accent stripe */}
       <div className="h-1 w-full" style={{ backgroundColor: "#4a8c2a" }} />
 
-      <div className="max-w-screen-2xl mx-auto page-x-pad h-16 flex items-center justify-between" style={{ gap: 24 }}>
+      {/* Main bar */}
+      <div className="max-w-screen-2xl mx-auto page-x-pad h-14 sm:h-16 flex items-center justify-between" style={{ gap: 16 }}>
         {/* Logo + label */}
         <div className="flex items-center shrink-0" style={{ gap: 10 }}>
           <Link href="/dashboard" className="shrink-0" aria-label="Home">
             {tournamentLogo ? (
-              <img
-                src={tournamentLogo}
-                alt={tournamentName ?? "Tournament"}
-                style={{ width: 36, height: 36, objectFit: "contain" }}
-              />
+              <img src={tournamentLogo} alt={tournamentName ?? "Tournament"} style={{ width: 32, height: 32, objectFit: "contain" }} />
             ) : (
-              <>
-                <span className="hidden sm:block"><MatchdayLogo size={30} /></span>
-                <span className="sm:hidden"><MatchdayLogo variant="icon" size={30} /></span>
-              </>
+              <MatchdayLogo size={30} />
             )}
           </Link>
-
-          {/* Text label next to logo — tournament name + group name */}
           {(tournamentName || currentGroup) && (
-            <div className="hidden sm:flex flex-col justify-center leading-tight">
+            <div className="flex flex-col justify-center leading-tight">
               {tournamentName && (
-                <span className="text-[11px] font-medium text-neutral-400 uppercase tracking-wide">
+                <span className="text-[10px] sm:text-[11px] font-medium text-neutral-400 uppercase tracking-wide">
                   {tournamentName}
                 </span>
               )}
               {currentGroup && (
-                <span className="text-sm font-bold text-neutral-900">
+                <span className="text-sm font-bold text-neutral-900 truncate max-w-[120px] sm:max-w-[160px]">
                   {currentGroup.name}
                 </span>
               )}
@@ -88,34 +107,10 @@ function AppNavInner({ user, groups }: AppNavProps) {
           )}
         </div>
 
-        {/* Desktop tabs — left-aligned, injected from group layout via context */}
+        {/* Desktop tabs — left-aligned */}
         {tabs.length > 0 ? (
-          <nav className="hidden sm:flex items-center h-16 flex-1" style={{ gap: 0 }}>
-            {tabs.map((t) => {
-              const active = isActive(t.href, t.exact);
-              const Icon = ICON_MAP[t.iconName];
-              return (
-                <Link
-                  key={t.href}
-                  href={t.href}
-                  className={cn(
-                    "inline-flex items-center text-sm font-medium transition-all rounded-full",
-                    active
-                      ? "bg-neutral-900 text-white"
-                      : "text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100"
-                  )}
-                  style={{ gap: 7, paddingLeft: 14, paddingRight: 14, paddingTop: 7, paddingBottom: 7 }}
-                >
-                  {Icon && <Icon className={cn("w-4 h-4 shrink-0", active ? "text-white" : "text-neutral-400")} />}
-                  {t.label}
-                  {(t.pending ?? 0) > 0 && (
-                    <span className="inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-semibold leading-none" style={{ paddingLeft: 5, paddingRight: 5 }}>
-                      {t.pending}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+          <nav className="hidden sm:flex items-center h-16 flex-1" style={{ gap: 4 }}>
+            {tabs.map(renderTab)}
           </nav>
         ) : (
           <div className="flex-1" />
@@ -227,6 +222,15 @@ function AppNavInner({ user, groups }: AppNavProps) {
           )}
         </div>
       </div>
+
+      {/* Mobile tab row — scrollable, shown only on small screens when tabs exist */}
+      {tabs.length > 0 && (
+        <div className="sm:hidden border-t border-neutral-100 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+          <nav className="flex page-x-pad" style={{ gap: 4, paddingTop: 8, paddingBottom: 8, minWidth: "max-content" }}>
+            {tabs.map(renderTab)}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
