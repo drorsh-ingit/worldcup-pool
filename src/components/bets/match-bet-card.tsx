@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Lock, MapPin, Clock, ChevronUp, ChevronDown } from "lucide-react";
 import { placeBet } from "@/lib/actions/bets";
 import { getLiveMatchScore, type LiveScore } from "@/lib/actions/live-scores";
@@ -85,6 +86,7 @@ export function MatchBetCard({
   const [awayScore, setAwayScore] = useState<string>(
     currentCorrectScore?.awayScore?.toString() ?? ""
   );
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(currentCorrectScore?.homeScore != null);
@@ -193,7 +195,7 @@ export function MatchBetCard({
       const results = await Promise.all(ops);
       setSaving(false);
       const firstError = results.find((r) => r.error)?.error;
-      if (firstError) { setError(firstError); } else { lastSavedRef.current = current; setSaved(true); }
+      if (firstError) { setError(firstError); } else { lastSavedRef.current = current; setSaved(true); router.refresh(); }
     }, 500);
 
     return () => clearTimeout(timer);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle, Lock, ChevronDown } from "lucide-react";
 import { placeBet } from "@/lib/actions/bets";
 import { Flag, CircleFlag } from "@/components/flag";
@@ -47,6 +48,7 @@ export function TeamPicker({
   resolution,
   earnedPoints,
 }: TeamPickerProps) {
+  const router = useRouter();
   const [selected, setSelected] = useState<string>(currentPrediction?.teamCode ?? "");
   const [saved, setSaved] = useState(!!currentPrediction?.teamCode);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +86,7 @@ export function TeamPicker({
         prediction: { teamCode: code, ...(odds != null && { odds }) },
       });
       if (result.error) setError(result.error);
-      else setSaved(true);
+      else { setSaved(true); router.refresh(); }
     });
   }
 
@@ -311,6 +313,7 @@ export function GroupPredictionsPicker({
   resolution,
   groupStandings,
 }: GroupPredictionsPickerProps) {
+  const router = useRouter();
   // picks[letter] = [winner, advancer1, advancer2]
   const [picks, setPicks] = useState<Record<string, string[]>>(currentPrediction ?? {});
   const [saving, setSaving] = useState(false);
@@ -325,7 +328,7 @@ export function GroupPredictionsPicker({
     const result = await placeBet(groupId, { tournamentId, betTypeId, prediction: newPicks });
     setSaving(false);
     if (result.error) setError(result.error);
-    else setSaved(true);
+    else { setSaved(true); router.refresh(); }
   }
 
   // Storage convention: picks[letter] = [winner, ...advancers]. Index 0 is the
@@ -671,6 +674,7 @@ export function SemifinalistsPicker({
   pointsByTeam,
   resolution,
 }: SemifinalistsPickerProps) {
+  const router = useRouter();
   const [picks, setPicks] = useState<Set<string>>(new Set(currentPrediction?.teams ?? []));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(!!(currentPrediction?.teams?.length));
@@ -697,7 +701,7 @@ export function SemifinalistsPicker({
       });
       setSaving(false);
       if (result.error) setError(result.error);
-      else setSaved(true);
+      else { setSaved(true); router.refresh(); }
     }
   }
 
