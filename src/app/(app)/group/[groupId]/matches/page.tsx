@@ -70,6 +70,15 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
     filteredMatches.find((m) => m.status !== "COMPLETED" && new Date(m.kickoffAt) > effectiveNow) ??
     [...filteredMatches].reverse().find((m) => m.status === "COMPLETED");
 
+  // Don't auto-scroll if the target is already the first match — no need to scroll
+  const sortedByKickoff = [...filteredMatches].sort(
+    (a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime()
+  );
+  const scrollTarget =
+    nextUpcomingMatch && nextUpcomingMatch.id !== sortedByKickoff[0]?.id
+      ? nextUpcomingMatch
+      : null;
+
   type MatchGroup = { label: string; matches: typeof filteredMatches };
 
   function buildGroups(): MatchGroup[] {
@@ -149,7 +158,7 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
 
   return (
     <div className="flex flex-col" style={{ gap: 32 }}>
-      {nextUpcomingMatch && <ScrollToMatch matchId={nextUpcomingMatch.id} />}
+      {scrollTarget && <ScrollToMatch matchId={scrollTarget.id} />}
 
       <h1 className="text-4xl font-black tracking-tight text-neutral-900">Matches</h1>
 
