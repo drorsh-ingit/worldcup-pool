@@ -83,6 +83,23 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
             </div>
           </div>
 
+          {/* Name */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <label htmlFor="name" className="text-sm font-medium text-neutral-700">Display name</label>
+            <input
+              id="name" name="name" type="text" required maxLength={50}
+              value={name} onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              className="w-full h-11 rounded-xl border border-neutral-300 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+              style={{ paddingLeft: 14, paddingRight: 14 }}
+            />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <label className="text-sm font-medium text-neutral-700">Email</label>
+            <p className="text-sm text-neutral-500 h-11 flex items-center" style={{ paddingLeft: 14 }}>{email}</p>
+          </div>
+
           {/* Avatar style picker */}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div className="flex items-center justify-between">
@@ -164,23 +181,6 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
                 />
               ))}
             </div>
-          </div>
-
-          {/* Name */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label htmlFor="name" className="text-sm font-medium text-neutral-700">Display name</label>
-            <input
-              id="name" name="name" type="text" required maxLength={50}
-              value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              className="w-full h-11 rounded-xl border border-neutral-300 text-sm text-neutral-900 placeholder:text-neutral-400 hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
-              style={{ paddingLeft: 14, paddingRight: 14 }}
-            />
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label className="text-sm font-medium text-neutral-700">Email</label>
-            <p className="text-sm text-neutral-500 h-11 flex items-center" style={{ paddingLeft: 14 }}>{email}</p>
           </div>
 
           {error && <p className="text-sm text-red-500 rounded-xl bg-red-50" style={{ padding: 12 }}>{error}</p>}
