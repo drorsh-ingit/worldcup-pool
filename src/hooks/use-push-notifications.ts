@@ -15,6 +15,8 @@ export function usePushNotifications() {
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator)) {
@@ -32,14 +34,30 @@ export function usePushNotifications() {
   }, []);
 
   async function subscribe() {
-    if (!("serviceWorker" in navigator)) return;
+    setDebugInfo(null);
+    if (!("serviceWorker" in navigator)) {
+      setDebugInfo("No service worker support");
+      return;
+    }
+    if (!("Notification" in window)) {
+      setDebugInfo("No Notification API");
+      return;
+    }
+    if (!("PushManager" in window)) {
+      setDebugInfo("No PushManager — requires iOS 16.4+ PWA");
+      return;
+    }
     setLoading(true);
     try {
-      const permission = await Notification.requestPermission();
-      setPermission(permission);
-      if (permission !== "granted") return;
+      setDebugInfo("Requesting permission...");
+      const perm = await Notification.requestPermission();
+      setPermission(perm);
+      setDebugInfo(`Permission: ${perm}`);
+      if (perm !== "granted") return;
 
+      setDebugInfo("Waiting for SW...");
       const reg = await navigator.serviceWorker.ready;
+      setDebugInfo("Subscribing to push...");
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
@@ -47,15 +65,21 @@ export function usePushNotifications() {
         ),
       });
 
+      setDebugInfo("Saving subscription...");
       const json = sub.toJSON();
-      await fetch("/api/push", {
+      const res = await fetch("/api/push", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
       });
+      if (!res.ok) {
+        setDebugInfo(`Server error: ${res.status}`);
+        return;
+      }
       setSubscribed(true);
-    } catch {
-      // Permission denied or SW error — silently ignore
+      setDebugInfo(null);
+    } catch (err) {
+      setDebugInfo(`Error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -81,5 +105,5 @@ export function usePushNotifications() {
     }
   }
 
-  return { permission, subscribed, loading, subscribe, unsubscribe };
+  return { permission, subscribed, loading, subscribe, unsubscribe, debugInfo };
 }

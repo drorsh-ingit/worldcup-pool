@@ -22,7 +22,7 @@ interface Props {
 export function SettingsForm({ initialName, realName, email, initialColor, initialStyle, initialSeed, userId }: Props) {
   const { update } = useSession();
   const router = useRouter();
-  const { permission, subscribed, loading: pushLoading, subscribe, unsubscribe } = usePushNotifications();
+  const { permission, subscribed, loading: pushLoading, subscribe, unsubscribe, debugInfo } = usePushNotifications();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -228,6 +228,11 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
                     {pushLoading ? "…" : subscribed ? "Turn off" : "Turn on"}
                   </button>
                 </div>
+
+                {/* Debug info */}
+                {debugInfo && (
+                  <p className="text-xs font-mono text-amber-700 bg-amber-50 rounded-lg" style={{ padding: "6px 10px" }}>{debugInfo}</p>
+                )}
 
                 {/* Install instructions */}
                 {!subscribed && permission !== "granted" && (
