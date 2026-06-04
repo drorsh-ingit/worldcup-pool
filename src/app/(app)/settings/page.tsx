@@ -11,7 +11,7 @@ export default async function SettingsPage() {
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, email: true, avatarColor: true, avatarEmoji: true },
+    select: { name: true, email: true, avatarColor: true, avatarStyle: true, avatarSeed: true },
   });
 
   return (
@@ -19,7 +19,8 @@ export default async function SettingsPage() {
       initialName={user?.name ?? ""}
       email={user?.email ?? ""}
       initialColor={user?.avatarColor ?? null}
-      initialEmoji={user?.avatarEmoji ?? null}
+      initialStyle={user?.avatarStyle ?? null}
+      initialSeed={user?.avatarSeed ?? null}
       userId={session.user.id}
     />
   );

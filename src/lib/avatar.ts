@@ -32,12 +32,28 @@ export function getInitials(name: string): string {
 
 export const AVATAR_COLOR_OPTIONS = AVATAR_COLORS.map((c, i) => ({ ...c, id: i }));
 
-/** Illustrated emoji avatars — shown instead of initials when selected */
-export const AVATAR_EMOJIS = [
-  // Football / sports
-  "⚽", "🏆", "🥇", "⭐", "🔥", "💥", "🎯", "🏅",
-  // Animals
-  "🦁", "🐯", "🦊", "🐺", "🦅", "🐬", "🦈", "🦋",
-  // Fun
-  "🚀", "👑", "💎", "🎭", "🌟", "🎪", "🤖", "🐉",
-];
+/** DiceBear avatar styles */
+export const DICEBEAR_STYLES = [
+  { id: "adventurer",  label: "Adventurer" },
+  { id: "avataaars",   label: "Avataaars" },
+  { id: "bottts",      label: "Bots" },
+  { id: "fun-emoji",   label: "Fun Emoji" },
+  { id: "lorelei",     label: "Lorelei" },
+  { id: "micah",       label: "Micah" },
+  { id: "notionists",  label: "Notionists" },
+  { id: "personas",    label: "Personas" },
+  { id: "pixel-art",   label: "Pixel Art" },
+  { id: "thumbs",      label: "Thumbs" },
+  { id: "croodles",    label: "Croodles" },
+  { id: "shapes",      label: "Shapes" },
+] as const;
+
+/** Build a DiceBear avatar URL */
+export function dicebearUrl(style: string, seed: string): string {
+  return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}&radius=50`;
+}
+
+/** Random seed string */
+export function randomSeed(): string {
+  return Math.random().toString(36).slice(2, 10);
+}

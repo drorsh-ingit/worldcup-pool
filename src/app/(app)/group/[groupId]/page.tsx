@@ -4,7 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { PendingMembers } from "@/components/pending-members";
 import { cn } from "@/lib/utils";
-import { getInitials, getAvatarColor, AVATAR_COLOR_OPTIONS } from "@/lib/avatar";
+import { getInitials, getAvatarColor, AVATAR_COLOR_OPTIONS, dicebearUrl } from "@/lib/avatar";
 
 interface GroupPageProps {
   params: Promise<{ groupId: string }>;
@@ -32,7 +32,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
     where: { id: groupId },
     include: {
       members: {
-        include: { user: { select: { id: true, name: true, email: true, avatarColor: true, avatarEmoji: true } } },
+        include: { user: { select: { id: true, name: true, email: true, avatarColor: true, avatarStyle: true, avatarSeed: true } } },
         orderBy: { joinedAt: "asc" },
       },
     },
@@ -58,7 +58,8 @@ export default async function GroupPage({ params }: GroupPageProps) {
         userId: m.userId,
         name: m.user.name,
         avatarColor: m.user.avatarColor,
-        avatarEmoji: m.user.avatarEmoji,
+        avatarStyle: m.user.avatarStyle,
+        avatarSeed: m.user.avatarSeed,
         role: m.role,
         totalPoints: entry?.totalPoints ?? 0,
         tournamentPts: entry?.tournamentPts ?? 0,
@@ -162,9 +163,13 @@ export default async function GroupPage({ params }: GroupPageProps) {
                       ? AVATAR_COLOR_OPTIONS[s.avatarColor]
                       : getAvatarColor(s.userId);
                     return (
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: color.bg, color: color.text, fontSize: s.avatarEmoji ? 16 : 11, fontWeight: s.avatarEmoji ? "normal" : "bold" }}>
-                        {s.avatarEmoji ?? getInitials(s.name)}
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: color.bg }}>
+                        {s.avatarStyle ? (
+                          <img src={dicebearUrl(s.avatarStyle, s.avatarSeed ?? s.userId)} alt="" className="w-full h-full" />
+                        ) : (
+                          <span style={{ color: color.text, fontSize: 11, fontWeight: "bold" }}>{getInitials(s.name)}</span>
+                        )}
                       </div>
                     );
                   })()}
