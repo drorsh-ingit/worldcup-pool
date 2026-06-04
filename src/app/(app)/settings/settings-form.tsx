@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { updateProfile } from "@/lib/actions/profile";
@@ -17,6 +18,7 @@ interface Props {
 
 export function SettingsForm({ initialName, email, initialColor, initialEmoji, userId }: Props) {
   const { update } = useSession();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -45,6 +47,7 @@ export function SettingsForm({ initialName, email, initialColor, initialEmoji, u
     } else {
       await update();
       setSuccess(true);
+      router.refresh(); // re-fetch server component so initial* props update
     }
     setLoading(false);
   }
