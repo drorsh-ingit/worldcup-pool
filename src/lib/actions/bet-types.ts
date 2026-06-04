@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { refreshOddsForBetType, snapshotOddsForBetType } from "@/lib/actions/refresh-odds";
 import { getProfile } from "@/lib/tournaments/registry";
+import { scoreBets } from "@/lib/scoring";
 import type { BetOpenTrigger } from "@prisma/client";
 
 async function requireAdmin(groupId: string) {
@@ -84,6 +85,12 @@ export async function resolveBetType(
 ) {
   await requireAdmin(groupId);
 
+  const betType = await db.betType.findUnique({
+    where: { id: betTypeId },
+    select: { tournamentId: true },
+  });
+  if (!betType) return { error: "Bet type not found" };
+
   await db.betType.update({
     where: { id: betTypeId },
     data: {
@@ -93,8 +100,12 @@ export async function resolveBetType(
     },
   });
 
+  // Score all bets for this bet type and update the leaderboard
+  await scoreBets(groupId, betType.tournamentId, null, betTypeId);
+
   revalidatePath(`/group/${groupId}/admin`);
   revalidatePath(`/group/${groupId}/bets`);
+  revalidatePath(`/group/${groupId}`);
 
   return { success: true };
 }
