@@ -34,7 +34,6 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
 
   const LOGO_SRCS: Record<string, string> = {
     WC_2026: "/logos/wc2026.webp",
-    UCL_2026: "/logos/ucl2026.svg",
   };
 
   const [tournament, pendingBets] = await Promise.all([

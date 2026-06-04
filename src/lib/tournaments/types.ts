@@ -9,7 +9,7 @@
 import type { BetCategory, BetOpenTrigger, MatchPhase } from "@prisma/client";
 import type { DEFAULT_GROUP_SETTINGS } from "@/lib/settings";
 
-export type TournamentKind = "WC_2026" | "UCL_2026";
+export type TournamentKind = "WC_2026";
 
 export interface TeamSeed {
   name: string;

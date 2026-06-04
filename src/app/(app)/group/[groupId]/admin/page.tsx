@@ -13,7 +13,6 @@ import { DeleteGroupButton } from "@/components/admin/delete-group-button";
 import { SyncResultsButton } from "@/components/admin/sync-results-button";
 import { RecalculateStandingsButton } from "@/components/admin/recalculate-standings-button";
 import { ResetTournamentButton } from "@/components/admin/reset-tournament-button";
-import { DebugCLFixturesButton } from "@/components/admin/debug-cl-fixtures-button";
 import { resolveGroupSettings, type GroupSettings } from "@/lib/settings";
 import { GOLDEN_BOOT_CANDIDATES } from "@/lib/data/wc2026";
 import { calculatePoints } from "@/lib/scoring";
@@ -181,46 +180,28 @@ export default async function AdminPage({ params }: AdminPageProps) {
               <SyncResultsButton groupId={groupId} />
               <RecalculateStandingsButton groupId={groupId} />
               <ResetTournamentButton groupId={groupId} />
-              {tournament.kind === "UCL_2026" && (
-                <DebugCLFixturesButton groupId={groupId} />
-              )}
             </div>
 
             {/* Groups / Teams overview */}
             <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
               <div className="px-4 py-2.5 border-b border-neutral-100 bg-neutral-50">
-                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                  {tournament.kind === "UCL_2026" ? "League Phase — Teams" : "Groups & Teams"}
-                </p>
+                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Groups & Teams</p>
               </div>
-              {tournament.kind === "UCL_2026" ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-px bg-neutral-100">
-                  {[...tournament.teams]
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((t) => (
-                      <div key={t.id} className="bg-white p-3 flex items-center gap-2">
-                        <span className="text-xs font-semibold text-neutral-500 w-8 shrink-0">{t.code}</span>
-                        <span className="text-xs text-neutral-700 truncate">{t.name}</span>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-px bg-neutral-100">
-                  {["A","B","C","D","E","F","G","H","I","J","K","L"].map((letter) => {
-                    const groupTeams = tournament.teams.filter((t) => t.groupLetter === letter);
-                    return (
-                      <div key={letter} className="bg-white p-3">
-                        <p className="text-xs font-semibold text-pitch-500 mb-1.5">Group {letter}</p>
-                        {groupTeams.map((t) => (
-                          <p key={t.id} className="text-xs text-neutral-700 leading-5">
-                            {t.code} — {t.name}
-                          </p>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-px bg-neutral-100">
+                {["A","B","C","D","E","F","G","H","I","J","K","L"].map((letter) => {
+                  const groupTeams = tournament.teams.filter((t) => t.groupLetter === letter);
+                  return (
+                    <div key={letter} className="bg-white p-3">
+                      <p className="text-xs font-semibold text-pitch-500 mb-1.5">Group {letter}</p>
+                      {groupTeams.map((t) => (
+                        <p key={t.id} className="text-xs text-neutral-700 leading-5">
+                          {t.code} — {t.name}
+                        </p>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

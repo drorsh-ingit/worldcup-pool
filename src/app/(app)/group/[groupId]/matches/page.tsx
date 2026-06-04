@@ -176,7 +176,7 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
                 }`}
                 style={{ height: 36, whiteSpace: "nowrap", paddingLeft: 20, paddingRight: 20 }}
               >
-                {phaseLabel(p, data.tournament.kind)}
+                {phaseLabel(p)}
               </Link>
             ))}
           </div>

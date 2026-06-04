@@ -9,7 +9,6 @@ import type { TournamentKind } from "@/lib/tournaments/types";
 
 const LOGO_SRCS: Record<TournamentKind, string> = {
   WC_2026: "/logos/wc2026.webp",
-  UCL_2026: "/logos/ucl2026.svg",
 };
 
 function TournamentLogo({ id, size = 40 }: { id: TournamentKind; size?: number }) {

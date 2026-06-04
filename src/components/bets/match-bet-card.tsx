@@ -54,12 +54,8 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function phaseLabel(phase: string, groupLetter: string | null, tournamentKind?: string): string {
-  if (phase === "GROUP" && groupLetter && tournamentKind !== "UCL_2026") return `Group ${groupLetter}`;
-  if (tournamentKind === "UCL_2026") {
-    if (phase === "GROUP") return "League Phase";
-    if (phase === "R32") return "Playoffs";
-  }
+function phaseLabel(phase: string, groupLetter: string | null): string {
+  if (phase === "GROUP" && groupLetter) return `Group ${groupLetter}`;
   const labels: Record<string, string> = {
     GROUP: "Group Stage", R32: "Round of 32", R16: "Round of 16",
     QF: "Quarter-final", SF: "Semi-final", FINAL: "Final", THIRD: "3rd Place",
@@ -236,7 +232,7 @@ export function MatchBetCard({
       <div className="flex items-center justify-between" style={{ gap: 12, padding: "14px 20px 12px" }}>
         <div className="inline-flex items-center text-sm text-neutral-600 min-w-0" style={{ gap: 6 }}>
           <MapPin className="w-4 h-4 text-neutral-400 shrink-0" />
-          <span className="font-medium text-neutral-800 whitespace-nowrap">{phaseLabel(match.phase, match.groupLetter, tournamentKind)}</span>
+          <span className="font-medium text-neutral-800 whitespace-nowrap">{phaseLabel(match.phase, match.groupLetter)}</span>
           <span className="text-neutral-300" style={{ paddingLeft: 2, paddingRight: 2 }}>·</span>
           <Clock className="w-4 h-4 text-neutral-400 shrink-0" />
           <span className="tabular-nums whitespace-nowrap">

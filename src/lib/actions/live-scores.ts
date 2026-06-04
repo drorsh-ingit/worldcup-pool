@@ -221,13 +221,7 @@ export async function syncCompetitionResults(
 
   let fdMatches: FDMatch[];
   try {
-    if (tournament.kind === "UCL_2026") {
-      fdMatches = await fetchCLSchedule();
-    } else if (tournament.kind === "WC_2026") {
-      fdMatches = await fetchWCSchedule();
-    } else {
-      return { error: "Unsupported tournament kind" };
-    }
+    fdMatches = await fetchWCSchedule();
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to fetch schedule" };
   }

@@ -163,26 +163,7 @@ export async function initTournament(groupId: string, kind: TournamentKind = "WC
   const teams = await db.team.findMany({ where: { tournamentId: tournament.id } });
   const teamByCode = Object.fromEntries(teams.map((t) => [t.code, t]));
 
-  // For UCL, seed only real fixtures from football-data.org (no fictional fallback for past phases).
-  let matchSeeds: readonly MatchSeed[] = profile.matches;
-  if (kind === "UCL_2026") {
-    try {
-      const real = await fetchRealCLMatchSeeds();
-      if (real.length > 0) {
-        // SF/FINAL teams are often TBD in the API until confirmed — always fall back
-        // to profile placeholders for those phases so those tabs exist in the DB.
-        const realPhases = new Set(real.map((m) => m.phase));
-        const supplement = profile.matches.filter(
-          (m) => (m.phase === "SF" || m.phase === "FINAL") && !realPhases.has(m.phase)
-        );
-        matchSeeds = [...real, ...supplement];
-      }
-    } catch {
-      // API unavailable — fall back to generated fixtures silently
-    }
-  }
-
-  const matchesData = matchSeeds
+  const matchesData = profile.matches
     .filter((m) => teamByCode[m.homeCode] && teamByCode[m.awayCode])
     .map((m) => ({
       tournamentId: tournament.id,

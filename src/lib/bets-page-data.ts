@@ -17,12 +17,7 @@ export const PHASE_LABELS: Record<string, string> = {
 };
 export const PHASE_ORDER = ["GROUP", "R32", "R16", "QF", "SF", "FINAL"];
 
-/** Phase label that adapts to tournament kind — UCL calls the "R32" round the Playoffs. */
-export function phaseLabel(phase: string, tournamentKind?: string): string {
-  if (tournamentKind === "UCL_2026") {
-    if (phase === "GROUP") return "League Phase";
-    if (phase === "R32") return "Playoffs";
-  }
+export function phaseLabel(phase: string): string {
   return PHASE_LABELS[phase] ?? phase;
 }
 

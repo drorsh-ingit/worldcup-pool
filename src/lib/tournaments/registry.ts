@@ -4,14 +4,12 @@
  */
 
 import { wc2026Profile } from "./wc2026";
-import { ucl2026Profile } from "./ucl2026";
 import type { TournamentKind, TournamentProfile } from "./types";
 
 export type { TournamentKind, TournamentProfile } from "./types";
 
 export const TOURNAMENT_PROFILES: Record<TournamentKind, TournamentProfile> = {
   WC_2026: wc2026Profile,
-  UCL_2026: ucl2026Profile,
 };
 
 export const TOURNAMENT_KINDS: TournamentKind[] = Object.keys(

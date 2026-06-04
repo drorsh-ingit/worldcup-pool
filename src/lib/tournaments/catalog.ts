@@ -12,5 +12,4 @@ export const TOURNAMENT_CATALOG: ReadonlyArray<{
   shortName: string;
 }> = [
   { id: "WC_2026", displayName: "FIFA World Cup 2026", shortName: "WC 2026" },
-  { id: "UCL_2026", displayName: "UEFA Champions League 2025–26", shortName: "UCL 2026" },
 ];
