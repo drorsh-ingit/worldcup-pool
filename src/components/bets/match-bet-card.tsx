@@ -328,32 +328,30 @@ export function MatchBetCard({
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex items-center border-t border-neutral-100 bg-neutral-50 rounded-b-3xl" style={{ padding: "10px 16px", gap: 8, minHeight: 44 }}>
-        {/* Points — centred, takes all available space */}
-        <div className="flex-1 flex items-center justify-center">
-          {isCompleted ? (
-            noBetCompleted ? (
-              <span className="text-sm font-semibold text-neutral-400">0 pts earned</span>
-            ) : (
-              <span className={`text-base font-bold tabular-nums ${earnedPts != null && earnedPts > 0 ? "text-pitch-700" : "text-neutral-600"}`}>
-                {earnedPts != null && earnedPts > 0 ? `${earnedPts.toFixed(1)} pts earned` : "0 pts earned"}
-              </span>
-            )
-          ) : betsNotOpenYet ? (
-            <span className="text-sm font-medium text-neutral-400">Potential points TBD</span>
-          ) : isPastKickoff && !hasSavedBet ? (
-            <span className="text-sm font-medium text-neutral-400">No bet placed</span>
-          ) : potentialPts != null ? (
-            <span className="text-base font-bold text-neutral-700 tabular-nums">{potentialPts.toFixed(1)} potential pts</span>
+      {/* Footer — points always truly centred; pill overlaid on the right */}
+      <div className="relative flex items-center justify-center border-t border-neutral-100 bg-neutral-50 rounded-b-3xl" style={{ padding: "10px 16px", minHeight: 44 }}>
+        {/* Points — centred relative to the full footer width */}
+        {isCompleted ? (
+          noBetCompleted ? (
+            <span className="text-sm font-semibold text-neutral-400">0 pts earned</span>
           ) : (
-            <span className="text-sm font-medium text-neutral-400">0 potential pts</span>
-          )}
-        </div>
+            <span className={`text-base font-bold tabular-nums ${earnedPts != null && earnedPts > 0 ? "text-pitch-700" : "text-neutral-600"}`}>
+              {earnedPts != null && earnedPts > 0 ? `${earnedPts.toFixed(1)} pts earned` : "0 pts earned"}
+            </span>
+          )
+        ) : betsNotOpenYet ? (
+          <span className="text-sm font-medium text-neutral-400">Potential points TBD</span>
+        ) : isPastKickoff && !hasSavedBet ? (
+          <span className="text-sm font-medium text-neutral-400">No bet placed</span>
+        ) : potentialPts != null ? (
+          <span className="text-base font-bold text-neutral-700 tabular-nums">{potentialPts.toFixed(1)} potential pts</span>
+        ) : (
+          <span className="text-sm font-medium text-neutral-400">0 potential pts</span>
+        )}
 
-        {/* Status pill — fixed to the right */}
+        {/* Status pill — absolute right so it doesn't affect centering */}
         {!(betsNotOpenYet && !hasSavedBet) && (
-          <div className="shrink-0">
+          <div className="absolute right-4">
             <StatusPill
               isLocked={isLocked}
               isCompleted={isCompleted}
