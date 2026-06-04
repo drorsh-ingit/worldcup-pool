@@ -53,7 +53,7 @@ function AppNavInner({ user, groups }: AppNavProps) {
 
       <div className="max-w-screen-2xl mx-auto page-x-pad h-16 flex items-center justify-between" style={{ gap: 24 }}>
         {/* Logo + label */}
-        <div className="flex items-center shrink-0" style={{ gap: 10 }}>
+        <div className="flex items-center min-w-0" style={{ gap: 10, flexShrink: 0, maxWidth: "55%" }}>
           <Link href="/dashboard" className="shrink-0" aria-label="Home">
             {tournamentLogo ? (
               <img
@@ -71,14 +71,14 @@ function AppNavInner({ user, groups }: AppNavProps) {
 
           {/* Text label next to logo — tournament name + group name */}
           {(tournamentName || currentGroup) && (
-            <div className="flex flex-col justify-center leading-tight">
+            <div className="flex flex-col justify-center leading-tight min-w-0">
               {tournamentName && (
-                <span className="text-[11px] font-medium text-neutral-400 uppercase tracking-wide">
+                <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide truncate">
                   {tournamentName}
                 </span>
               )}
               {currentGroup && (
-                <span className="text-sm font-bold text-neutral-900">
+                <span className="text-sm font-bold text-neutral-900 truncate">
                   {currentGroup.name}
                 </span>
               )}
