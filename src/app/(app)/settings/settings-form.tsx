@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Shuffle } from "lucide-react";
+import { ArrowLeft, Loader2, Shuffle, Bell, BellOff } from "lucide-react";
 import Link from "next/link";
 import { updateProfile } from "@/lib/actions/profile";
 import { getInitials, getAvatarColor, AVATAR_COLOR_OPTIONS, DICEBEAR_STYLES, dicebearUrl, randomSeed } from "@/lib/avatar";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 interface Props {
   initialName: string;
@@ -21,6 +22,7 @@ interface Props {
 export function SettingsForm({ initialName, realName, email, initialColor, initialStyle, initialSeed, userId }: Props) {
   const { update } = useSession();
   const router = useRouter();
+  const { permission, subscribed, loading: pushLoading, subscribe, unsubscribe } = usePushNotifications();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -181,6 +183,65 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
                 />
               ))}
             </div>
+          </div>
+
+          {/* Push notifications */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <label className="text-sm font-medium text-neutral-700">Notifications</label>
+
+            {permission === "unsupported" ? (
+              <p className="text-sm text-neutral-400">Push notifications are not supported in this browser.</p>
+            ) : permission === "denied" ? (
+              <div className="rounded-xl bg-neutral-50 border border-neutral-200" style={{ padding: 14 }}>
+                <p className="text-sm text-neutral-500">Notifications are blocked. Enable them in your browser settings, then reload.</p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-neutral-200 bg-neutral-50" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+                <div className="flex items-center justify-between" style={{ gap: 12 }}>
+                  <div className="flex items-center" style={{ gap: 10 }}>
+                    {subscribed
+                      ? <Bell className="w-4 h-4 text-emerald-600 shrink-0" />
+                      : <BellOff className="w-4 h-4 text-neutral-400 shrink-0" />
+                    }
+                    <div>
+                      <p className="text-sm font-medium text-neutral-900">
+                        {subscribed ? "Notifications enabled" : "Enable notifications"}
+                      </p>
+                      <p className="text-xs text-neutral-500" style={{ marginTop: 2 }}>
+                        {subscribed
+                          ? "You'll be notified when new bets open."
+                          : "Get notified when new bets open."}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={subscribed ? unsubscribe : subscribe}
+                    disabled={pushLoading}
+                    className={`text-sm font-medium rounded-lg transition-colors disabled:opacity-50 ${
+                      subscribed
+                        ? "text-neutral-500 bg-white border border-neutral-200 hover:bg-neutral-50"
+                        : "text-white bg-neutral-900 hover:bg-neutral-700"
+                    }`}
+                    style={{ paddingLeft: 14, paddingRight: 14, paddingTop: 7, paddingBottom: 7, whiteSpace: "nowrap" }}
+                  >
+                    {pushLoading ? "…" : subscribed ? "Turn off" : "Turn on"}
+                  </button>
+                </div>
+
+                {/* Install instructions */}
+                {!subscribed && permission !== "granted" && (
+                  <div className="border-t border-neutral-200" style={{ paddingTop: 10 }}>
+                    <p className="text-xs font-medium text-neutral-500" style={{ marginBottom: 6 }}>How to enable on your device:</p>
+                    <ul className="text-xs text-neutral-400" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <li><span className="font-medium text-neutral-500">Android Chrome</span> — tap "Turn on" above, allow when prompted.</li>
+                      <li><span className="font-medium text-neutral-500">Desktop Chrome/Firefox</span> — tap "Turn on", allow in the browser popup.</li>
+                      <li><span className="font-medium text-neutral-500">iPhone/iPad (Safari)</span> — first tap Share → "Add to Home Screen", then open the app from your home screen and tap "Turn on".</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {error && <p className="text-sm text-red-500 rounded-xl bg-red-50" style={{ padding: 12 }}>{error}</p>}

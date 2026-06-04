@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { Prisma, BetCategory } from "@prisma/client";
 import { fetchTournamentWinnerOdds, fetchMatchOdds, fetchPlayerAwardOdds, isConfigured } from "@/lib/odds-api";
+import { sendPushToGroup } from "@/lib/push";
 import { deriveScoreOdds, impliedTotalGoals } from "@/lib/match-odds";
 import { WC2026_API_NAME_TO_CODE, GOLDEN_BALL_CANDIDATES, GOLDEN_GLOVE_CANDIDATES, GOLDEN_BOOT_CANDIDATES } from "@/lib/data/wc2026";
 
@@ -427,7 +428,7 @@ export async function refreshOddsForBetType(
 export async function promoteBetTypeGlobally(
   triggeringTournamentId: string,
   tournamentKind: string,
-  betType: { category: string; subType: string; opensAt: Date | null },
+  betType: { category: string; subType: string; opensAt: Date | null; locksAt?: Date | null },
   options?: { skipRefresh?: boolean; isolated?: boolean }
 ): Promise<void> {
   let frozen: Prisma.InputJsonValue | null = null;
@@ -475,6 +476,13 @@ export async function promoteBetTypeGlobally(
     }
   }
 
+  // Find affected groups BEFORE opening so we know who to notify.
+  const affectedGroups = options?.isolated
+    ? await db.tournament.findUnique({ where: { id: triggeringTournamentId }, select: { groupId: true } })
+        .then((t) => t ? [t.groupId] : [])
+    : await db.tournament.findMany({ where: { kind: tournamentKind }, select: { groupId: true } })
+        .then((ts) => ts.map((t) => t.groupId));
+
   // Open DRAFT bet types — either just this tournament (isolated/simulation mode)
   // or all groups of the same tournament kind (normal mode).
   await db.betType.updateMany({
@@ -491,4 +499,24 @@ export async function promoteBetTypeGlobally(
       ...(frozen != null && { frozenOdds: frozen }),
     },
   });
+
+  // Send push notifications to members of affected groups (skip for simulated groups).
+  if (!options?.isolated && affectedGroups.length > 0) {
+    const betLabel = betType.subType
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+    const locksText = betType.locksAt
+      ? ` — closes ${new Date(betType.locksAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
+      : "";
+
+    for (const groupId of affectedGroups) {
+      sendPushToGroup(groupId, {
+        title: `New bet open: ${betLabel}`,
+        body: `Place your prediction now${locksText}.`,
+        url: betType.category === "PER_GAME"
+          ? `/group/${groupId}/matches`
+          : `/group/${groupId}/bets`,
+      }).catch(() => null); // best-effort — never block the main flow
+    }
+  }
 }
