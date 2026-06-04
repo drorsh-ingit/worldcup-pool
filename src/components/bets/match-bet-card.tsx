@@ -253,7 +253,7 @@ export function MatchBetCard({
         {/* Home team */}
         <div className="flex flex-col items-center min-w-0" style={{ gap: 8 }}>
           <TeamBadge code={match.homeTeamCode} tournamentKind={tournamentKind} size="md" />
-          <span className="font-semibold text-neutral-800 text-center leading-tight w-full line-clamp-2" style={{ fontSize: teamNameSize(match.homeTeamName || match.homeTeamCode), overflowWrap: "anywhere" }}>
+          <span className="font-semibold text-neutral-800 text-center leading-tight w-full line-clamp-2" style={{ fontSize: teamNameSize(match.homeTeamName || match.homeTeamCode) }}>
             {match.homeTeamName || match.homeTeamCode}
           </span>
         </div>
@@ -379,7 +379,7 @@ function ScoreCell({
 }) {
   if (isLocked) {
     const cls = cn(
-      "w-[46px] h-[46px] rounded-2xl border bg-white flex items-center justify-center text-xl font-bold tabular-nums",
+      "w-[52px] h-[52px] rounded-2xl border bg-white flex items-center justify-center text-2xl font-bold tabular-nums",
       highlight === "emerald" && "text-emerald-600 border-emerald-200 bg-emerald-50",
       highlight === "amber" && "text-pitch-700 border-amber-200 bg-pitch-50",
       highlight === "grayed" && "text-neutral-300 border-neutral-150 bg-neutral-50",
@@ -408,7 +408,7 @@ function ScoreCell({
       <button
         type="button"
         onClick={increment}
-        className="sm:hidden w-[46px] flex items-center justify-center rounded-t-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 transition-colors touch-manipulation"
+        className="sm:hidden w-[52px] flex items-center justify-center rounded-t-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 transition-colors touch-manipulation"
         style={{ height: 24 }}
         aria-label="Increase score"
       >
@@ -423,13 +423,13 @@ function ScoreCell({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="–"
-        className="w-[46px] h-[46px] rounded-2xl border border-neutral-200 bg-white text-xl font-bold text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-400/60 focus:border-amber-300 tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-neutral-300 sm:rounded-2xl"
+        className="w-[52px] h-[52px] rounded-2xl border border-neutral-200 bg-white text-2xl font-bold text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-400/60 focus:border-amber-300 tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-neutral-300 sm:rounded-2xl"
       />
       <button
         type="button"
         onClick={decrement}
         disabled={numVal == null || numVal <= 0}
-        className="sm:hidden w-[46px] flex items-center justify-center rounded-b-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 disabled:opacity-30 transition-colors touch-manipulation"
+        className="sm:hidden w-[52px] flex items-center justify-center rounded-b-xl bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-300 disabled:opacity-30 transition-colors touch-manipulation"
         style={{ height: 24 }}
         aria-label="Decrease score"
       >
