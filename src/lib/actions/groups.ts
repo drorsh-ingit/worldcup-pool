@@ -19,7 +19,9 @@ function slugify(text: string): string {
 function generateSlug(name: string): string {
   const base = slugify(name);
   const suffix = Math.random().toString(36).slice(2, 6);
-  return `${base}-${suffix}`;
+  // If the name contains no Latin/ASCII chars (e.g. Hebrew, Arabic, CJK),
+  // base will be empty — just use a standalone random code.
+  return base ? `${base}-${suffix}` : suffix;
 }
 
 export async function createGroup(formData: FormData) {
