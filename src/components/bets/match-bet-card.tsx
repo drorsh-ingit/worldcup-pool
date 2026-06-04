@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, MapPin, Clock, ChevronUp, ChevronDown } from "lucide-react";
+import { Lock, MapPin, Clock, ChevronUp, ChevronDown, Check, Loader2 } from "lucide-react";
 import { placeBet } from "@/lib/actions/bets";
 import { getLiveMatchScore, type LiveScore } from "@/lib/actions/live-scores";
 import { TeamBadge } from "@/components/team-badge";
@@ -243,12 +243,13 @@ export function MatchBetCard({
             {formatDate(kickoff)} {formatTime(kickoff)}
           </span>
         </div>
-        {isLocked && (
-          <span className="inline-flex items-center text-xs font-semibold text-pitch-900 bg-pitch-50 border border-amber-200 rounded-full shrink-0" style={{ gap: 6, paddingLeft: 10, paddingRight: 10, paddingTop: 4, paddingBottom: 4 }}>
-            <Lock className="w-3.5 h-3.5" />
-            {effectivelyFinished ? "Played" : "Locked"}
-          </span>
-        )}
+        {isInPlay ? (
+          <span className="text-base shrink-0" title="In play">⚽</span>
+        ) : isLocked ? (
+          effectivelyFinished
+            ? <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+            : <Lock className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+        ) : null}
       </div>
 
       {/* Teams + score */}
@@ -456,34 +457,39 @@ function StatusPill({
   error: string | null;
   hasSavedBet: boolean;
 }) {
-  let label = "–";
-  let cls = "text-neutral-400 border-neutral-200";
+  if (saving) {
+    return <Loader2 className="w-4 h-4 text-neutral-400 animate-spin shrink-0" />;
+  }
+  if (error) {
+    return (
+      <span className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-xs font-semibold text-red-600 whitespace-nowrap" style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 3, paddingBottom: 3 }}>
+        Error
+      </span>
+    );
+  }
+
+  let label = "";
+  let cls = "hidden";
   if (isCompleted) {
     label = hasSavedBet ? "Done" : "Missed";
     cls = hasSavedBet ? "text-neutral-500 border-neutral-200" : "text-neutral-400 border-neutral-200";
   } else if (isLocked) {
-    label = hasSavedBet ? "Locked" : betsNotOpenYet ? "–" : "Missed";
-    cls = hasSavedBet ? "text-neutral-500 border-neutral-200" : "text-neutral-400 border-neutral-200";
-  } else if (saving) {
-    label = "Saving…";
-    cls = "text-neutral-500 border-neutral-200";
-  } else if (error) {
-    label = "Error";
-    cls = "text-red-600 border-red-200 bg-red-50";
+    label = hasSavedBet ? "Locked" : betsNotOpenYet ? "" : "Missed";
+    cls = label ? (hasSavedBet ? "text-neutral-500 border-neutral-200" : "text-neutral-400 border-neutral-200") : "hidden";
   } else if (saved) {
     label = "Saved";
     cls = "text-emerald-700 border-emerald-200 bg-emerald-50";
-  } else {
-    label = "";
-    cls = "hidden";
   }
+
+  if (!label) return null;
+
   return (
     <span
       className={cn(
         "inline-flex items-center justify-center rounded-lg border bg-white text-xs font-semibold whitespace-nowrap",
         cls
       )}
-      style={{ paddingLeft: 10, paddingRight: 10, paddingTop: 4, paddingBottom: 4 }}
+      style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 3, paddingBottom: 3 }}
     >
       {label}
     </span>

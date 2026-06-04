@@ -71,7 +71,7 @@ function AppNavInner({ user, groups }: AppNavProps) {
 
           {/* Text label next to logo — tournament name + group name */}
           {(tournamentName || currentGroup) && (
-            <div className="hidden sm:flex flex-col justify-center leading-tight">
+            <div className="flex flex-col justify-center leading-tight">
               {tournamentName && (
                 <span className="text-[11px] font-medium text-neutral-400 uppercase tracking-wide">
                   {tournamentName}
