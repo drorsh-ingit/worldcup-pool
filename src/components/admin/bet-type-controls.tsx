@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { CheckCircle, Lock, Circle, ChevronDown, ChevronUp } from "lucide-react";
 import { openBetType, lockBetType, reopenBetType, resolveBetType, updateBetTypeOpenTrigger } from "@/lib/actions/bet-types";
-import { BET_OPEN_TRIGGERS, BET_OPEN_TRIGGER_LABELS, type BetOpenTrigger } from "@/lib/data/wc2026";
+import { BET_OPEN_TRIGGERS, BET_OPEN_TRIGGER_LABELS, type BetOpenTrigger, GOLDEN_BOOT_CANDIDATES, GOLDEN_BALL_CANDIDATES, GOLDEN_GLOVE_CANDIDATES } from "@/lib/data/wc2026";
+
+const PLAYER_CANDIDATES: Record<string, readonly { playerName: string; teamCode: string }[]> = {
+  golden_boot: GOLDEN_BOOT_CANDIDATES,
+  golden_ball: GOLDEN_BALL_CANDIDATES,
+  golden_glove: GOLDEN_GLOVE_CANDIDATES,
+};
 
 interface BetTypeRow {
   id: string;
@@ -36,9 +42,14 @@ function ResolutionForm({
   betType: BetTypeRow;
   onDone: () => void;
 }) {
+  const isPlayerBet = ["golden_boot", "golden_ball", "golden_glove"].includes(betType.subType);
+  const candidates = isPlayerBet ? (PLAYER_CANDIDATES[betType.subType] ?? []) : [];
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [value, setValue] = useState("");
+  // For player bets: store selected candidate directly
+  const [selectedPlayer, setSelectedPlayer] = useState<{ playerName: string; teamCode: string } | null>(null);
 
   async function handleResolve() {
     setLoading(true);
@@ -46,14 +57,11 @@ function ResolutionForm({
     try {
       let resolution: Record<string, unknown> = {};
 
-      if (["winner", "runner_up", "dark_horse"].includes(betType.subType)) {
+      if (isPlayerBet) {
+        if (!selectedPlayer) { setError("Please select a player"); setLoading(false); return; }
+        resolution = { playerName: selectedPlayer.playerName, teamCode: selectedPlayer.teamCode };
+      } else if (["winner", "runner_up", "dark_horse"].includes(betType.subType)) {
         resolution = { teamCode: value.toUpperCase().trim() };
-      } else if (["golden_boot", "golden_glove"].includes(betType.subType)) {
-        const [name, code] = value.split(",").map((s) => s.trim());
-        resolution = { playerName: name, teamCode: code?.toUpperCase() };
-      } else if (["golden_ball"].includes(betType.subType)) {
-        const [name, code] = value.split(",").map((s) => s.trim());
-        resolution = { playerName: name, teamCode: code?.toUpperCase() };
       } else if (betType.subType === "group_predictions") {
         // Format: "A:FRA,B:USA,C:POR,..." (winners) — advancing is auto-computed
         const pairs = value.split(",").map((s) => s.trim());
@@ -92,18 +100,38 @@ function ResolutionForm({
   return (
     <div className="border-t border-neutral-100" style={{ marginTop: 12, paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
       <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">Enter resolution</p>
-      <input
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder()}
-        className="w-full h-9 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 bg-white"
-        style={{ padding: "0 12px" }}
-      />
+      {isPlayerBet ? (
+        <select
+          value={selectedPlayer ? `${selectedPlayer.playerName}|${selectedPlayer.teamCode}` : ""}
+          onChange={(e) => {
+            if (!e.target.value) { setSelectedPlayer(null); return; }
+            const [playerName, teamCode] = e.target.value.split("|");
+            setSelectedPlayer({ playerName, teamCode });
+          }}
+          className="w-full h-9 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 bg-white"
+          style={{ paddingLeft: 12, paddingRight: 12 }}
+        >
+          <option value="">— Select winner —</option>
+          {candidates.map((c) => (
+            <option key={`${c.playerName}|${c.teamCode}`} value={`${c.playerName}|${c.teamCode}`}>
+              {c.playerName} ({c.teamCode})
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder()}
+          className="w-full h-9 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 bg-white"
+          style={{ padding: "0 12px" }}
+        />
+      )}
       {error && <p className="text-xs text-red-500">{error}</p>}
       <div className="flex" style={{ gap: 8 }}>
         <button
           onClick={handleResolve}
-          disabled={loading || !value.trim()}
+          disabled={loading || (isPlayerBet ? !selectedPlayer : !value.trim())}
           className="h-8 rounded-lg bg-pitch-500 text-white text-sm font-medium hover:bg-pitch-700 disabled:opacity-60 transition-colors"
           style={{ padding: "0 12px" }}
         >
