@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import { Users } from "lucide-react";
 import Link from "next/link";
-import { CopySlugButton } from "@/components/copy-slug-button";
 import { PendingMembers } from "@/components/pending-members";
 import { cn } from "@/lib/utils";
 
@@ -85,14 +84,11 @@ export default async function GroupPage({ params }: GroupPageProps) {
           {group.name}
         </span>
         <h1 className="text-4xl font-black tracking-tight text-neutral-900">Standings</h1>
-        <div className="flex items-center" style={{ gap: 12, marginTop: 2 }}>
-          <span className="text-sm text-neutral-400">Live · Updates every 2 min</span>
-          <span className="text-neutral-200">·</span>
+        <div className="flex items-center" style={{ gap: 8, marginTop: 2 }}>
           <div className="inline-flex items-center text-sm text-neutral-400" style={{ gap: 5 }}>
             <Users className="w-3.5 h-3.5" />
             <span>{approvedMembers.length} member{approvedMembers.length !== 1 ? "s" : ""}</span>
           </div>
-          <CopySlugButton slug={group.slug} />
         </div>
       </div>
 
