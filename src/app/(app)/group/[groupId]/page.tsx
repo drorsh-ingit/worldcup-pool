@@ -125,12 +125,12 @@ export default async function GroupPage({ params }: GroupPageProps) {
 
           {standings.map((s, i) => {
             const isMe = s.userId === currentUserId;
-            const rankColors = [
-              { bg: "bg-amber-500", text: "text-white" },
-              { bg: "bg-neutral-800", text: "text-white" },
-              { bg: "bg-orange-400", text: "text-white" },
+            const medals = [
+              { outer: "#f59e0b", inner: "#fbbf24", text: "#78350f" }, // gold
+              { outer: "#6b7280", inner: "#9ca3af", text: "#1f2937" }, // silver
+              { outer: "#b45309", inner: "#d97706", text: "#78350f" }, // bronze
             ];
-            const rankStyle = i < 3 ? rankColors[i] : null;
+            const medal = i < 3 ? medals[i] : null;
 
             return (
               <Link
@@ -144,12 +144,12 @@ export default async function GroupPage({ params }: GroupPageProps) {
               >
                 {/* Rank badge */}
                 <div className="flex items-center">
-                  {rankStyle ? (
-                    <span
-                      className={cn("inline-flex items-center justify-center rounded-full text-xs font-bold tabular-nums w-7 h-7", rankStyle.bg, rankStyle.text)}
-                    >
-                      {i + 1}
-                    </span>
+                  {medal ? (
+                    <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="16" cy="16" r="16" fill={medal.outer}/>
+                      <circle cx="16" cy="16" r="12" fill={medal.inner}/>
+                      <text x="16" y="21" textAnchor="middle" fontSize="13" fontWeight="900" fill={medal.text}>{i + 1}</text>
+                    </svg>
                   ) : (
                     <span className="text-sm font-medium text-neutral-400 tabular-nums w-7 text-center">
                       {i + 1}
