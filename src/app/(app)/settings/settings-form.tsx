@@ -236,7 +236,7 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
                     <ul className="text-xs text-neutral-400" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                       <li><span className="font-medium text-neutral-500">Android Chrome</span> — tap "Turn on" above, allow when prompted.</li>
                       <li><span className="font-medium text-neutral-500">Desktop Chrome/Firefox</span> — tap "Turn on", allow in the browser popup.</li>
-                      <li><span className="font-medium text-neutral-500">iPhone/iPad (Safari)</span> — first tap Share → "Add to Home Screen", then open the app from your home screen and tap "Turn on".</li>
+                      <li><span className="font-medium text-neutral-500">iPhone/iPad</span> — (1) Set Safari as your default browser in Settings → Safari → Default Browser. (2) Open this site in Safari, tap Share → "Add to Home Screen". (3) Open the app from your home screen and tap "Turn on". (4) You can now set your preferred browser back as default.</li>
                     </ul>
                   </div>
                 )}
