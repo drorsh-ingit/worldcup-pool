@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { PendingMembers } from "@/components/pending-members";
 import { cn } from "@/lib/utils";
+import { getInitials, getAvatarColor, AVATAR_COLOR_OPTIONS } from "@/lib/avatar";
 
 interface GroupPageProps {
   params: Promise<{ groupId: string }>;
@@ -31,7 +32,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
     where: { id: groupId },
     include: {
       members: {
-        include: { user: { select: { id: true, name: true, email: true } } },
+        include: { user: { select: { id: true, name: true, email: true, avatarColor: true } } },
         orderBy: { joinedAt: "asc" },
       },
     },
@@ -56,6 +57,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
       return {
         userId: m.userId,
         name: m.user.name,
+        avatarColor: m.user.avatarColor,
         role: m.role,
         totalPoints: entry?.totalPoints ?? 0,
         tournamentPts: entry?.tournamentPts ?? 0,
@@ -154,11 +156,17 @@ export default async function GroupPage({ params }: GroupPageProps) {
 
                 {/* Avatar + name */}
                 <div className="flex items-center min-w-0" style={{ gap: 10 }}>
-                  <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 border border-neutral-200">
-                    <span className="text-xs font-semibold text-neutral-600">
-                      {s.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                  {(() => {
+                    const color = s.avatarColor != null
+                      ? AVATAR_COLOR_OPTIONS[s.avatarColor]
+                      : getAvatarColor(s.userId);
+                    return (
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+                        style={{ backgroundColor: color.bg, color: color.text }}>
+                        {getInitials(s.name)}
+                      </div>
+                    );
+                  })()}
                   <span className="text-sm font-medium truncate text-neutral-900">
                     {s.name}
                     {isMe && <span className="text-neutral-400 font-normal"> (you)</span>}

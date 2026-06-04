@@ -11,6 +11,7 @@ const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
 };
 import { MatchdayLogo } from "@/components/matchday-logo";
 import { useNavMeta } from "@/lib/nav-tabs-context";
+import { getInitials, getAvatarColor } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 
 interface GroupOption {
@@ -46,7 +47,8 @@ function AppNavInner({ user, groups }: AppNavProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const userInitial = user.name?.charAt(0).toUpperCase() ?? "?";
+  const userInitials = getInitials(user.name ?? "");
+  const userAvatarColor = getAvatarColor(user.email ?? user.name ?? "");
 
   return (
     <header className="sticky top-0 z-30 bg-neutral-50 border-b border-neutral-200 shadow-sm">
@@ -126,8 +128,9 @@ function AppNavInner({ user, groups }: AppNavProps) {
             className="flex items-center h-9 rounded-xl hover:bg-neutral-100 transition-colors"
             style={{ gap: 8, paddingLeft: 8, paddingRight: 8 }}
           >
-            <div className="w-8 h-8 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center">
-              <span className="text-xs font-semibold text-emerald-700">{userInitial}</span>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+              style={{ backgroundColor: userAvatarColor.bg, color: userAvatarColor.text }}>
+              {userInitials}
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-neutral-400 hidden sm:block" />
           </button>
