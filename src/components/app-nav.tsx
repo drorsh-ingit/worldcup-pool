@@ -20,7 +20,7 @@ interface GroupOption {
 }
 
 interface AppNavProps {
-  user: { name: string; email: string; avatarColor?: number | null; avatarStyle?: string | null; avatarSeed?: string | null };
+  user: { name: string; email: string; realName?: string | null; avatarColor?: number | null; avatarStyle?: string | null; avatarSeed?: string | null };
   groups: GroupOption[];
 }
 
@@ -47,7 +47,7 @@ function AppNavInner({ user, groups }: AppNavProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const userInitials = getInitials(user.name ?? "");
+  const userInitials = getInitials(user.realName ?? user.name ?? "");
   const userAvatarColor = user.avatarColor != null
     ? AVATAR_COLOR_OPTIONS[user.avatarColor]
     : getAvatarColor(user.email ?? user.name ?? "");

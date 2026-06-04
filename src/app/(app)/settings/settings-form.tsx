@@ -10,6 +10,7 @@ import { getInitials, getAvatarColor, AVATAR_COLOR_OPTIONS, DICEBEAR_STYLES, dic
 
 interface Props {
   initialName: string;
+  realName: string;
   email: string;
   initialColor: number | null;
   initialStyle: string | null;
@@ -17,7 +18,7 @@ interface Props {
   userId: string;
 }
 
-export function SettingsForm({ initialName, email, initialColor, initialStyle, initialSeed, userId }: Props) {
+export function SettingsForm({ initialName, realName, email, initialColor, initialStyle, initialSeed, userId }: Props) {
   const { update } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,7 @@ export function SettingsForm({ initialName, email, initialColor, initialStyle, i
   const [selectedStyle, setSelectedStyle] = useState<string | null>(initialStyle);
   const [seed, setSeed] = useState<string>(initialSeed ?? userId.slice(-8));
 
-  const initials = getInitials(name || initialName);
+  const initials = getInitials(realName);
   const color = selectedColor != null ? AVATAR_COLOR_OPTIONS[selectedColor] : getAvatarColor(userId);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

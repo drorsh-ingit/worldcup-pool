@@ -14,6 +14,7 @@ model User {
   email        String   @unique
   passwordHash String?
   name         String
+  realName     String?
   avatarColor  Int?
   avatarStyle  String?
   avatarSeed   String?

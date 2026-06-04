@@ -32,7 +32,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
     where: { id: groupId },
     include: {
       members: {
-        include: { user: { select: { id: true, name: true, email: true, avatarColor: true, avatarStyle: true, avatarSeed: true } } },
+        include: { user: { select: { id: true, name: true, realName: true, email: true, avatarColor: true, avatarStyle: true, avatarSeed: true } } },
         orderBy: { joinedAt: "asc" },
       },
     },
@@ -60,6 +60,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
         avatarColor: m.user.avatarColor,
         avatarStyle: m.user.avatarStyle,
         avatarSeed: m.user.avatarSeed,
+        realName: m.user.realName,
         role: m.role,
         totalPoints: entry?.totalPoints ?? 0,
         tournamentPts: entry?.tournamentPts ?? 0,
@@ -168,7 +169,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
                         {s.avatarStyle ? (
                           <img src={dicebearUrl(s.avatarStyle, s.avatarSeed ?? s.userId)} alt="" className="w-full h-full" />
                         ) : (
-                          <span style={{ color: color.text, fontSize: 11, fontWeight: "bold" }}>{getInitials(s.name)}</span>
+                          <span style={{ color: color.text, fontSize: 11, fontWeight: "bold" }}>{getInitials(s.realName ?? s.name)}</span>
                         )}
                       </div>
                     );

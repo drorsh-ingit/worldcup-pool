@@ -20,7 +20,7 @@ export default async function AppLayout({
     }),
     db.user.findUnique({
       where: { id: session.user.id },
-      select: { avatarColor: true, avatarStyle: true, avatarSeed: true },
+      select: { avatarColor: true, avatarStyle: true, avatarSeed: true, realName: true },
     }),
   ]);
   const groups = memberships.map((m) => ({ id: m.group.id, name: m.group.name }));
@@ -29,7 +29,7 @@ export default async function AppLayout({
     <NavShell>
       <div className="min-h-screen bg-neutral-50 pb-16 sm:pb-0">
         <AppNav
-          user={{ ...session.user, avatarColor: dbUser?.avatarColor ?? null, avatarStyle: dbUser?.avatarStyle ?? null, avatarSeed: dbUser?.avatarSeed ?? null }}
+          user={{ ...session.user, avatarColor: dbUser?.avatarColor ?? null, avatarStyle: dbUser?.avatarStyle ?? null, avatarSeed: dbUser?.avatarSeed ?? null, realName: dbUser?.realName ?? null }}
           groups={groups}
         />
         <main

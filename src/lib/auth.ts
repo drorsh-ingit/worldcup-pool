@@ -53,21 +53,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider === "google" && user.email) {
         const existing = await db.user.findUnique({ where: { email: user.email } });
         if (!existing) {
+          const googleName = user.name ?? user.email.split("@")[0];
           const created = await db.user.create({
             data: {
               email: user.email,
-              name: user.name ?? user.email.split("@")[0],
+              name: googleName,
+              realName: googleName,
               passwordHash: null,
             },
           });
           user.id = created.id;
         } else {
           // Sync name from Google profile if it's more complete
-          if (user.name && user.name !== existing.name) {
-            await db.user.update({
-              where: { id: existing.id },
-              data: { name: user.name },
-            });
+          const updates: Record<string, string> = {};
+          if (user.name && user.name !== existing.name) updates.name = user.name;
+          // Set realName once from Google if not yet stored
+          if (user.name && !existing.realName) updates.realName = user.name;
+          if (Object.keys(updates).length > 0) {
+            await db.user.update({ where: { id: existing.id }, data: updates });
           }
           user.id = existing.id;
         }
