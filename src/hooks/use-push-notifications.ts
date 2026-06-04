@@ -55,14 +55,17 @@ export function usePushNotifications() {
       setDebugInfo(`Permission: ${perm}`);
       if (perm !== "granted") return;
 
+      const vapidKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "").trim().replace(/\s/g, "");
+      if (!vapidKey) {
+        setDebugInfo("Error: VAPID key not configured");
+        return;
+      }
       setDebugInfo("Waiting for SW...");
       const reg = await navigator.serviceWorker.ready;
       setDebugInfo("Subscribing to push...");
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-        ),
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
 
       setDebugInfo("Saving subscription...");
