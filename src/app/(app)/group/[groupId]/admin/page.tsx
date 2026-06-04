@@ -13,6 +13,7 @@ import { DeleteGroupButton } from "@/components/admin/delete-group-button";
 import { SyncResultsButton } from "@/components/admin/sync-results-button";
 import { RecalculateStandingsButton } from "@/components/admin/recalculate-standings-button";
 import { ResetTournamentButton } from "@/components/admin/reset-tournament-button";
+import { TestPushButton } from "@/components/admin/test-push-button";
 import { resolveGroupSettings, type GroupSettings } from "@/lib/settings";
 import { GOLDEN_BOOT_CANDIDATES } from "@/lib/data/wc2026";
 import { calculatePoints } from "@/lib/scoring";
@@ -180,6 +181,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
               <SyncResultsButton groupId={groupId} />
               <RecalculateStandingsButton groupId={groupId} />
               <ResetTournamentButton groupId={groupId} />
+              <TestPushButton groupId={groupId} />
             </div>
 
             {/* Groups / Teams overview */}
