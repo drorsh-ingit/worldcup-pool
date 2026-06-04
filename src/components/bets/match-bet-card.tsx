@@ -329,36 +329,41 @@ export function MatchBetCard({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-neutral-100 bg-neutral-50 rounded-b-3xl" style={{ padding: "10px 16px", gap: 8 }}>
-        <span className="text-sm font-semibold text-neutral-900 tabular-nums">
+      <div className="flex items-center border-t border-neutral-100 bg-neutral-50 rounded-b-3xl" style={{ padding: "10px 16px", gap: 8, minHeight: 44 }}>
+        {/* Points — centred, takes all available space */}
+        <div className="flex-1 flex items-center justify-center">
           {isCompleted ? (
             noBetCompleted ? (
-              <span className="text-neutral-400">0 pts earned</span>
+              <span className="text-sm font-semibold text-neutral-400">0 pts earned</span>
             ) : (
-              <span className={earnedPts != null && earnedPts > 0 ? "text-pitch-700" : "text-neutral-700"}>
+              <span className={`text-base font-bold tabular-nums ${earnedPts != null && earnedPts > 0 ? "text-pitch-700" : "text-neutral-600"}`}>
                 {earnedPts != null && earnedPts > 0 ? `${earnedPts.toFixed(1)} pts earned` : "0 pts earned"}
               </span>
             )
           ) : betsNotOpenYet ? (
-            <span className="text-neutral-400 font-normal text-xs">Potential points TBD</span>
+            <span className="text-sm font-medium text-neutral-400">Potential points TBD</span>
           ) : isPastKickoff && !hasSavedBet ? (
-            <span className="text-neutral-400 font-normal text-xs">No bet placed</span>
+            <span className="text-sm font-medium text-neutral-400">No bet placed</span>
           ) : potentialPts != null ? (
-            <span className="text-neutral-500 font-normal text-xs">{potentialPts.toFixed(1)} potential pts</span>
+            <span className="text-base font-bold text-neutral-700 tabular-nums">{potentialPts.toFixed(1)} potential pts</span>
           ) : (
-            <span className="text-neutral-400 font-normal text-xs">0 potential pts</span>
+            <span className="text-sm font-medium text-neutral-400">0 potential pts</span>
           )}
-        </span>
+        </div>
+
+        {/* Status pill — fixed to the right */}
         {!(betsNotOpenYet && !hasSavedBet) && (
-          <StatusPill
-            isLocked={isLocked}
-            isCompleted={isCompleted}
-            betsNotOpenYet={betsNotOpenYet}
-            saving={saving}
-            saved={saved}
-            error={error}
-            hasSavedBet={hasSavedBet}
-          />
+          <div className="shrink-0">
+            <StatusPill
+              isLocked={isLocked}
+              isCompleted={isCompleted}
+              betsNotOpenYet={betsNotOpenYet}
+              saving={saving}
+              saved={saved}
+              error={error}
+              hasSavedBet={hasSavedBet}
+            />
+          </div>
         )}
       </div>
     </div>
