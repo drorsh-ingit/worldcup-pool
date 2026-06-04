@@ -107,16 +107,34 @@ function buildSlots(
           slots[key] = { key, phase, index: i, isReal: false };
         }
       } else {
-        // R16+ always derived from user's picks — bracket shows the prediction path
-        const prev = PREV_PHASE[phase]!;
-        const homeCode = picks[`${prev}-${i * 2}`];
-        const awayCode = picks[`${prev}-${i * 2 + 1}`];
-        slots[key] = {
-          key, phase, index: i,
-          homeTeam: homeCode ? teamByCode[homeCode] : undefined,
-          awayTeam: awayCode ? teamByCode[awayCode] : undefined,
-          isReal: false,
-        };
+        // R16+: use real match data when available so scores/completion show
+        const realMatches = matches
+          .filter((m) => m.phase === phase)
+          .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
+        const real = realMatches[i];
+        if (real) {
+          slots[key] = {
+            key, phase, index: i,
+            matchId: real.id,
+            homeTeam: real.homeTeam ?? (real.homeTeam),
+            awayTeam: real.awayTeam ?? (real.awayTeam),
+            status: real.status,
+            homeScore: real.actualHomeScore,
+            awayScore: real.actualAwayScore,
+            isReal: true,
+          };
+        } else {
+          // Fall back to deriving from user's picks when match not yet seeded
+          const prev = PREV_PHASE[phase]!;
+          const homeCode = picks[`${prev}-${i * 2}`];
+          const awayCode = picks[`${prev}-${i * 2 + 1}`];
+          slots[key] = {
+            key, phase, index: i,
+            homeTeam: homeCode ? teamByCode[homeCode] : undefined,
+            awayTeam: awayCode ? teamByCode[awayCode] : undefined,
+            isReal: false,
+          };
+        }
       }
     }
   }
