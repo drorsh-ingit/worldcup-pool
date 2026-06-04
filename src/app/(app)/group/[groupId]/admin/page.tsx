@@ -86,10 +86,10 @@ export default async function AdminPage({ params }: AdminPageProps) {
       .sort((a, b) => a.odds - b.odds);
     oddsData.winner = withPoints("winner", winnerEntries);
     oddsData.runnerUp = withPoints("runnerUp", winnerEntries);
-    oddsData.darkHorse = withPoints("darkHorse", winnerEntries.slice(-35));
+    oddsData.darkHorse = withPoints("darkHorse", winnerEntries.filter((e) => e.odds >= 6000));
     // Reverse dark horse: points calculated from inverted odds (bigger favourite → more points)
     // but displayed odds stay raw so the admin sees actual team odds.
-    oddsData.reverseDarkHorse = winnerEntries.slice(0, 15).map((e) => {
+    oddsData.reverseDarkHorse = winnerEntries.filter((e) => e.odds <= 5100).map((e) => {
       const invertedOdds = Math.max(1, 4000000 / e.odds);
       return {
         ...e,

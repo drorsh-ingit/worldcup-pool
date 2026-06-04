@@ -466,7 +466,7 @@ export const TOURNAMENT_BET_TYPES: ReadonlyArray<{
   {
     subType: "dark_horse",
     name: "Dark Horse",
-    description: "Pick an underdog (odds > 20/1) that will reach the quarter-finals. Big points for correct calls — only long-shot teams are eligible.",
+    description: "Pick an underdog (odds > 60/1) that will reach the quarter-finals. Big points for correct calls — only long-shot teams are eligible.",
     openTrigger: "PRE_TOURNAMENT",
   },
   {

@@ -339,13 +339,17 @@ export default async function BetsPage({ params }: BetsPageProps) {
           ) : bt.subType === "winner" || bt.subType === "runner_up" || bt.subType === "dark_horse" || bt.subType === "reverse_dark_horse" ? (() => {
             let filteredTeams = tournament.teams;
             if (bt.subType === "dark_horse") {
+              // True underdogs: winnerOdds >= 6000 (roughly 60/1 or longer)
+              // Ensures no overlap with reverse_dark_horse (favourites ≤ 5100)
               filteredTeams = [...tournament.teams]
-                .sort((a, b) => ((b.odds as { winnerOdds?: number })?.winnerOdds ?? 0) - ((a.odds as { winnerOdds?: number })?.winnerOdds ?? 0))
-                .slice(0, 35);
+                .filter((t) => ((t.odds as { winnerOdds?: number })?.winnerOdds ?? 0) >= 6000)
+                .sort((a, b) => ((a.odds as { winnerOdds?: number })?.winnerOdds ?? 0) - ((b.odds as { winnerOdds?: number })?.winnerOdds ?? 0));
             } else if (bt.subType === "reverse_dark_horse") {
+              // Clear favourites: winnerOdds ≤ 5100 (top ~12 teams)
+              // Ensures no overlap with dark_horse (underdogs ≥ 6000)
               filteredTeams = [...tournament.teams]
-                .sort((a, b) => ((a.odds as { winnerOdds?: number })?.winnerOdds ?? 0) - ((b.odds as { winnerOdds?: number })?.winnerOdds ?? 0))
-                .slice(0, 15);
+                .filter((t) => ((t.odds as { winnerOdds?: number })?.winnerOdds ?? 0) <= 5100)
+                .sort((a, b) => ((a.odds as { winnerOdds?: number })?.winnerOdds ?? 0) - ((b.odds as { winnerOdds?: number })?.winnerOdds ?? 0));
             }
             return (
               <TeamPicker
