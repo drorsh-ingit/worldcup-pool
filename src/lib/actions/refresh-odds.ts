@@ -375,29 +375,44 @@ export async function promoteBetTypeGlobally(
 ): Promise<void> {
   let frozen: Prisma.InputJsonValue | null = null;
 
-  if (betType.category === "TOURNAMENT") {
-    if (!options?.skipRefresh) {
-      // Refresh odds on the triggering tournament's teams (API fetch + Bradley-Terry derivation).
-      await refreshOddsForBetType(triggeringTournamentId, betType.category, betType.subType).catch(() => null);
-    }
-    // Snapshot the refreshed odds.
-    frozen = await snapshotOddsForBetType(triggeringTournamentId, betType.category, betType.subType);
-  } else if (betType.category === "PER_GAME") {
-    if (!options?.skipRefresh) {
-      // Match odds are per-tournament (different groups may have different match schedules
-      // in theory), so refresh each tournament's matches individually.
-      const tournaments = await db.tournament.findMany({
-        where: { kind: tournamentKind },
-        select: { id: true },
-      });
-      for (const t of tournaments) {
-        await refreshOddsForBetType(t.id, betType.category, betType.subType).catch(() => null);
+  // Check if any group has already opened this bet type with frozen odds.
+  // If so, reuse those exact odds — all groups in the same tournament must share
+  // the same frozen snapshot so late-joining groups don't get different point values.
+  const alreadyOpen = await db.betType.findFirst({
+    where: {
+      subType: betType.subType,
+      category: betType.category as BetCategory,
+      status: { in: ["OPEN", "LOCKED", "RESOLVED"] },
+      tournament: { kind: tournamentKind },
+      frozenOdds: { not: Prisma.JsonNull },
+    },
+    select: { frozenOdds: true },
+  });
+
+  if (alreadyOpen?.frozenOdds != null) {
+    // Reuse existing frozen odds — don't re-fetch from the API.
+    frozen = alreadyOpen.frozenOdds as Prisma.InputJsonValue;
+  } else {
+    // First group to open this bet type — fetch fresh odds now.
+    if (betType.category === "TOURNAMENT") {
+      if (!options?.skipRefresh) {
+        await refreshOddsForBetType(triggeringTournamentId, betType.category, betType.subType).catch(() => null);
+      }
+      frozen = await snapshotOddsForBetType(triggeringTournamentId, betType.category, betType.subType);
+    } else if (betType.category === "PER_GAME") {
+      if (!options?.skipRefresh) {
+        const tournaments = await db.tournament.findMany({
+          where: { kind: tournamentKind },
+          select: { id: true },
+        });
+        for (const t of tournaments) {
+          await refreshOddsForBetType(t.id, betType.category, betType.subType).catch(() => null);
+        }
       }
     }
   }
 
-  // Find all DRAFT bet types of this subType across all groups with the same tournament kind,
-  // and promote them all at once with the same frozen odds.
+  // Open all DRAFT bet types of this subType across all groups, with the same frozen odds.
   await db.betType.updateMany({
     where: {
       subType: betType.subType,
