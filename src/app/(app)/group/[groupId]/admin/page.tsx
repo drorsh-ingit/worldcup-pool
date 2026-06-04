@@ -127,14 +127,6 @@ export default async function AdminPage({ params }: AdminPageProps) {
         <p className="text-sm text-neutral-500" style={{ marginTop: 4 }}>{group.name}</p>
       </div>
 
-      {/* Simulation control */}
-      <SimulationControl
-        groupId={groupId}
-        simulationEnabled={!!groupSettings?.simulation?.enabled}
-        simulatedDate={groupSettings?.simulation?.simulatedDate ?? null}
-        awards={groupSettings?.simulation?.awards}
-      />
-
       {/* Invite code */}
       <section style={{ padding: 20 }} className="rounded-xl border border-neutral-200 bg-white space-y-3">
         <div className="flex items-center gap-2">
@@ -146,6 +138,14 @@ export default async function AdminPage({ params }: AdminPageProps) {
         </p>
         <CopySlugButton slug={group.slug} />
       </section>
+
+      {/* Simulation control */}
+      <SimulationControl
+        groupId={groupId}
+        simulationEnabled={!!groupSettings?.simulation?.enabled}
+        simulatedDate={groupSettings?.simulation?.simulatedDate ?? null}
+        awards={groupSettings?.simulation?.awards}
+      />
 
       {/* Tournament setup */}
       <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
