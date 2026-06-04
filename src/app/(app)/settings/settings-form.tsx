@@ -145,28 +145,26 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
             </div>
           </div>
 
-          {/* Background color (only when using initials) */}
-          {!selectedStyle && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <label className="text-sm font-medium text-neutral-700">Background color</label>
-              <div className="flex flex-wrap" style={{ gap: 8 }}>
-                {AVATAR_COLOR_OPTIONS.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setSelectedColor(c.id)}
-                    className="w-8 h-8 rounded-full transition-transform hover:scale-110"
-                    style={{
-                      backgroundColor: c.bg,
-                      outline: selectedColor === c.id ? `3px solid ${c.bg}` : "none",
-                      outlineOffset: 2,
-                      boxShadow: selectedColor === c.id ? "0 0 0 2px white inset" : "none",
-                    }}
-                  />
-                ))}
-              </div>
+          {/* Background color — always available */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <label className="text-sm font-medium text-neutral-700">Background color</label>
+            <div className="flex flex-wrap" style={{ gap: 8 }}>
+              {AVATAR_COLOR_OPTIONS.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelectedColor(c.id)}
+                  className="w-8 h-8 rounded-full transition-transform hover:scale-110"
+                  style={{
+                    backgroundColor: c.bg,
+                    outline: selectedColor === c.id ? `3px solid ${c.bg}` : "none",
+                    outlineOffset: 2,
+                    boxShadow: selectedColor === c.id ? "0 0 0 2px white inset" : "none",
+                  }}
+                />
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Name */}
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
