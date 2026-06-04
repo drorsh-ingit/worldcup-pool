@@ -11,7 +11,7 @@ const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
 };
 import { MatchdayLogo } from "@/components/matchday-logo";
 import { useNavMeta } from "@/lib/nav-tabs-context";
-import { getInitials, getAvatarColor } from "@/lib/avatar";
+import { getInitials, getAvatarColor, AVATAR_COLOR_OPTIONS } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 
 interface GroupOption {
@@ -20,7 +20,7 @@ interface GroupOption {
 }
 
 interface AppNavProps {
-  user: { name: string; email: string };
+  user: { name: string; email: string; avatarColor?: number | null; avatarEmoji?: string | null };
   groups: GroupOption[];
 }
 
@@ -48,7 +48,10 @@ function AppNavInner({ user, groups }: AppNavProps) {
   }, []);
 
   const userInitials = getInitials(user.name ?? "");
-  const userAvatarColor = getAvatarColor(user.email ?? user.name ?? "");
+  const userAvatarColor = user.avatarColor != null
+    ? AVATAR_COLOR_OPTIONS[user.avatarColor]
+    : getAvatarColor(user.email ?? user.name ?? "");
+  const userAvatarEmoji = user.avatarEmoji ?? null;
 
   return (
     <header className="sticky top-0 z-30 bg-neutral-50 border-b border-neutral-200 shadow-sm">
@@ -128,9 +131,9 @@ function AppNavInner({ user, groups }: AppNavProps) {
             className="flex items-center h-9 rounded-xl hover:bg-neutral-100 transition-colors"
             style={{ gap: 8, paddingLeft: 8, paddingRight: 8 }}
           >
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-              style={{ backgroundColor: userAvatarColor.bg, color: userAvatarColor.text }}>
-              {userInitials}
+            <div className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: userAvatarColor.bg, color: userAvatarColor.text, fontSize: userAvatarEmoji ? 16 : 11, fontWeight: userAvatarEmoji ? "normal" : "bold" }}>
+              {userAvatarEmoji ?? userInitials}
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-neutral-400 hidden sm:block" />
           </button>

@@ -7,6 +7,7 @@ import { z } from "zod";
 const schema = z.object({
   name: z.string().min(1).max(50),
   avatarColor: z.coerce.number().int().min(0).max(9).optional(),
+  avatarEmoji: z.string().optional(),
 });
 
 export async function updateProfile(formData: FormData) {
@@ -16,6 +17,7 @@ export async function updateProfile(formData: FormData) {
   const parsed = schema.safeParse({
     name: formData.get("name"),
     avatarColor: formData.get("avatarColor") ?? undefined,
+    avatarEmoji: formData.get("avatarEmoji") ?? undefined,
   });
   if (!parsed.success) return { error: "Name must be 1–50 characters" };
 
@@ -24,6 +26,8 @@ export async function updateProfile(formData: FormData) {
     data: {
       name: parsed.data.name,
       ...(parsed.data.avatarColor != null && { avatarColor: parsed.data.avatarColor }),
+      // Empty string clears the emoji (reverts to initials)
+      avatarEmoji: parsed.data.avatarEmoji ?? null,
     },
   });
 

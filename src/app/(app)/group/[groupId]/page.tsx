@@ -32,7 +32,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
     where: { id: groupId },
     include: {
       members: {
-        include: { user: { select: { id: true, name: true, email: true, avatarColor: true } } },
+        include: { user: { select: { id: true, name: true, email: true, avatarColor: true, avatarEmoji: true } } },
         orderBy: { joinedAt: "asc" },
       },
     },
@@ -58,6 +58,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
         userId: m.userId,
         name: m.user.name,
         avatarColor: m.user.avatarColor,
+        avatarEmoji: m.user.avatarEmoji,
         role: m.role,
         totalPoints: entry?.totalPoints ?? 0,
         tournamentPts: entry?.tournamentPts ?? 0,
@@ -161,9 +162,9 @@ export default async function GroupPage({ params }: GroupPageProps) {
                       ? AVATAR_COLOR_OPTIONS[s.avatarColor]
                       : getAvatarColor(s.userId);
                     return (
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-                        style={{ backgroundColor: color.bg, color: color.text }}>
-                        {getInitials(s.name)}
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: color.bg, color: color.text, fontSize: s.avatarEmoji ? 16 : 11, fontWeight: s.avatarEmoji ? "normal" : "bold" }}>
+                        {s.avatarEmoji ?? getInitials(s.name)}
                       </div>
                     );
                   })()}

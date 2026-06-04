@@ -31,3 +31,13 @@ export function getInitials(name: string): string {
 }
 
 export const AVATAR_COLOR_OPTIONS = AVATAR_COLORS.map((c, i) => ({ ...c, id: i }));
+
+/** Illustrated emoji avatars — shown instead of initials when selected */
+export const AVATAR_EMOJIS = [
+  // Football / sports
+  "⚽", "🏆", "🥇", "⭐", "🔥", "💥", "🎯", "🏅",
+  // Animals
+  "🦁", "🐯", "🦊", "🐺", "🦅", "🐬", "🦈", "🦋",
+  // Fun
+  "🚀", "👑", "💎", "🎭", "🌟", "🎪", "🤖", "🐉",
+];
