@@ -428,7 +428,7 @@ export async function promoteBetTypeGlobally(
   triggeringTournamentId: string,
   tournamentKind: string,
   betType: { category: string; subType: string; opensAt: Date | null },
-  options?: { skipRefresh?: boolean }
+  options?: { skipRefresh?: boolean; isolated?: boolean }
 ): Promise<void> {
   let frozen: Prisma.InputJsonValue | null = null;
 
@@ -475,13 +475,16 @@ export async function promoteBetTypeGlobally(
     }
   }
 
-  // Open all DRAFT bet types of this subType across all groups, with the same frozen odds.
+  // Open DRAFT bet types — either just this tournament (isolated/simulation mode)
+  // or all groups of the same tournament kind (normal mode).
   await db.betType.updateMany({
     where: {
       subType: betType.subType,
       category: betType.category as BetCategory,
       status: "DRAFT",
-      tournament: { kind: tournamentKind },
+      ...(options?.isolated
+        ? { tournamentId: triggeringTournamentId }
+        : { tournament: { kind: tournamentKind } }),
     },
     data: {
       status: "OPEN",

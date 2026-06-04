@@ -51,27 +51,35 @@ export async function loadBetsPageData(groupId: string, userId: string) {
 
   if (!tournament) return null;
 
+  // Simulation mode: effectiveNow is a fake date set by the admin.
+  // In that case, promotions must be isolated to this group only — we must not
+  // open bets on real groups just because a test group has fast-forwarded in time.
+  const isSimulated = !!groupSettings?.simulation?.enabled;
+
   // Auto-promote bet types whose opensAt has passed but DB still says DRAFT.
-  // All groups running the same tournament kind share identical odds, so promotion
-  // is a single atomic operation: fetch odds once → freeze → open across ALL groups.
   const toPromote = tournament.betTypes.filter(
     (bt) => bt.status === "DRAFT" && bt.opensAt != null && effectiveNow >= bt.opensAt && bt.frozenOdds == null
   );
 
   if (toPromote.length > 0) {
     // Pre-refresh odds ONCE before promoting any bet types (avoids redundant API calls).
+    // Skip for simulated groups — use whatever odds are already in the DB.
     const hasTournamentBets = toPromote.some((bt) => bt.category === "TOURNAMENT");
     const hasPerGameBets = toPromote.some((bt) => bt.category === "PER_GAME");
-    if (hasTournamentBets) {
-      await refreshOddsForBetType(tournament.id, "TOURNAMENT", "winner").catch(() => null);
-    }
-    if (hasPerGameBets) {
-      await refreshAllMatchOdds(tournament.id).catch(() => null);
+    if (!isSimulated) {
+      if (hasTournamentBets) {
+        await refreshOddsForBetType(tournament.id, "TOURNAMENT", "winner").catch(() => null);
+      }
+      if (hasPerGameBets) {
+        await refreshAllMatchOdds(tournament.id).catch(() => null);
+      }
     }
 
     for (const bt of toPromote) {
-      // skipRefresh: odds were already refreshed above in bulk.
-      await promoteBetTypeGlobally(tournament.id, tournament.kind, bt, { skipRefresh: true });
+      await promoteBetTypeGlobally(tournament.id, tournament.kind, bt, {
+        skipRefresh: true,
+        isolated: isSimulated, // simulated groups only affect their own tournament
+      });
 
       // Refresh local state so the rest of this page load sees the updated values.
       const updated = await db.betType.findUnique({ where: { id: bt.id } });
