@@ -60,6 +60,8 @@ export function usePushNotifications() {
         setDebugInfo("Error: VAPID key not configured");
         return;
       }
+      setDebugInfo(`Key: ${vapidKey.length} chars, starts: ${vapidKey.slice(0, 8)}, ends: ${vapidKey.slice(-8)}`);
+      await new Promise(r => setTimeout(r, 2000)); // pause so you can read it
       setDebugInfo("Waiting for SW...");
       const reg = await navigator.serviceWorker.ready;
       setDebugInfo("Subscribing to push...");
