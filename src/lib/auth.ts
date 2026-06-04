@@ -62,6 +62,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
           user.id = created.id;
         } else {
+          // Sync name from Google profile if it's more complete
+          if (user.name && user.name !== existing.name) {
+            await db.user.update({
+              where: { id: existing.id },
+              data: { name: user.name },
+            });
+          }
           user.id = existing.id;
         }
       }
