@@ -87,24 +87,26 @@ export function PlayerNameForm({
       resolution?.teamCode === currentPrediction?.teamCode;
 
     return (
-      <div className="flex flex-col" style={{ gap: 10, paddingTop: 4, paddingBottom: 4 }}>
+      <div className="flex flex-col" style={{ gap: 12, paddingTop: 4, paddingBottom: 4 }}>
+        {/* Pick row */}
         {selectedCandidate ? (
           <div className="flex items-center" style={{ gap: 10 }}>
-            <CircleFlag code={selectedCandidate.teamCode} size="xs" />
-            <div className="flex items-baseline min-w-0" style={{ gap: 8 }}>
-              <span className="text-sm font-medium text-neutral-900">{selectedCandidate.playerName}</span>
-              <span className="text-xs text-neutral-400">{selectedCandidate.teamCode}</span>
-            </div>
+            <CircleFlag code={selectedCandidate.teamCode} size="sm" />
+            <span className="text-base font-semibold text-neutral-900">{selectedCandidate.playerName}</span>
             {isResolved ? (
               isCorrect ? (
-                <span className="ml-auto inline-flex items-center text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-full" style={{ gap: 4, paddingLeft: 10, paddingRight: 10, paddingTop: 3, paddingBottom: 3 }}>
-                  <CheckCircle className="w-3.5 h-3.5" /> Correct
-                </span>
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-500 text-white text-sm font-bold shrink-0">✓</span>
               ) : (
-                <span className="ml-auto text-xs font-medium text-neutral-400 bg-neutral-100 rounded-full" style={{ paddingLeft: 10, paddingRight: 10, paddingTop: 3, paddingBottom: 3 }}>
-                  Incorrect
-                </span>
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-400 text-white text-sm font-bold shrink-0">✗</span>
               )
+            ) : null}
+            {isResolved ? (
+              <span className={cn(
+                "text-sm tabular-nums font-semibold ml-auto",
+                (earnedPoints ?? 0) > 0 ? "text-emerald-600" : "text-neutral-400"
+              )}>
+                {(earnedPoints ?? 0).toFixed(1)} pts earned
+              </span>
             ) : pts != null ? (
               <span className="text-xs text-neutral-400 tabular-nums ml-auto">{pts.toFixed(1)} potential pts</span>
             ) : null}
@@ -116,21 +118,23 @@ export function PlayerNameForm({
           </span>
         )}
 
-        {/* Resolution row — show winner + earned points */}
-        {isResolved && (
-          <div className="flex items-center rounded-xl bg-neutral-50 border border-neutral-100" style={{ gap: 10, padding: "10px 12px" }}>
-            <CircleFlag code={resolution!.teamCode ?? ""} size="xs" />
-            <div className="flex items-baseline min-w-0" style={{ gap: 6 }}>
-              <span className="text-xs text-neutral-500">Winner:</span>
-              <span className="text-sm font-semibold text-neutral-900">{resolution!.playerName}</span>
-              <span className="text-xs text-neutral-400">{resolution!.teamCode}</span>
-            </div>
-            {earnedPoints != null && earnedPoints > 0 && (
-              <span className="ml-auto text-base font-bold text-pitch-700 tabular-nums">{earnedPoints.toFixed(1)} pts</span>
-            )}
-            {earnedPoints != null && earnedPoints === 0 && (
-              <span className="ml-auto text-sm font-medium text-neutral-400 tabular-nums">0 pts</span>
-            )}
+        {/* Correct picks */}
+        {isResolved && resolution?.playerName && (
+          <div className="flex flex-col" style={{ gap: 8 }}>
+            <span className="text-xs font-medium text-neutral-500">Correct picks:</span>
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full text-sm font-medium w-fit",
+                isCorrect
+                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                  : "bg-neutral-100 text-neutral-700"
+              )}
+              style={{ gap: 8, paddingLeft: 10, paddingRight: 14, paddingTop: 6, paddingBottom: 6 }}
+            >
+              <CircleFlag code={resolution.teamCode ?? ""} size="xs" />
+              {resolution.playerName}
+              <span className="text-xs text-neutral-400">{resolution.teamCode}</span>
+            </span>
           </div>
         )}
       </div>

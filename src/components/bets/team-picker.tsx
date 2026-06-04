@@ -113,72 +113,67 @@ export function TeamPicker({
             .filter((t): t is Team => !!t)
         : [];
 
+    // Determine all correct teams to display (single or multiple)
+    const allCorrectTeams = correctTeam ? [correctTeam] : correctTeams;
+
     return (
-      <div className="flex flex-col" style={{ gap: 6, paddingTop: 4, paddingBottom: 4 }}>
-        <div className="flex items-center flex-wrap" style={{ gap: 10 }}>
-          {selectedTeam ? (
-            <>
-              <TeamBadge code={selectedTeam.code} tournamentKind={tournamentKind} size="sm" />
+      <div className="flex flex-col" style={{ gap: 12, paddingTop: 4, paddingBottom: 4 }}>
+        {/* Pick row */}
+        {selectedTeam ? (
+          <div className="flex items-center" style={{ gap: 10 }}>
+            <TeamBadge code={selectedTeam.code} tournamentKind={tournamentKind} size="md" />
+            <span className="text-base font-semibold text-neutral-900">{selectedTeam.name}</span>
+            {wasCorrect === true && (
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-500 text-white text-sm font-bold shrink-0">✓</span>
+            )}
+            {wasCorrect === false && (
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-400 text-white text-sm font-bold shrink-0">✗</span>
+            )}
+            {isResolved ? (
               <span className={cn(
-                "text-sm font-medium",
-                wasCorrect === true ? "text-emerald-700" : wasCorrect === false ? "text-neutral-500" : "text-neutral-900"
+                "text-sm tabular-nums font-semibold ml-auto",
+                (earnedPoints ?? 0) > 0 ? "text-emerald-600" : "text-neutral-400"
               )}>
-                {selectedTeam.name}
+                {(earnedPoints ?? 0).toFixed(1)} pts earned
               </span>
-              {wasCorrect === true && (
-                <span className="text-xs font-bold rounded bg-emerald-500 text-white leading-none" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>✓</span>
-              )}
-              {wasCorrect === false && (
-                <span className="text-xs font-bold rounded bg-red-400 text-white leading-none" style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2 }}>✗</span>
-              )}
-              {isResolved ? (
-                <span className={cn(
-                  "text-xs tabular-nums font-semibold",
-                  (earnedPoints ?? 0) > 0 ? "text-emerald-600" : "text-neutral-400"
-                )}>
-                  {(earnedPoints ?? 0).toFixed(1)} pts earned
-                </span>
-              ) : (
-                pts != null && (
-                  <span className="text-xs text-neutral-400 tabular-nums">{pts.toFixed(1)} potential points</span>
-                )
-              )}
-            </>
-          ) : (
-            <span className="flex items-center text-sm text-pitch-700" style={{ gap: 6 }}>
-              <Lock className="w-3.5 h-3.5" />
-              No prediction entered
-            </span>
-          )}
-        </div>
-        {isResolved && correctTeam && wasCorrect === false && (
-          <div className="flex items-center text-xs text-neutral-500" style={{ gap: 6 }}>
-            <span>Actual:</span>
-            <TeamBadge code={correctTeam.code} tournamentKind={tournamentKind} size="sm" />
-            <span className="font-medium text-neutral-700">{correctTeam.name}</span>
+            ) : pts != null ? (
+              <span className="text-xs text-neutral-400 tabular-nums ml-auto">{pts.toFixed(1)} potential pts</span>
+            ) : null}
+          </div>
+        ) : (
+          <span className="flex items-center text-sm text-neutral-400" style={{ gap: 6 }}>
+            <Lock className="w-3.5 h-3.5" />
+            No prediction entered
+          </span>
+        )}
+
+        {/* Correct picks */}
+        {isResolved && allCorrectTeams.length > 0 && (
+          <div className="flex flex-col" style={{ gap: 8 }}>
+            <span className="text-xs font-medium text-neutral-500">Correct picks:</span>
+            <div className="flex flex-wrap" style={{ gap: 8 }}>
+              {allCorrectTeams.map((t) => {
+                const isUserPick = selectedTeam?.code === t.code;
+                return (
+                  <span
+                    key={t.code}
+                    className={cn(
+                      "inline-flex items-center rounded-full text-sm font-medium",
+                      isUserPick
+                        ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                        : "bg-neutral-100 text-neutral-700"
+                    )}
+                    style={{ gap: 6, paddingLeft: 10, paddingRight: 12, paddingTop: 6, paddingBottom: 6 }}
+                  >
+                    <TeamBadge code={t.code} tournamentKind={tournamentKind} size="sm" />
+                    {t.name}
+                  </span>
+                );
+              })}
+            </div>
           </div>
         )}
-        {isResolved && correctTeams.length > 0 && (
-          <div className="flex items-start text-xs text-neutral-500 flex-wrap" style={{ gap: 6 }}>
-            <span className="shrink-0">Correct picks:</span>
-            <span className="flex items-center flex-wrap" style={{ gap: 6 }}>
-              {correctTeams.map((t) => (
-                <span
-                  key={t.code}
-                  className={cn(
-                    "inline-flex items-center rounded-full bg-neutral-100",
-                    selectedTeam?.code === t.code && "bg-emerald-100 text-emerald-800"
-                  )}
-                  style={{ gap: 4, paddingLeft: 8, paddingRight: 8, paddingTop: 2, paddingBottom: 2 }}
-                >
-                  <TeamBadge code={t.code} tournamentKind={tournamentKind} size="sm" />
-                  <span className="font-medium">{t.name}</span>
-                </span>
-              ))}
-            </span>
-          </div>
-        )}
-        {isResolved && correctTeams.length === 0 && resolution!.teams && (
+        {isResolved && allCorrectTeams.length === 0 && resolution!.teams && (
           <span className="text-xs text-neutral-400">No team matched the criteria.</span>
         )}
       </div>
