@@ -208,6 +208,73 @@ export async function fetchMatchOdds(): Promise<Record<string, LiveMatchOdds> | 
   return result;
 }
 
+/**
+ * Fetch player award outright odds (top goalscorer, best player, best goalkeeper).
+ * The Odds API may or may not have these markets depending on availability.
+ * Returns an array of { name, odds } sorted by odds ascending, or null if unavailable.
+ *
+ * Sport keys tried:
+ *   - soccer_fifa_world_cup_top_goalscorer (Golden Boot)
+ *   - soccer_fifa_world_cup_best_player (Golden Ball — less commonly offered)
+ *   - soccer_fifa_world_cup_best_goalkeeper (Golden Glove — less commonly offered)
+ *
+ * Falls back to the tournament-winner event's outright markets which sometimes
+ * include player award sub-markets from certain bookmakers.
+ */
+export async function fetchPlayerAwardOdds(
+  awardType: "golden_boot" | "golden_ball" | "golden_glove"
+): Promise<Array<{ playerName: string; odds: number }> | null> {
+  const cacheKey = `player_award_${awardType}`;
+  const cached = getCached<Array<{ playerName: string; odds: number }>>(cacheKey);
+  if (cached) return cached;
+
+  // Map award to likely Odds API sport keys (try most specific first)
+  const sportKeys: string[] = {
+    golden_boot: ["soccer_fifa_world_cup_top_goalscorer", "soccer_fifa_world_cup_winner"],
+    golden_ball: ["soccer_fifa_world_cup_best_player", "soccer_fifa_world_cup_winner"],
+    golden_glove: ["soccer_fifa_world_cup_best_goalkeeper", "soccer_fifa_world_cup_winner"],
+  }[awardType];
+
+  for (const sportKey of sportKeys) {
+    const events = await get<OddsApiEvent[]>(`/sports/${sportKey}/odds`, {
+      regions: "uk,eu,us",
+      markets: "outrights",
+      oddsFormat: "decimal",
+    });
+    if (!events || events.length === 0) continue;
+
+    const byPlayer: Record<string, number[]> = {};
+    for (const ev of events) {
+      for (const bk of ev.bookmakers) {
+        for (const mkt of bk.markets) {
+          if (mkt.key !== "outrights") continue;
+          for (const o of mkt.outcomes) {
+            (byPlayer[o.name] ??= []).push(o.price);
+          }
+        }
+      }
+    }
+
+    if (Object.keys(byPlayer).length === 0) continue;
+
+    // Take median odds per player and convert to integer (×100 like winnerOdds)
+    const results: Array<{ playerName: string; odds: number }> = [];
+    for (const [name, prices] of Object.entries(byPlayer)) {
+      prices.sort((a, b) => a - b);
+      const median = prices[Math.floor(prices.length / 2)];
+      results.push({ playerName: name, odds: Math.round(median * 100) });
+    }
+
+    if (results.length > 0) {
+      results.sort((a, b) => a.odds - b.odds);
+      setCache(cacheKey, results);
+      return results;
+    }
+  }
+
+  return null;
+}
+
 export function isConfigured(): boolean {
   return apiKey() !== null;
 }

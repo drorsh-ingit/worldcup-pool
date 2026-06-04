@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { Prisma, BetCategory } from "@prisma/client";
-import { fetchTournamentWinnerOdds, fetchMatchOdds, isConfigured } from "@/lib/odds-api";
+import { fetchTournamentWinnerOdds, fetchMatchOdds, fetchPlayerAwardOdds, isConfigured } from "@/lib/odds-api";
 import { deriveScoreOdds, impliedTotalGoals } from "@/lib/match-odds";
 import { WC2026_API_NAME_TO_CODE, GOLDEN_BALL_CANDIDATES, GOLDEN_GLOVE_CANDIDATES, GOLDEN_BOOT_CANDIDATES } from "@/lib/data/wc2026";
 
@@ -270,19 +270,47 @@ export async function snapshotOddsForBetType(
 ): Promise<Prisma.InputJsonValue | null> {
   if (category !== "TOURNAMENT") return null;
 
-  // For player-award bets, snapshot the current candidate list sorted by odds.
-  // There is no live API for these markets, so we freeze the static list at open time
-  // so future edits to the data file don't affect already-open bets.
-  if (subType === "golden_ball") {
-    const candidates = [...GOLDEN_BALL_CANDIDATES].sort((a, b) => a.odds - b.odds);
-    return { candidates } as unknown as Prisma.InputJsonValue;
-  }
-  if (subType === "golden_glove") {
-    const candidates = [...GOLDEN_GLOVE_CANDIDATES].sort((a, b) => a.odds - b.odds);
-    return { candidates } as unknown as Prisma.InputJsonValue;
-  }
-  if (subType === "golden_boot") {
-    const candidates = [...GOLDEN_BOOT_CANDIDATES].sort((a, b) => a.odds - b.odds);
+  // For player-award bets: try live API first, fall back to static list.
+  // The static list is always used as a baseline — live API results override it
+  // when available, giving fresher odds at bet-open time.
+  const playerAwardSubType =
+    subType === "golden_boot" ? "golden_boot"
+    : subType === "golden_ball" ? "golden_ball"
+    : subType === "golden_glove" ? "golden_glove"
+    : null;
+
+  if (playerAwardSubType) {
+    const staticFallback = {
+      golden_boot: GOLDEN_BOOT_CANDIDATES,
+      golden_ball: GOLDEN_BALL_CANDIDATES,
+      golden_glove: GOLDEN_GLOVE_CANDIDATES,
+    }[playerAwardSubType];
+
+    // Try live API (may return null if market not posted yet)
+    const live = await fetchPlayerAwardOdds(playerAwardSubType).catch(() => null);
+
+    if (live && live.length > 0) {
+      // Merge: live data wins for known players, static fills in missing ones
+      const liveByName = new Map(live.map((p) => [p.playerName.toLowerCase(), p]));
+      const merged = live.map((p) => ({ playerName: p.playerName, teamCode: "", odds: p.odds }));
+
+      // Add static candidates not present in live (preserving teamCode from static)
+      for (const s of staticFallback) {
+        if (!liveByName.has(s.playerName.toLowerCase())) {
+          merged.push({ playerName: s.playerName, teamCode: s.teamCode, odds: s.odds });
+        } else {
+          // Enrich live entry with teamCode from static
+          const idx = merged.findIndex((p) => p.playerName.toLowerCase() === s.playerName.toLowerCase());
+          if (idx !== -1) merged[idx].teamCode = s.teamCode;
+        }
+      }
+
+      const candidates = merged.filter((p) => p.teamCode).sort((a, b) => a.odds - b.odds);
+      return { candidates } as unknown as Prisma.InputJsonValue;
+    }
+
+    // API unavailable — use static list
+    const candidates = [...staticFallback].sort((a, b) => a.odds - b.odds);
     return { candidates } as unknown as Prisma.InputJsonValue;
   }
 
