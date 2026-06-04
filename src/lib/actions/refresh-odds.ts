@@ -204,6 +204,63 @@ function deriveGroupOdds(
  * match in the tournament that we can match by team name + kickoff date.
  * Also derives correct-score odds from the refreshed h2h prices.
  */
+/**
+ * Copy match oddsData from a sibling tournament (same kind) to the given tournament.
+ * Used so late-created groups get identical odds to already-opened groups rather than
+ * re-fetching from the API and potentially getting different values.
+ * Returns the number of matches updated, or 0 if no sibling had odds yet.
+ */
+export async function copyMatchOddsFromSibling(tournamentId: string): Promise<number> {
+  const tournament = await db.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { kind: true },
+  });
+  if (!tournament) return 0;
+
+  // Find a sibling tournament that already has match odds
+  const sibling = await db.tournament.findFirst({
+    where: {
+      kind: tournament.kind,
+      id: { not: tournamentId },
+      matches: { some: { oddsData: { not: Prisma.JsonNull } } },
+    },
+    include: {
+      matches: {
+        where: { oddsData: { not: Prisma.JsonNull }, status: "UPCOMING" },
+        include: { homeTeam: true, awayTeam: true },
+      },
+    },
+  });
+
+  if (!sibling || sibling.matches.length === 0) return 0;
+
+  // Build lookup from sibling: homeCode+awayCode → oddsData
+  const siblingOdds = new Map<string, unknown>();
+  for (const m of sibling.matches) {
+    siblingOdds.set(`${m.homeTeam.code}__${m.awayTeam.code}`, m.oddsData);
+  }
+
+  // Apply to this tournament's matches
+  const matches = await db.match.findMany({
+    where: { tournamentId, status: "UPCOMING" },
+    include: { homeTeam: true, awayTeam: true },
+  });
+
+  let updated = 0;
+  for (const m of matches) {
+    const key = `${m.homeTeam.code}__${m.awayTeam.code}`;
+    const odds = siblingOdds.get(key);
+    if (!odds) continue;
+    await db.match.update({
+      where: { id: m.id },
+      data: { oddsData: odds as Prisma.InputJsonValue },
+    });
+    updated++;
+  }
+
+  return updated;
+}
+
 export async function refreshAllMatchOdds(tournamentId: string): Promise<RefreshResult> {
   if (!isConfigured()) return { refreshed: false, reason: "ODDS_API_KEY not set" };
 
@@ -401,12 +458,18 @@ export async function promoteBetTypeGlobally(
       frozen = await snapshotOddsForBetType(triggeringTournamentId, betType.category, betType.subType);
     } else if (betType.category === "PER_GAME") {
       if (!options?.skipRefresh) {
+        // Find all tournaments of this kind that don't yet have match odds.
+        // For each, try to copy from a sibling first; only hit the API if no sibling has odds.
         const tournaments = await db.tournament.findMany({
           where: { kind: tournamentKind },
           select: { id: true },
         });
         for (const t of tournaments) {
-          await refreshOddsForBetType(t.id, betType.category, betType.subType).catch(() => null);
+          const copied = await copyMatchOddsFromSibling(t.id).catch(() => 0);
+          if (copied === 0) {
+            // No sibling had odds — fetch from API (first group to open)
+            await refreshOddsForBetType(t.id, betType.category, betType.subType).catch(() => null);
+          }
         }
       }
     }
