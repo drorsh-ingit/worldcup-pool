@@ -21,6 +21,8 @@ interface PlayerNameFormProps {
   candidates: Candidate[];
   currentPrediction?: { playerName?: string; teamCode?: string };
   pointsByCandidate?: Record<string, number>;
+  resolution?: { playerName?: string; teamCode?: string } | null;
+  earnedPoints?: number | null;
 }
 
 export function PlayerNameForm({
@@ -31,6 +33,8 @@ export function PlayerNameForm({
   candidates,
   currentPrediction,
   pointsByCandidate,
+  resolution,
+  earnedPoints,
 }: PlayerNameFormProps) {
   const currentKey = currentPrediction
     ? `${currentPrediction.playerName}|${currentPrediction.teamCode}`
@@ -77,24 +81,57 @@ export function PlayerNameForm({
 
   if (isLocked) {
     const pts = selected ? pointsByCandidate?.[selected] : undefined;
+    const isResolved = !!resolution?.playerName;
+    const isCorrect = isResolved &&
+      resolution?.playerName === currentPrediction?.playerName &&
+      resolution?.teamCode === currentPrediction?.teamCode;
+
     return (
-      <div className="flex items-center" style={{ gap: 10, paddingTop: 4, paddingBottom: 4 }}>
+      <div className="flex flex-col" style={{ gap: 10, paddingTop: 4, paddingBottom: 4 }}>
         {selectedCandidate ? (
-          <>
+          <div className="flex items-center" style={{ gap: 10 }}>
             <CircleFlag code={selectedCandidate.teamCode} size="xs" />
             <div className="flex items-baseline min-w-0" style={{ gap: 8 }}>
               <span className="text-sm font-medium text-neutral-900">{selectedCandidate.playerName}</span>
               <span className="text-xs text-neutral-400">{selectedCandidate.teamCode}</span>
             </div>
-            {pts != null && (
-              <span className="text-xs text-neutral-400 tabular-nums ml-auto">{pts.toFixed(1)} potential points</span>
-            )}
-          </>
+            {isResolved ? (
+              isCorrect ? (
+                <span className="ml-auto inline-flex items-center text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-full" style={{ gap: 4, paddingLeft: 10, paddingRight: 10, paddingTop: 3, paddingBottom: 3 }}>
+                  <CheckCircle className="w-3.5 h-3.5" /> Correct
+                </span>
+              ) : (
+                <span className="ml-auto text-xs font-medium text-neutral-400 bg-neutral-100 rounded-full" style={{ paddingLeft: 10, paddingRight: 10, paddingTop: 3, paddingBottom: 3 }}>
+                  Incorrect
+                </span>
+              )
+            ) : pts != null ? (
+              <span className="text-xs text-neutral-400 tabular-nums ml-auto">{pts.toFixed(1)} potential pts</span>
+            ) : null}
+          </div>
         ) : (
-          <span className="flex items-center text-sm text-pitch-700" style={{ gap: 6 }}>
+          <span className="flex items-center text-sm text-neutral-400" style={{ gap: 6 }}>
             <Lock className="w-3.5 h-3.5" />
             No prediction entered
           </span>
+        )}
+
+        {/* Resolution row — show winner + earned points */}
+        {isResolved && (
+          <div className="flex items-center rounded-xl bg-neutral-50 border border-neutral-100" style={{ gap: 10, padding: "10px 12px" }}>
+            <CircleFlag code={resolution!.teamCode ?? ""} size="xs" />
+            <div className="flex items-baseline min-w-0" style={{ gap: 6 }}>
+              <span className="text-xs text-neutral-500">Winner:</span>
+              <span className="text-sm font-semibold text-neutral-900">{resolution!.playerName}</span>
+              <span className="text-xs text-neutral-400">{resolution!.teamCode}</span>
+            </div>
+            {earnedPoints != null && earnedPoints > 0 && (
+              <span className="ml-auto text-base font-bold text-pitch-700 tabular-nums">{earnedPoints.toFixed(1)} pts</span>
+            )}
+            {earnedPoints != null && earnedPoints === 0 && (
+              <span className="ml-auto text-sm font-medium text-neutral-400 tabular-nums">0 pts</span>
+            )}
+          </div>
         )}
       </div>
     );

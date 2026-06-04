@@ -373,6 +373,8 @@ export default async function BetsPage({ params }: BetsPageProps) {
                 candidates={[...GOLDEN_BOOT_CANDIDATES]}
                 currentPrediction={currentBet?.prediction as { playerName?: string; teamCode?: string } | undefined}
                 pointsByCandidate={goldenBootPoints}
+                resolution={bt.resolution as { playerName?: string; teamCode?: string } | null}
+                earnedPoints={currentBet?.totalPoints ?? null}
               />
           ) : bt.subType === "group_predictions" ? (
             <GroupPredictionsPicker
@@ -415,6 +417,8 @@ export default async function BetsPage({ params }: BetsPageProps) {
               candidates={resolveCandidates(bt, GOLDEN_BALL_CANDIDATES, filterByAdvancing)}
               currentPrediction={currentBet?.prediction as { playerName?: string; teamCode?: string } | undefined}
               pointsByCandidate={goldenBallPoints}
+              resolution={bt.resolution as { playerName?: string; teamCode?: string } | null}
+              earnedPoints={currentBet?.totalPoints ?? null}
             />
           ) : bt.subType === "golden_glove" ? (
             <PlayerNameForm
@@ -426,6 +430,8 @@ export default async function BetsPage({ params }: BetsPageProps) {
               candidates={resolveCandidates(bt, GOLDEN_GLOVE_CANDIDATES, filterByAdvancing)}
               currentPrediction={currentBet?.prediction as { playerName?: string; teamCode?: string } | undefined}
               pointsByCandidate={goldenGlovePoints}
+              resolution={bt.resolution as { playerName?: string; teamCode?: string } | null}
+              earnedPoints={currentBet?.totalPoints ?? null}
             />
           ) : bt.subType === "bracket" ? (
             <BracketPicker
