@@ -17,12 +17,15 @@ export function usePushNotifications() {
   const [loading, setLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [canPush, setCanPush] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator)) {
       setPermission("unsupported");
       return;
     }
+
+    setCanPush("PushManager" in window);
     setPermission(Notification.permission);
 
     // Register SW and check if already subscribed
@@ -108,5 +111,5 @@ export function usePushNotifications() {
     }
   }
 
-  return { permission, subscribed, loading, subscribe, unsubscribe, debugInfo };
+  return { permission, subscribed, loading, subscribe, unsubscribe, debugInfo, canPush };
 }
