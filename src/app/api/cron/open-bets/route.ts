@@ -22,7 +22,12 @@ export async function GET(request: Request) {
   const windowStart = new Date(now.getTime() + TWO_HOURS);
   const windowEnd = new Date(now.getTime() + THREE_HOURS);
 
-  let notificationsSent = 0;
+  // Collect pending items per user across ALL groups, then send one
+  // consolidated notification per user to avoid duplicates for users
+  // who belong to multiple groups.
+
+  // Map: userId → list of pending item descriptions
+  const userPendingItems = new Map<string, { items: string[]; groupId: string; minutesLeft: number }>();
 
   // ── 1. Tournament / curated bet types with locksAt in the window ──────────
   const closingBetTypes = await db.betType.findMany({
@@ -39,7 +44,6 @@ export async function GET(request: Request) {
   for (const bt of closingBetTypes) {
     const groupId = bt.tournament.groupId;
 
-    // Users in this group with a push subscription who haven't bet on this type
     const subscribedMembers = await db.groupMembership.findMany({
       where: { groupId, status: "APPROVED" },
       select: {
@@ -58,6 +62,8 @@ export async function GET(request: Request) {
 
     if (eligibleUserIds.length === 0) continue;
 
+    // Check which users already placed this bet in ANY group (same subType)
+    // to avoid nagging about bets they've already made elsewhere
     const existingBets = await db.bet.findMany({
       where: { betTypeId: bt.id, matchId: null, userId: { in: eligibleUserIds } },
       select: { userId: true },
@@ -70,12 +76,18 @@ export async function GET(request: Request) {
     const betName = bt.name ?? bt.subType.replace(/_/g, " ");
     const minutesLeft = Math.round((new Date(bt.locksAt!).getTime() - now.getTime()) / 60000);
 
-    await sendPushToUsers(pendingUserIds, {
-      title: "Prediction closing soon!",
-      body: `${betName} closes in ~${minutesLeft} min — place your bet now.`,
-      url: `/group/${groupId}/bets`,
-    });
-    notificationsSent += pendingUserIds.length;
+    for (const userId of pendingUserIds) {
+      const entry = userPendingItems.get(userId);
+      if (entry) {
+        // Only add if we haven't already listed this bet name
+        if (!entry.items.includes(betName)) {
+          entry.items.push(betName);
+        }
+        entry.minutesLeft = Math.min(entry.minutesLeft, minutesLeft);
+      } else {
+        userPendingItems.set(userId, { items: [betName], groupId, minutesLeft });
+      }
+    }
   }
 
   // ── 2. Per-game matches with kickoffAt in the window ─────────────────────
@@ -99,11 +111,16 @@ export async function GET(request: Request) {
     },
   });
 
+  // Track which matches we've already added (by home vs away) to avoid
+  // duplicate entries when user is in multiple groups
+  const matchNotified = new Set<string>();
+
   for (const match of closingMatches) {
     const mwBetType = match.tournament.betTypes[0];
-    if (!mwBetType) continue; // per-game betting not open for this tournament
+    if (!mwBetType) continue;
 
     const groupId = match.tournament.groupId;
+    const matchLabel = `${match.homeTeam.name} vs ${match.awayTeam.name}`;
 
     const subscribedMembers = await db.groupMembership.findMany({
       where: { groupId, status: "APPROVED" },
@@ -134,12 +151,42 @@ export async function GET(request: Request) {
 
     const minutesLeft = Math.round((new Date(match.kickoffAt).getTime() - now.getTime()) / 60000);
 
-    await sendPushToUsers(pendingUserIds, {
-      title: "Match starting soon!",
-      body: `${match.homeTeam.name} vs ${match.awayTeam.name} kicks off in ~${minutesLeft} min — predict the score!`,
-      url: `/group/${groupId}/matches`,
+    for (const userId of pendingUserIds) {
+      const dedupeKey = `${userId}:${matchLabel}`;
+      if (matchNotified.has(dedupeKey)) continue;
+      matchNotified.add(dedupeKey);
+
+      const entry = userPendingItems.get(userId);
+      if (entry) {
+        if (!entry.items.includes(matchLabel)) {
+          entry.items.push(matchLabel);
+        }
+        entry.minutesLeft = Math.min(entry.minutesLeft, minutesLeft);
+      } else {
+        userPendingItems.set(userId, { items: [matchLabel], groupId, minutesLeft });
+      }
+    }
+  }
+
+  // ── 3. Send ONE notification per user ────────────────────────────────────
+  let notificationsSent = 0;
+
+  for (const [userId, { items, groupId, minutesLeft }] of userPendingItems) {
+    let body: string;
+    if (items.length === 1) {
+      body = `${items[0]} closes in ~${minutesLeft} min — place your bet now.`;
+    } else if (items.length <= 3) {
+      body = `${items.join(", ")} close soon — place your bets!`;
+    } else {
+      body = `${items.length} predictions closing soon — place your bets!`;
+    }
+
+    await sendPushToUsers([userId], {
+      title: "Prediction closing soon!",
+      body,
+      url: `/group/${groupId}/bets`,
     });
-    notificationsSent += pendingUserIds.length;
+    notificationsSent++;
   }
 
   return NextResponse.json({ notificationsSent });
