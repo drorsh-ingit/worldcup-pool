@@ -16,10 +16,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
   }
 
+  // Check if this endpoint already belongs to a different user
+  const existing = await db.pushSubscription.findUnique({ where: { endpoint } });
+  if (existing && existing.userId !== session.user.id) {
+    return NextResponse.json({ error: "Subscription endpoint already in use" }, { status: 409 });
+  }
+
   await db.pushSubscription.upsert({
     where: { endpoint },
     create: { userId: session.user.id, endpoint, p256dh: keys.p256dh, auth: keys.auth },
-    update: { userId: session.user.id, p256dh: keys.p256dh, auth: keys.auth },
+    update: { p256dh: keys.p256dh, auth: keys.auth },
   });
 
   return NextResponse.json({ success: true });

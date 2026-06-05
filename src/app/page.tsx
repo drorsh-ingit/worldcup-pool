@@ -10,7 +10,8 @@ import { MatchdayLogo } from "@/components/matchday-logo";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const rawCallback = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = rawCallback.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/dashboard";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 

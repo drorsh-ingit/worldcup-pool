@@ -106,6 +106,18 @@ export async function getUserBets(tournamentId: string) {
   const session = await auth();
   if (!session) return [];
 
+  // Verify user is a member of the group that owns this tournament
+  const tournament = await db.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { groupId: true },
+  });
+  if (!tournament) return [];
+
+  const membership = await db.groupMembership.findUnique({
+    where: { userId_groupId: { userId: session.user.id, groupId: tournament.groupId } },
+  });
+  if (!membership || membership.status !== "APPROVED") return [];
+
   return db.bet.findMany({
     where: { userId: session.user.id, tournamentId },
     include: { betType: true, match: { include: { homeTeam: true, awayTeam: true } } },

@@ -4,11 +4,17 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 
+const VALID_AVATAR_STYLES = [
+  "adventurer", "avataaars", "bottts", "fun-emoji", "lorelei",
+  "micah", "notionists", "personas", "pixel-art", "thumbs",
+  "croodles", "shapes",
+] as const;
+
 const schema = z.object({
   name: z.string().min(1).max(50),
   avatarColor: z.coerce.number().int().min(0).max(11).optional(),
-  avatarStyle: z.string().optional(),
-  avatarSeed: z.string().optional(),
+  avatarStyle: z.enum(VALID_AVATAR_STYLES).optional(),
+  avatarSeed: z.string().max(20).optional(),
 });
 
 export async function updateProfile(formData: FormData) {
@@ -40,6 +46,9 @@ export async function updateProfile(formData: FormData) {
 export const updateName = updateProfile;
 
 export async function getAvatarColor(userId: string): Promise<number | null> {
+  const session = await auth();
+  if (!session) return null;
+
   const user = await db.user.findUnique({ where: { id: userId }, select: { avatarColor: true } });
   return user?.avatarColor ?? null;
 }
