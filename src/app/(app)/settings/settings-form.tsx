@@ -251,12 +251,36 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
               )}
 
               {!canPush && (
-                <div>
-                  <p className="text-sm text-neutral-500" style={{ marginBottom: 8 }}>Push notifications aren&apos;t available in this browser. Here&apos;s how to enable them:</p>
-                  <ul className="text-xs text-neutral-400" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    <li><span className="font-medium text-neutral-500">Android</span> — open this site in Chrome, go to your Profile, and tap &quot;Turn on&quot; under Notifications.</li>
-                    <li><span className="font-medium text-neutral-500">iPhone / iPad</span> — set Safari as your default browser (Settings → Safari → Default Browser App), open this site in Safari, tap the Share button → &quot;Add to Home Screen&quot;. Then open the app from your Home Screen, go to your Profile, and tap &quot;Turn on&quot; under Notifications. You can switch your default browser back afterwards.</li>
-                  </ul>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {subscribed && (
+                    <div className="flex items-center justify-between" style={{ gap: 12 }}>
+                      <div className="flex items-center" style={{ gap: 10 }}>
+                        <Bell className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-neutral-900">Notifications enabled</p>
+                          <p className="text-xs text-neutral-500" style={{ marginTop: 2 }}>You&apos;ll be notified when new bets open.</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={unsubscribe}
+                        disabled={pushLoading}
+                        className="text-sm font-medium rounded-lg transition-colors disabled:opacity-50 text-neutral-500 bg-white border border-neutral-200 hover:bg-neutral-50"
+                        style={{ paddingLeft: 14, paddingRight: 14, paddingTop: 7, paddingBottom: 7, whiteSpace: "nowrap" }}
+                      >
+                        {pushLoading ? "…" : "Turn off"}
+                      </button>
+                    </div>
+                  )}
+                  {!subscribed && (
+                    <div>
+                      <p className="text-sm text-neutral-500" style={{ marginBottom: 8 }}>Push notifications aren&apos;t available in this browser. Here&apos;s how to enable them:</p>
+                      <ul className="text-xs text-neutral-400" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <li><span className="font-medium text-neutral-500">Android</span> — open this site in Chrome, go to your Profile, and tap &quot;Turn on&quot; under Notifications.</li>
+                        <li><span className="font-medium text-neutral-500">iPhone / iPad</span> — set Safari as your default browser (Settings → Safari → Default Browser App), open this site in Safari, tap the Share button → &quot;Add to Home Screen&quot;. Then open the app from your Home Screen, go to your Profile, and tap &quot;Turn on&quot; under Notifications. You can switch your default browser back afterwards.</li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
