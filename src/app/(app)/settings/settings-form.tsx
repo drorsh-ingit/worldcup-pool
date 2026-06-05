@@ -254,8 +254,8 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
                 <div>
                   <p className="text-sm text-neutral-500" style={{ marginBottom: 8 }}>Push notifications aren&apos;t available in this browser. Here&apos;s how to enable them:</p>
                   <ul className="text-xs text-neutral-400" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    <li><span className="font-medium text-neutral-500">Android</span> — open this site in Chrome. Notifications work directly in the browser.</li>
-                    <li><span className="font-medium text-neutral-500">iPhone / iPad</span> — set Safari as your default browser (Settings → Safari → Default Browser App), open this site in Safari, tap the Share button → &quot;Add to Home Screen&quot;. Then open the app from your Home Screen — notifications will be available in Settings. You can switch your default browser back afterwards.</li>
+                    <li><span className="font-medium text-neutral-500">Android</span> — open this site in Chrome, go to your Profile, and tap &quot;Turn on&quot; under Notifications.</li>
+                    <li><span className="font-medium text-neutral-500">iPhone / iPad</span> — set Safari as your default browser (Settings → Safari → Default Browser App), open this site in Safari, tap the Share button → &quot;Add to Home Screen&quot;. Then open the app from your Home Screen, go to your Profile, and tap &quot;Turn on&quot; under Notifications. You can switch your default browser back afterwards.</li>
                   </ul>
                 </div>
               )}
