@@ -314,7 +314,6 @@ export const GOLDEN_BOOT_CANDIDATES = [
   { playerName: "Kai Havertz", teamCode: "GER", odds: 2100 },
   { playerName: "Lautaro Martínez", teamCode: "ARG", odds: 2100 },
   { playerName: "Nick Woltemade", teamCode: "GER", odds: 2100 },
-  { playerName: "José Vinicius Junior", teamCode: "BRA", odds: 2300 },
   { playerName: "Julián Álvarez", teamCode: "ARG", odds: 2300 },
   { playerName: "Romelu Lukaku", teamCode: "BEL", odds: 2900 },
   { playerName: "Bukayo Saka", teamCode: "ENG", odds: 2900 },
@@ -329,6 +328,7 @@ export const GOLDEN_BOOT_CANDIDATES = [
   { playerName: "Jérémy Doku", teamCode: "BEL", odds: 3100 },
   { playerName: "Dani Olmo", teamCode: "ESP", odds: 3100 },
   { playerName: "Rafael Leão", teamCode: "POR", odds: 3100 },
+  { playerName: "Igor Thiago", teamCode: "BRA", odds: 3400 },
 ] as const;
 
 /**
