@@ -25,7 +25,14 @@ export function usePushNotifications() {
       return;
     }
 
-    setCanPush("PushManager" in window);
+    const hasPushManager = "PushManager" in window;
+    const ua = navigator.userAgent;
+    const isAndroid = /android/i.test(ua);
+    const isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+      || (navigator as unknown as { standalone?: boolean }).standalone === true;
+
+    setCanPush(hasPushManager && (isAndroid || (isIOS && isStandalone)));
     setPermission(Notification.permission);
 
     // Register SW and check if already subscribed
