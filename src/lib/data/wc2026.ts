@@ -321,7 +321,7 @@ export const GOLDEN_BOOT_CANDIDATES = [
   { playerName: "Cody Gakpo", teamCode: "NED", odds: 3100 },
   { playerName: "Luis Díaz", teamCode: "COL", odds: 3100 },
   { playerName: "Darwin Núñez", teamCode: "URU", odds: 3100 },
-  { playerName: "Luis Suárez", teamCode: "URU", odds: 3100 },
+  { playerName: "Luis Javier Suárez", teamCode: "COL", odds: 3100 },
   { playerName: "Jamal Musiala", teamCode: "GER", odds: 3100 },
   { playerName: "Jude Bellingham", teamCode: "ENG", odds: 3100 },
   { playerName: "Enner Valencia", teamCode: "ECU", odds: 3100 },
