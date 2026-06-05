@@ -17,9 +17,10 @@ interface Props {
   initialStyle: string | null;
   initialSeed: string | null;
   userId: string;
+  hasAnyPushSubscription: boolean;
 }
 
-export function SettingsForm({ initialName, realName, email, initialColor, initialStyle, initialSeed, userId }: Props) {
+export function SettingsForm({ initialName, realName, email, initialColor, initialStyle, initialSeed, userId, hasAnyPushSubscription }: Props) {
   const { update } = useSession();
   const router = useRouter();
   const { permission, subscribed, loading: pushLoading, subscribe, unsubscribe, debugInfo, canPush } = usePushNotifications();
@@ -252,27 +253,16 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
 
               {!canPush && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {subscribed && (
-                    <div className="flex items-center justify-between" style={{ gap: 12 }}>
-                      <div className="flex items-center" style={{ gap: 10 }}>
-                        <Bell className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium text-neutral-900">Notifications enabled</p>
-                          <p className="text-xs text-neutral-500" style={{ marginTop: 2 }}>You&apos;ll be notified when new bets open.</p>
-                        </div>
+                  {hasAnyPushSubscription && (
+                    <div className="flex items-center" style={{ gap: 10 }}>
+                      <Bell className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900">Notifications enabled</p>
+                        <p className="text-xs text-neutral-500" style={{ marginTop: 2 }}>You&apos;ll be notified when new bets open on your other device.</p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={unsubscribe}
-                        disabled={pushLoading}
-                        className="text-sm font-medium rounded-lg transition-colors disabled:opacity-50 text-neutral-500 bg-white border border-neutral-200 hover:bg-neutral-50"
-                        style={{ paddingLeft: 14, paddingRight: 14, paddingTop: 7, paddingBottom: 7, whiteSpace: "nowrap" }}
-                      >
-                        {pushLoading ? "…" : "Turn off"}
-                      </button>
                     </div>
                   )}
-                  {!subscribed && (
+                  {!hasAnyPushSubscription && (
                     <div>
                       <p className="text-sm text-neutral-500" style={{ marginBottom: 8 }}>Push notifications aren&apos;t available in this browser. Here&apos;s how to enable them:</p>
                       <ul className="text-xs text-neutral-400" style={{ display: "flex", flexDirection: "column", gap: 4 }}>

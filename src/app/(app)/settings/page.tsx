@@ -9,10 +9,13 @@ export default async function SettingsPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { name: true, realName: true, email: true, avatarColor: true, avatarStyle: true, avatarSeed: true },
-  });
+  const [user, pushSubCount] = await Promise.all([
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true, realName: true, email: true, avatarColor: true, avatarStyle: true, avatarSeed: true },
+    }),
+    db.pushSubscription.count({ where: { userId: session.user.id } }),
+  ]);
 
   return (
     <SettingsForm
@@ -23,6 +26,7 @@ export default async function SettingsPage() {
       initialStyle={user?.avatarStyle ?? null}
       initialSeed={user?.avatarSeed ?? null}
       userId={session.user.id}
+      hasAnyPushSubscription={pushSubCount > 0}
     />
   );
 }
