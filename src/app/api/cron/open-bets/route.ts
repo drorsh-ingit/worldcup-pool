@@ -2,15 +2,12 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sendPushToGroup } from "@/lib/push";
 
-// Runs every hour.
+// Runs once daily (Vercel free tier cron).
 // Finds open bets (tournament bet types or per-game matches) closing in the
-// next 2–3 hours where a user hasn't placed their bet yet, and sends them a
+// next 24 hours where a user hasn't placed their bet yet, and sends them a
 // reminder push notification.
-// The 2–3h window (rather than 0–3h) means each closing deadline is caught
-// by exactly one cron run, avoiding repeated notifications.
 
-const TWO_HOURS = 2 * 60 * 60 * 1000;
-const THREE_HOURS = 3 * 60 * 60 * 1000;
+const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -19,8 +16,8 @@ export async function GET(request: Request) {
   }
 
   const now = new Date();
-  const windowStart = new Date(now.getTime() + TWO_HOURS);
-  const windowEnd = new Date(now.getTime() + THREE_HOURS);
+  const windowStart = now;
+  const windowEnd = new Date(now.getTime() + TWENTY_FOUR_HOURS);
 
   // Collect pending items per user across ALL groups, then send one
   // consolidated notification per user to avoid duplicates for users

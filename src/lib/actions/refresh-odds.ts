@@ -501,6 +501,7 @@ export async function promoteBetTypeGlobally(
   });
 
   // Send push notifications to members of affected groups (skip for simulated groups).
+  // Deduplicate: send one notification per user even if they're in multiple groups.
   if (!options?.isolated && affectedGroups.length > 0) {
     const betLabel = betType.subType
       .replace(/_/g, " ")
@@ -509,14 +510,68 @@ export async function promoteBetTypeGlobally(
       ? ` — closes ${new Date(betType.locksAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
       : "";
 
-    for (const groupId of affectedGroups) {
-      sendPushToGroup(groupId, {
-        title: `New bet open: ${betLabel}`,
-        body: `Place your prediction now${locksText}.`,
-        url: betType.category === "PER_GAME"
-          ? `/group/${groupId}/matches`
-          : `/group/${groupId}/bets`,
-      }).catch(() => null); // best-effort — never block the main flow
+    // Collect unique users with push subscriptions across all affected groups
+    const members = await db.groupMembership.findMany({
+      where: { groupId: { in: affectedGroups }, status: "APPROVED" },
+      select: {
+        groupId: true,
+        user: {
+          select: {
+            id: true,
+            pushSubscriptions: { select: { id: true, endpoint: true, p256dh: true, auth: true } },
+          },
+        },
+      },
+    });
+
+    // Deduplicate by userId — pick first groupId for the URL
+    const userMap = new Map<string, { groupId: string }>();
+    for (const m of members) {
+      if (m.user.pushSubscriptions.length > 0 && !userMap.has(m.user.id)) {
+        userMap.set(m.user.id, { groupId: m.groupId });
+      }
+    }
+
+    const uniqueUserIds = [...userMap.keys()];
+    if (uniqueUserIds.length > 0) {
+      // Find users who already placed this bet (in any group) and skip them
+      const existingBets = await db.bet.findMany({
+        where: {
+          userId: { in: uniqueUserIds },
+          betType: { subType: betType.subType, category: betType.category as BetCategory },
+        },
+        select: { userId: true },
+      });
+      const alreadyBetUserIds = new Set(existingBets.map((b) => b.userId));
+      const pendingUserIds = uniqueUserIds.filter((id) => !alreadyBetUserIds.has(id));
+
+      if (pendingUserIds.length > 0) {
+        // Use sendPushToGroup-style logic but for specific users
+        const webpush = (await import("web-push")).default;
+        webpush.setVapidDetails(
+          process.env.VAPID_EMAIL!,
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+          process.env.VAPID_PRIVATE_KEY!
+        );
+
+        const subs = await db.pushSubscription.findMany({
+          where: { userId: { in: pendingUserIds } },
+        });
+
+        for (const sub of subs) {
+          const groupId = userMap.get(sub.userId)?.groupId ?? affectedGroups[0];
+          webpush.sendNotification(
+            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+            JSON.stringify({
+              title: `New bet open: ${betLabel}`,
+              body: `Place your prediction now${locksText}.`,
+              url: betType.category === "PER_GAME"
+                ? `/group/${groupId}/matches`
+                : `/group/${groupId}/bets`,
+            })
+          ).catch(() => null);
+        }
+      }
     }
   }
 }
