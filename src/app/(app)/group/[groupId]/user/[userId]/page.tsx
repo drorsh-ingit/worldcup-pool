@@ -437,7 +437,7 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
   ) : null;
 
   return (
-    <div className="flex flex-col gap-12" style={{ marginLeft: "3rem" }}>
+    <div className="flex flex-col gap-12">
       <BackLink groupId={groupId} name={targetUser.name} isOwn={isOwnProfile} />
 
       <UserPredictionsTabs

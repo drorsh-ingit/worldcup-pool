@@ -132,13 +132,16 @@ export default async function GroupPage({ params }: GroupPageProps) {
             ];
             const medal = i < 3 ? medals[i] : null;
 
+            const Row = isMe ? "div" : Link;
+            const rowProps = isMe ? {} : { href: `/group/${groupId}/user/${s.userId}` };
+
             return (
-              <Link
+              <Row
                 key={s.userId}
-                href={`/group/${groupId}/user/${s.userId}`}
+                {...rowProps as any}
                 className={cn(
                   "grid grid-cols-[56px_1fr_72px] sm:grid-cols-[56px_1fr_80px_88px_80px_80px] items-center border-b border-neutral-50 last:border-0 transition-colors",
-                  isMe ? "bg-emerald-50/60 hover:bg-emerald-50" : "hover:bg-neutral-50"
+                  isMe ? "bg-emerald-50/60" : "hover:bg-neutral-50 cursor-pointer"
                 )}
                 style={{ paddingLeft: 20, paddingRight: 20, paddingTop: 14, paddingBottom: 14, gap: 8 }}
               >
@@ -195,7 +198,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
                 <span className={cn("text-sm font-bold text-right tabular-nums", isMe ? "text-emerald-700" : "text-neutral-900")}>
                   {s.totalPoints.toFixed(1)}
                 </span>
-              </Link>
+              </Row>
             );
           })}
         </div>
