@@ -2,18 +2,11 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trophy, Users, Sliders } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import { CopySlugButton } from "@/components/copy-slug-button";
-import { RefreshOddsButton } from "@/components/admin/refresh-odds-button";
-import { BetTypeControls } from "@/components/admin/bet-type-controls";
-import { CuratedPropForm } from "@/components/admin/curated-prop-form";
 import { SimulationControl } from "@/components/admin/simulation-control";
 import { ScoringSettings, type OddsData } from "@/components/admin/scoring-settings";
 import { DeleteGroupButton } from "@/components/admin/delete-group-button";
-import { SyncResultsButton } from "@/components/admin/sync-results-button";
-import { RecalculateStandingsButton } from "@/components/admin/recalculate-standings-button";
-import { ResetTournamentButton } from "@/components/admin/reset-tournament-button";
-import { TestPushButton } from "@/components/admin/test-push-button";
 import { resolveGroupSettings, type GroupSettings } from "@/lib/settings";
 import { GOLDEN_BOOT_CANDIDATES } from "@/lib/data/wc2026";
 import { calculatePoints } from "@/lib/scoring";
@@ -148,67 +141,6 @@ export default async function AdminPage({ params }: AdminPageProps) {
         awards={groupSettings?.simulation?.awards}
       />
 
-      {/* Tournament setup */}
-      <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div className="flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-pitch-500" />
-          <h2 className="font-display text-base font-semibold text-neutral-900">Tournament</h2>
-        </div>
-
-        {!tournament ? (
-          <div style={{ padding: 20 }} className="rounded-xl border border-red-100 bg-red-50 space-y-1">
-            <p className="text-sm font-medium text-red-700">Tournament failed to initialize</p>
-            <p className="text-sm text-red-600">
-              Something went wrong during group creation. Try deleting and re-creating the group.
-            </p>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Status + stats */}
-            <div style={{ padding: 20 }} className="rounded-xl border border-neutral-200 bg-white space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <p className="text-sm font-medium text-neutral-900">{tournament.name}</p>
-                  <p className="text-xs text-neutral-400 mt-0.5">
-                    {tournament.teams.length} teams · {tournament.betTypes.length} bet types
-                  </p>
-                </div>
-                <div className="flex gap-3 text-xs text-neutral-500">
-                  <span>{approvedCount} members</span>
-                </div>
-              </div>
-              <RefreshOddsButton tournamentId={tournament.id} />
-              <SyncResultsButton groupId={groupId} />
-              <RecalculateStandingsButton groupId={groupId} />
-              <ResetTournamentButton groupId={groupId} />
-              <TestPushButton groupId={groupId} />
-            </div>
-
-            {/* Groups / Teams overview */}
-            <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-neutral-100 bg-neutral-50">
-                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Groups & Teams</p>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-px bg-neutral-100">
-                {["A","B","C","D","E","F","G","H","I","J","K","L"].map((letter) => {
-                  const groupTeams = tournament.teams.filter((t) => t.groupLetter === letter);
-                  return (
-                    <div key={letter} className="bg-white p-3">
-                      <p className="text-xs font-semibold text-pitch-500 mb-1.5">Group {letter}</p>
-                      {groupTeams.map((t) => (
-                        <p key={t.id} className="text-xs text-neutral-700 leading-5">
-                          {t.code} — {t.name}
-                        </p>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-
       {/* Scoring settings */}
       {tournament && (
         <ScoringSettings
@@ -217,34 +149,6 @@ export default async function AdminPage({ params }: AdminPageProps) {
           oddsData={oddsData}
           locked={tournament.betTypes.some((bt) => bt.status !== "DRAFT")}
         />
-      )}
-
-      {/* Bet type controls */}
-      {tournament && (
-        <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div className="flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-neutral-500" />
-            <h2 className="font-display text-base font-semibold text-neutral-900">Bet Types</h2>
-          </div>
-          <p className="text-sm text-neutral-500" style={{ marginTop: -4 }}>
-            Open bets so members can place predictions. Lock when bets should close. Resolve with the correct answer to trigger scoring.
-          </p>
-          <BetTypeControls
-            groupId={groupId}
-            betTypes={tournament.betTypes.map((bt) => ({
-              id: bt.id,
-              name: bt.name,
-              subType: bt.subType,
-              description: bt.description,
-              category: bt.category,
-              status: bt.status as "DRAFT" | "OPEN" | "LOCKED" | "RESOLVED",
-              openTrigger: bt.openTrigger,
-              opensAt: bt.opensAt,
-              locksAt: bt.locksAt,
-            }))}
-          />
-          <CuratedPropForm groupId={groupId} tournamentId={tournament.id} />
-        </section>
       )}
 
       {/* Danger zone */}
