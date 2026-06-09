@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Shuffle, Bell, BellOff } from "lucide-react";
+import { ArrowLeft, Loader2, Shuffle, Bell, BellOff, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { updateProfile } from "@/lib/actions/profile";
+import { updateProfile, deleteAccount } from "@/lib/actions/profile";
 import { getInitials, getAvatarColor, AVATAR_COLOR_OPTIONS, DICEBEAR_STYLES, dicebearUrl, randomSeed } from "@/lib/avatar";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 
@@ -31,6 +31,8 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
   const [selectedColor, setSelectedColor] = useState<number | null>(initialColor);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(initialStyle);
   const [seed, setSeed] = useState<string>(initialSeed ?? userId.slice(-8));
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const initials = getInitials(realName);
   const color = selectedColor != null ? AVATAR_COLOR_OPTIONS[selectedColor] : getAvatarColor(userId);
@@ -286,6 +288,59 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
             {loading ? "Saving..." : "Save changes"}
           </button>
         </form>
+      </div>
+
+      {/* Delete account */}
+      <div className="rounded-2xl border border-red-200 bg-white" style={{ padding: 28 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <h2 className="text-sm font-semibold text-red-600">Delete account</h2>
+          <p className="text-sm text-neutral-500">
+            This will permanently delete your account, all your predictions, and remove you from all groups. This action cannot be undone.
+          </p>
+          {!showDeleteConfirm ? (
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete my account
+            </button>
+          ) : (
+            <div className="rounded-xl bg-red-50 border border-red-200" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <p className="text-sm font-medium text-red-700">Are you sure? This cannot be undone.</p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                  className="flex-1 h-10 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-600 bg-white hover:bg-neutral-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={async () => {
+                    setDeleting(true);
+                    const result = await deleteAccount();
+                    if (result.error) {
+                      setError(result.error);
+                      setDeleting(false);
+                      setShowDeleteConfirm(false);
+                    } else {
+                      signOut({ callbackUrl: "/" });
+                    }
+                  }}
+                  className="flex-1 h-10 rounded-xl bg-red-600 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                >
+                  {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  {deleting ? "Deleting..." : "Yes, delete"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

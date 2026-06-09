@@ -42,6 +42,21 @@ export async function updateProfile(formData: FormData) {
   return { success: true };
 }
 
+export async function deleteAccount() {
+  const session = await auth();
+  if (!session) return { error: "Not authenticated" };
+
+  const userId = session.user.id;
+
+  // LeaderboardEntry has no cascade relation — delete manually
+  await db.leaderboardEntry.deleteMany({ where: { userId } });
+
+  // User delete cascades: memberships, bets, push subscriptions
+  await db.user.delete({ where: { id: userId } });
+
+  return { success: true };
+}
+
 // Keep old name for backwards compat
 export const updateName = updateProfile;
 
