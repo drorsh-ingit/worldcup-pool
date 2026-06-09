@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { scoreBets, scoreBracketPerPick, scoreSemifinalistsPerPick, calculatePoints } from "@/lib/scoring";
 import { resolveGroupSettings } from "@/lib/settings";
+import { progressTournament } from "@/lib/actions/progression";
 import { z } from "zod";
 
 async function requireAdmin(groupId: string) {
@@ -58,7 +59,10 @@ export async function enterMatchResult(groupId: string, input: unknown) {
   // Progressively score bracket + semifinalist bets from match data
   await scoreProgressiveTournamentBets(groupId, match.tournamentId);
 
-  // Recalculate leaderboard
+  // Auto-progress tournament (create knockout rounds, resolve bets) if a phase completed
+  await progressTournament(groupId, match.tournamentId);
+
+  // Recalculate leaderboard (after progression, which may resolve additional bet types)
   await recalculateLeaderboard(groupId, match.tournamentId);
 
   revalidatePath(`/group/${groupId}`);
