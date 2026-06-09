@@ -211,7 +211,7 @@ function deriveGroupOdds(
  * re-fetching from the API and potentially getting different values.
  * Returns the number of matches updated, or 0 if no sibling had odds yet.
  */
-export async function copyMatchOddsFromSibling(tournamentId: string): Promise<number> {
+export async function copyMatchOddsFromSibling(tournamentId: string, matchIds?: string[]): Promise<number> {
   const tournament = await db.tournament.findUnique({
     where: { id: tournamentId },
     select: { kind: true },
@@ -241,9 +241,14 @@ export async function copyMatchOddsFromSibling(tournamentId: string): Promise<nu
     siblingOdds.set(`${m.homeTeam.code}__${m.awayTeam.code}`, m.oddsData);
   }
 
-  // Apply to this tournament's matches
+  // Apply to this tournament's matches (skip already-frozen ones)
   const matches = await db.match.findMany({
-    where: { tournamentId, status: "UPCOMING" },
+    where: {
+      tournamentId,
+      status: "UPCOMING",
+      oddsLockedAt: null,
+      ...(matchIds && { id: { in: matchIds } }),
+    },
     include: { homeTeam: true, awayTeam: true },
   });
 
@@ -262,14 +267,22 @@ export async function copyMatchOddsFromSibling(tournamentId: string): Promise<nu
   return updated;
 }
 
-export async function refreshAllMatchOdds(tournamentId: string): Promise<RefreshResult> {
+export async function refreshAllMatchOdds(
+  tournamentId: string,
+  matchIds?: string[]
+): Promise<RefreshResult> {
   if (!isConfigured()) return { refreshed: false, reason: "ODDS_API_KEY not set" };
 
   const live = await fetchMatchOdds();
   if (!live) return { refreshed: false, reason: "No match odds available yet" };
 
   const matches = await db.match.findMany({
-    where: { tournamentId, status: "UPCOMING" },
+    where: {
+      tournamentId,
+      status: "UPCOMING",
+      oddsLockedAt: null,
+      ...(matchIds && { id: { in: matchIds } }),
+    },
     include: { homeTeam: true, awayTeam: true },
   });
 

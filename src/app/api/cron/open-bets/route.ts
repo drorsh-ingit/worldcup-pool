@@ -91,6 +91,7 @@ export async function GET(request: Request) {
   const closingMatches = await db.match.findMany({
     where: {
       status: "UPCOMING",
+      oddsLockedAt: { not: null },
       kickoffAt: { gte: windowStart, lte: windowEnd },
     },
     include: {

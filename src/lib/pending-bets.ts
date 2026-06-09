@@ -2,8 +2,6 @@ import { db } from "@/lib/db";
 import { resolveGroupSettings } from "@/lib/settings";
 import { getEffectiveDate } from "@/lib/simulation";
 
-const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
-
 export async function getPendingBetCounts(
   groupId: string,
   userId: string
@@ -25,7 +23,7 @@ export async function getPendingBetCounts(
         select: { id: true, category: true, subType: true, status: true, opensAt: true, locksAt: true },
       },
       matches: {
-        where: { status: "UPCOMING" },
+        where: { status: "UPCOMING", oddsLockedAt: { not: null } },
         select: { id: true, kickoffAt: true },
       },
     },
@@ -60,7 +58,7 @@ export async function getPendingBetCounts(
     if (!betByTypeId.has(bt.id)) tournamentPending++;
   }
 
-  // Matches tab: open per-game matches within betting window without a bet
+  // Matches tab: matches with frozen odds (open) that haven't kicked off, without a bet
   const mwBetType = tournament.betTypes.find(
     (bt) => bt.category === "PER_GAME" && bt.subType === "match_winner"
   );
@@ -69,10 +67,8 @@ export async function getPendingBetCounts(
   let matchesPending = 0;
   if (perGameOpen && mwBetType) {
     for (const match of tournament.matches) {
-      const kickoff = new Date(match.kickoffAt).getTime();
-      const inWindow = now.getTime() >= kickoff - FORTY_EIGHT_HOURS;
-      const notStarted = now.getTime() < kickoff;
-      if (inWindow && notStarted && !betByTypeAndMatch.has(`${mwBetType.id}:${match.id}`)) {
+      const notStarted = now.getTime() < new Date(match.kickoffAt).getTime();
+      if (notStarted && !betByTypeAndMatch.has(`${mwBetType.id}:${match.id}`)) {
         matchesPending++;
       }
     }

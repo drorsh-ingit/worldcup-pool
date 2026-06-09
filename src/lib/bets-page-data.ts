@@ -21,8 +21,6 @@ export function phaseLabel(phase: string): string {
   return PHASE_LABELS[phase] ?? phase;
 }
 
-const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
-
 /** Shared data loader for /matches and /bets pages. Returns null if tournament missing. */
 export async function loadBetsPageData(groupId: string, userId: string) {
   const group = await db.group.findUnique({ where: { id: groupId } });
@@ -348,9 +346,7 @@ export function buildMatchCardProps(
   const csBetId = correctScoreBetType?.id ?? null;
   const mwBet = mwBetId ? betByTypeAndMatch[`${mwBetId}:${match.id}`] : null;
   const csBet = csBetId ? betByTypeAndMatch[`${csBetId}:${match.id}`] : null;
-  const inBettingWindow =
-    effectiveNow.getTime() >= new Date(match.kickoffAt).getTime() - FORTY_EIGHT_HOURS;
-  const betsOpen = perGameBetTypeOpen && inBettingWindow;
+  const betsOpen = perGameBetTypeOpen && match.oddsLockedAt != null;
 
   const storedOdds = match.oddsData as { homeWin?: number; draw?: number; awayWin?: number } | null;
   const derived = deriveMatchOdds(

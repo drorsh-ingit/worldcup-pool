@@ -59,10 +59,14 @@ export async function placeBet(groupId: string, input: unknown) {
     return { error: "This bet has already locked" };
   }
 
-  // For per-game bets, lock at match kickoff time
+  // For per-game bets, verify match is open and hasn't kicked off
   if (matchId) {
     const match = await db.match.findUnique({ where: { id: matchId } });
-    if (match && effectiveNow >= match.kickoffAt) {
+    if (!match) return { error: "Match not found" };
+    if (!match.oddsLockedAt) {
+      return { error: "This match is not open for predictions yet" };
+    }
+    if (effectiveNow >= match.kickoffAt) {
       return { error: "This match has already kicked off" };
     }
   }
