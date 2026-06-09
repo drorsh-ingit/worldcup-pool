@@ -21,7 +21,7 @@ import type {
 } from "./types";
 
 const TOURNAMENT_START = new Date("2026-06-11T00:00:00Z");
-const PER_GAME_OPENS = new Date(TOURNAMENT_START.getTime() - 24 * 60 * 60 * 1000);
+const PER_GAME_OPENS = new Date(TOURNAMENT_START.getTime() - 48 * 60 * 60 * 1000);
 
 const teams: TeamSeed[] = WC2026_TEAMS.map((t) => ({
   name: t.name,
