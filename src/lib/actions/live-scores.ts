@@ -3,7 +3,8 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { fetchWCSchedule, fetchCLSchedule, fetchLiveMatch, type FDMatch } from "@/lib/football-data";
+import { fetchWCSchedule, fetchCLSchedule, fetchLiveMatch, regulationScore, fdWinnerCode, type FDMatch } from "@/lib/football-data";
+import { fdTlaToCode } from "@/lib/wc-team-map";
 import { scoreBets } from "@/lib/scoring";
 import { recalculateLeaderboard, scoreProgressiveTournamentBets } from "@/lib/actions/results";
 
@@ -15,9 +16,6 @@ async function requireAdmin(groupId: string) {
   });
   if (!membership || membership.role !== "ADMIN") throw new Error("Not authorized");
 }
-
-// TLA overrides where football-data.org differs from FIFA codes — extend as needed
-const FD_TLA_TO_FIFA: Record<string, string> = {};
 
 export async function syncFixtureIds(
   groupId: string
@@ -44,14 +42,11 @@ export async function syncFixtureIds(
   let synced = 0;
 
   for (const match of tournament.matches) {
-    const homeCode = FD_TLA_TO_FIFA[match.homeTeam.code] ?? match.homeTeam.code;
-    const awayCode = FD_TLA_TO_FIFA[match.awayTeam.code] ?? match.awayTeam.code;
-
     const fdMatch = fdMatches.find(
       (m) =>
-        (m.homeTeam.tla === homeCode ||
+        (fdTlaToCode(m.homeTeam.tla) === match.homeTeam.code ||
           (m.homeTeam.name?.toLowerCase().includes(match.homeTeam.name.toLowerCase()) ?? false)) &&
-        (m.awayTeam.tla === awayCode ||
+        (fdTlaToCode(m.awayTeam.tla) === match.awayTeam.code ||
           (m.awayTeam.name?.toLowerCase().includes(match.awayTeam.name.toLowerCase()) ?? false))
     );
 
@@ -113,35 +108,50 @@ export async function getLiveMatchScore(
   };
 
   // Auto-complete when API says FINISHED and our DB hasn't recorded it yet
-  if (
-    fdMatch.status === "FINISHED" &&
-    match.status !== "COMPLETED" &&
-    currentHome !== null &&
-    currentAway !== null
-  ) {
-    await autoCompleteMatch(groupId, matchId, match.tournamentId, currentHome, currentAway);
+  if (fdMatch.status === "FINISHED" && match.status !== "COMPLETED") {
+    await autoCompleteMatch(groupId, matchId, match.tournamentId, fdMatch);
   }
 
   return { data: liveScore };
+}
+
+/** Map a finished FD match's winner (penalties included) to our team id. */
+function resolveWinnerTeamId(
+  fd: FDMatch,
+  home: { id: string; code: string },
+  away: { id: string; code: string }
+): string | null {
+  const winnerCode = fdWinnerCode(fd, home.code, away.code);
+  if (winnerCode === home.code) return home.id;
+  if (winnerCode === away.code) return away.id;
+  return null;
 }
 
 async function autoCompleteMatch(
   groupId: string,
   matchId: string,
   tournamentId: string,
-  homeScore: number,
-  awayScore: number
+  fd: FDMatch
 ) {
-  // Guard against concurrent calls
-  const current = await db.match.findUnique({ where: { id: matchId }, select: { status: true } });
-  if (current?.status === "COMPLETED") return;
+  // Guard against concurrent calls; load teams to resolve the winner.
+  const current = await db.match.findUnique({
+    where: { id: matchId },
+    include: { homeTeam: true, awayTeam: true },
+  });
+  if (!current || current.status === "COMPLETED") return;
+
+  // Store the pens-excluded 90'/120' score; winnerTeamId carries the actual advancer.
+  const reg = regulationScore(fd);
+  if (!reg) return;
+  const winnerTeamId = resolveWinnerTeamId(fd, current.homeTeam, current.awayTeam);
 
   await db.match.update({
     where: { id: matchId },
-    data: { actualHomeScore: homeScore, actualAwayScore: awayScore, status: "COMPLETED" },
+    data: { actualHomeScore: reg.home, actualAwayScore: reg.away, winnerTeamId, status: "COMPLETED" },
   });
 
   await scoreBets(groupId, tournamentId, matchId);
+  await scoreProgressiveTournamentBets(groupId, tournamentId);
   await recalculateLeaderboard(groupId, tournamentId);
   revalidatePath(`/group/${groupId}`);
 }
@@ -164,11 +174,11 @@ function normaliseName(s: string | null | undefined): string {
 }
 
 // Returns significant words (>3 chars) for word-level overlap matching
-function sigWords(s: string): string[] {
+function sigWords(s: string | null | undefined): string[] {
   return normaliseName(s).split(" ").filter((w) => w.length > 3);
 }
 
-function teamMatches(fdName: string, fdShort: string, ourName: string): boolean {
+function teamMatches(fdName: string | null, fdShort: string | null, ourName: string): boolean {
   const our = normaliseName(ourName);
   const n1 = normaliseName(fdName);
   const n2 = normaliseName(fdShort);
@@ -251,15 +261,17 @@ export async function syncCompetitionResults(
 
     if (!fdMatch || fdMatch.status !== "FINISHED") continue;
 
-    const home = fdMatch.score.fullTime.home;
-    const away = fdMatch.score.fullTime.away;
-    if (home === null || away === null) continue;
+    // Pens-excluded 90'/120' score for bet scoring; winnerTeamId for progression.
+    const reg = regulationScore(fdMatch);
+    if (!reg) continue;
+    const winnerTeamId = resolveWinnerTeamId(fdMatch, dbMatch.homeTeam, dbMatch.awayTeam);
 
     await db.match.update({
       where: { id: dbMatch.id },
       data: {
-        actualHomeScore: home,
-        actualAwayScore: away,
+        actualHomeScore: reg.home,
+        actualAwayScore: reg.away,
+        winnerTeamId,
         status: "COMPLETED",
         externalId: String(fdMatch.id),
       },

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { scoreBets, scoreBracketPerPick, scoreSemifinalistsPerPick, calculatePoints } from "@/lib/scoring";
 import { resolveGroupSettings } from "@/lib/settings";
 import { progressTournament } from "@/lib/actions/progression";
+import { knockoutWinnerTeamId } from "@/lib/tournament-engine";
 import { z } from "zod";
 
 async function requireAdmin(groupId: string) {
@@ -122,9 +123,11 @@ export async function scoreProgressiveTournamentBets(groupId: string, tournament
       const phase = m.phase;
       const idx = phaseIndexMap[phase] ?? 0;
       phaseIndexMap[phase] = idx + 1;
-      if (m.status === "COMPLETED" && m.actualHomeScore != null && m.actualAwayScore != null) {
-        derivedWinners[`${phase}-${idx}`] =
-          m.actualHomeScore >= m.actualAwayScore ? m.homeTeam.code : m.awayTeam.code;
+      if (m.status === "COMPLETED") {
+        const winnerId = knockoutWinnerTeamId(m);
+        const winnerCode =
+          winnerId === m.homeTeamId ? m.homeTeam.code : winnerId === m.awayTeamId ? m.awayTeam.code : null;
+        if (winnerCode) derivedWinners[`${phase}-${idx}`] = winnerCode;
       }
     }
     // Also fold in admin-set resolution.winners for any slots not covered by match data

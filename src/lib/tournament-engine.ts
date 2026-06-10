@@ -190,6 +190,23 @@ export async function createR32Matches(
 }
 
 /**
+ * Canonical "who advanced" for a knockout match. Prefers winnerTeamId (set from the
+ * feed's score.winner, penalties included); falls back to score comparison when it's
+ * null — which is the case for simulated matches (never drawn) and any legacy row.
+ */
+export function knockoutWinnerTeamId(m: {
+  winnerTeamId: string | null;
+  homeTeamId: string;
+  awayTeamId: string;
+  actualHomeScore: number | null;
+  actualAwayScore: number | null;
+}): string | null {
+  if (m.winnerTeamId) return m.winnerTeamId;
+  if (m.actualHomeScore == null || m.actualAwayScore == null) return null;
+  return m.actualHomeScore >= m.actualAwayScore ? m.homeTeamId : m.awayTeamId;
+}
+
+/**
  * Get winners from completed knockout matches of a given phase.
  * Returns team IDs in match order (for bracket pairing in next round).
  */

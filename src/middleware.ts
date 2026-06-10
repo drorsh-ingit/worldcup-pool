@@ -7,10 +7,13 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith("/login") ||
     req.nextUrl.pathname.startsWith("/signup");
   const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
+  // Cron routes are called by Vercel with no session cookie; they authenticate
+  // themselves via the CRON_SECRET bearer token, so skip the login redirect.
+  const isCron = req.nextUrl.pathname.startsWith("/api/cron");
   const isPublic = req.nextUrl.pathname === "/" || req.nextUrl.pathname === "/countdown";
 
-  // Allow API auth routes through
-  if (isApiAuth) {
+  // Allow API auth + cron routes through
+  if (isApiAuth || isCron) {
     return NextResponse.next();
   }
 

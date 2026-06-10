@@ -1,0 +1,41 @@
+name: Reconcile tournament
+
+# Pings the secured reconcile endpoint so match results, knockout fixtures, standings
+# and bet resolution populate automatically — Vercel's free tier only allows daily cron,
+# so we drive it from GitHub Actions instead.
+#
+# Requirements:
+#   - secret  CRON_SECRET : must match the CRON_SECRET set in the Vercel project env
+#   - var     APP_URL     : deployed base URL (falls back to the production URL below)
+#
+# Note: GitHub's scheduled runs are best-effort and can lag a few minutes; that's fine for
+# ~10-minute freshness. Schedules also only run from the default branch, and auto-disable
+# after 60 days of repo inactivity (re-enable from the Actions tab if that happens).
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: reconcile
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit reconcile endpoint
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          BASE="${APP_URL:-https://worldcup-pool-three.vercel.app}"
+          echo "Reconciling via ${BASE}/api/cron/reconcile"
+          code=$(curl -sS -m 55 -o /tmp/reconcile.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${BASE}/api/cron/reconcile")
+          echo "HTTP ${code}"
+          cat /tmp/reconcile.json 2>/dev/null || true
+          echo
+          test "$code" = "200"

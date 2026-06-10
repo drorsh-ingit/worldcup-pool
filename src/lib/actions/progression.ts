@@ -13,6 +13,7 @@ import {
   getKnockoutWinners,
   createNextRoundMatches,
   syncPhaseBetLocks,
+  knockoutWinnerTeamId,
 } from "@/lib/tournament-engine";
 import { Prisma } from "@prisma/client";
 
@@ -262,6 +263,7 @@ async function autoResolveWinnerRunnerUp(
   matches: Array<{
     phase: string;
     status: string;
+    winnerTeamId: string | null;
     homeTeamId: string;
     awayTeamId: string;
     actualHomeScore: number | null;
@@ -272,12 +274,11 @@ async function autoResolveWinnerRunnerUp(
   teams: Array<{ id: string; code: string }>
 ) {
   const final = matches.find((m) => m.phase === "FINAL" && m.status === "COMPLETED");
-  if (!final || final.actualHomeScore == null || final.actualAwayScore == null) return;
+  if (!final) return;
 
-  const winnerId = final.actualHomeScore >= final.actualAwayScore
-    ? final.homeTeamId : final.awayTeamId;
-  const loserId = final.actualHomeScore >= final.actualAwayScore
-    ? final.awayTeamId : final.homeTeamId;
+  const winnerId = knockoutWinnerTeamId(final);
+  if (!winnerId) return;
+  const loserId = winnerId === final.homeTeamId ? final.awayTeamId : final.homeTeamId;
 
   const winnerCode = teams.find((t) => t.id === winnerId)?.code;
   const loserCode = teams.find((t) => t.id === loserId)?.code;
@@ -316,6 +317,7 @@ async function autoResolveBracket(
     id: string;
     phase: string;
     status: string;
+    winnerTeamId: string | null;
     homeTeamId: string;
     awayTeamId: string;
     kickoffAt: Date;
@@ -335,8 +337,8 @@ async function autoResolveBracket(
       .filter((m) => m.phase === phase && m.status === "COMPLETED")
       .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
     phaseMatches.forEach((m, i) => {
-      if (m.actualHomeScore == null || m.actualAwayScore == null) return;
-      const winnerId = m.actualHomeScore >= m.actualAwayScore ? m.homeTeamId : m.awayTeamId;
+      const winnerId = knockoutWinnerTeamId(m);
+      if (!winnerId) return;
       const winnerCode = teams.find((t) => t.id === winnerId)?.code;
       if (winnerCode) winners[`${phase}-${i}`] = winnerCode;
     });

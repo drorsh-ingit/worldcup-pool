@@ -68,8 +68,8 @@ async function fetchRealCLMatchSeeds(): Promise<MatchSeed[]> {
     const phase = FD_STAGE_TO_PHASE[m.stage];
     if (!phase || !SEEDED_PHASES.has(phase)) continue;
 
-    const home = FD_ID_TO_CODE.get(m.homeTeam.id) ?? null;
-    const away = FD_ID_TO_CODE.get(m.awayTeam.id) ?? null;
+    const home = m.homeTeam.id != null ? FD_ID_TO_CODE.get(m.homeTeam.id) ?? null : null;
+    const away = m.awayTeam.id != null ? FD_ID_TO_CODE.get(m.awayTeam.id) ?? null : null;
     if (!home || !away) continue;
 
     if (!koByPhase[phase]) koByPhase[phase] = [];
@@ -270,8 +270,8 @@ export async function debugCLFixtures(groupId: string) {
       utcDate: m.utcDate,
       home: { id: m.homeTeam.id, name: m.homeTeam.name, tla: m.homeTeam.tla },
       away: { id: m.awayTeam.id, name: m.awayTeam.name, tla: m.awayTeam.tla },
-      homeMatchedCode: FD_ID_TO_CODE.get(m.homeTeam.id) ?? null,
-      awayMatchedCode: FD_ID_TO_CODE.get(m.awayTeam.id) ?? null,
+      homeMatchedCode: m.homeTeam.id != null ? FD_ID_TO_CODE.get(m.homeTeam.id) ?? null : null,
+      awayMatchedCode: m.awayTeam.id != null ? FD_ID_TO_CODE.get(m.awayTeam.id) ?? null : null,
     }));
 
   return { error, stageCounts, matches: filtered };

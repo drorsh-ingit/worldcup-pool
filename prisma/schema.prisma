@@ -146,6 +146,7 @@ model Match {
   oddsLockedAt   DateTime?                  // when set, odds are frozen and match is open for betting
   multiplier     Float       @default(1.0)  // knockout multiplier
   externalId     String?                    // football-data.org match ID for live scores
+  winnerTeamId   String?                    // KO winner incl. penalties (from feed score.winner); null = derive from score
 
   tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   homeTeam   Team       @relation("HomeTeam", fields: [homeTeamId], references: [id])
