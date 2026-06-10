@@ -37,7 +37,8 @@ export const DEFAULT_GROUP_SETTINGS = {
     darkHorse: 0.30,
     reverseDarkHorse: 0.30,
     matchWinner: 0.15,
-    correctScore: 0.20,
+    // Low base, high bonus: an exact score should pay ~2-2.5x a direction pick
+    correctScore: 0.10,
     bracket: 0.25,
     goldenGlove: 0.25,
     goldenBall: 0.25,
@@ -56,7 +57,9 @@ export const DEFAULT_GROUP_SETTINGS = {
     reverseDarkHorse: 10000,
     matchWinner: 100000,
     correctScore: 100000,
-    bracket: 100000,
+    // Also the bonus-normalization ceiling for bracket picks: bonusFactor = sqrt(odds/threshold).
+    // 100000 made the factor ~0 for every real team (odds 550-50000), killing the bracket bonus.
+    bracket: 20000,
     goldenGlove: 3000,
     goldenBall: 3000,
     semifinalists: 2000,

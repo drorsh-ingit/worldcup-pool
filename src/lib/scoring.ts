@@ -67,7 +67,10 @@ function oddsScaler(prob: number, thresholdOdds: number, divisor = 30): number {
  * @param settings group settings
  * @param phase match phase (for per-game multiplier)
  * @param totalPool total pool for the group
- * @param memberCount number of members in the group
+ * @param _memberCount unused (kept for call-site compatibility)
+ * @param samePickCount per-game only: how many members made this exact pick.
+ *        The bonus is split between them — rewards contrarian picks, and makes
+ *        the displayed potential (samePickCount=1) the lone-pick maximum.
  */
 export function calculatePoints(
   isCorrect: boolean,
@@ -76,7 +79,8 @@ export function calculatePoints(
   settings: GroupSettings,
   phase: keyof typeof DEFAULT_GROUP_SETTINGS["knockoutMultipliers"] = "GROUP",
   totalPool = 1000,
-  memberCount = 10
+  _memberCount = 10,
+  samePickCount = 1
 ): { basePoints: number; bonusPoints: number; totalPoints: number } {
   if (!isCorrect) return { basePoints: 0, bonusPoints: 0, totalPoints: 0 };
 
@@ -103,13 +107,12 @@ export function calculatePoints(
   const basePoints = (subPool * basePct) / matchDivisor;
 
   // Bonus: scaled by oddsScaler.
-  // Per-game bets divide by memberCount (many players pile onto the obvious pick, so cap the bonus).
-  // Tournament/curated bets don't — picks are spread across many different teams/players.
+  // Per-game bets split the bonus between members who made the same pick (herding divisor):
+  // piling onto the obvious favorite shares the reward, a lone contrarian keeps it all.
+  // Tournament/curated bets don't split — picks are spread across many teams/players.
   const scalerDivisor = tierKey === "perGame" ? 3 : 30;
   const scaler = oddsScaler(impliedProbability, threshold, scalerDivisor);
-  // Floor the per-game bonus divisor at 5: in tiny groups (e.g., solo testing) the bonus would
-  // otherwise inflate, since we're not actually splitting a pool across many pickers.
-  const effectiveDivisor = tierKey === "perGame" ? Math.max(memberCount, 5) : 1;
+  const effectiveDivisor = tierKey === "perGame" ? Math.max(samePickCount, 1) : 1;
   const bonusPoints = (subPool * (1 - basePct) * Math.min(scaler, 5)) / effectiveDivisor / matchDivisor;
 
   // Apply knockout multiplier for per-game bets
@@ -183,9 +186,22 @@ export async function scoreBets(
     });
 
     for (const bt of perGameBetTypes) {
-      const bets = await db.bet.findMany({
-        where: { betTypeId: bt.id, matchId, scoredAt: null },
+      // Fetch ALL bets on this market (scored or not) to count identical picks —
+      // the bonus is split between members who made the same prediction.
+      const allMarketBets = await db.bet.findMany({
+        where: { betTypeId: bt.id, matchId },
       });
+      const pickKey = (p: Record<string, unknown>) =>
+        bt.subType === "match_winner"
+          ? `o:${String(p.outcome)}`
+          : `s:${Number(p.homeScore)}-${Number(p.awayScore)}`;
+      const samePickCounts = new Map<string, number>();
+      for (const b of allMarketBets) {
+        const key = pickKey(b.prediction as Record<string, unknown>);
+        samePickCounts.set(key, (samePickCounts.get(key) ?? 0) + 1);
+      }
+
+      const bets = allMarketBets.filter((b) => b.scoredAt === null);
 
       for (const bet of bets) {
         const pred = bet.prediction as Record<string, unknown>;
@@ -228,7 +244,8 @@ export async function scoreBets(
         }
 
         const phase = match.phase as keyof typeof DEFAULT_GROUP_SETTINGS["knockoutMultipliers"];
-        const pts = calculatePoints(isCorrect, subType, impliedProbability, settings, phase, totalPool, memberCount);
+        const samePickCount = samePickCounts.get(pickKey(pred)) ?? 1;
+        const pts = calculatePoints(isCorrect, subType, impliedProbability, settings, phase, totalPool, memberCount, samePickCount);
 
         await db.bet.update({
           where: { id: bet.id },
@@ -466,7 +483,7 @@ function bracketPickAward(
 
   const perPickAllocation = subPool * bracketSlotShare(phase);
   const basePct = (settings.basePct as Record<string, number>).bracket ?? 0.25;
-  const threshold = (settings.outlierThresholds as Record<string, number>).bracket ?? 100000;
+  const threshold = (settings.outlierThresholds as Record<string, number>).bracket ?? 20000;
   // Normalize the odds scaler against its value at the outlier threshold so bonusFactor ∈ [0, 1].
   // A team picked at threshold-or-longer odds maxes out the slot; favorites get only the base share.
   const scaler = oddsScaler(impliedProb(teamWinnerOdds), threshold, 30);

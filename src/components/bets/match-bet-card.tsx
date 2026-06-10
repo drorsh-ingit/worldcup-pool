@@ -340,7 +340,12 @@ export function MatchBetCard({
         ) : isPastKickoff && !hasSavedBet ? (
           <span className="text-sm font-medium text-neutral-400">No bet placed</span>
         ) : potentialPts != null ? (
-          <span className="text-base font-bold text-neutral-700 tabular-nums">{potentialPts.toFixed(1)} potential pts</span>
+          <span
+            className="text-base font-bold text-neutral-700 tabular-nums"
+            title="Maximum if you're the only one with this pick — the bonus part is split between members who predict the same thing"
+          >
+            {potentialPts.toFixed(1)} potential pts
+          </span>
         ) : (
           <span className="text-sm font-medium text-neutral-400">0 potential pts</span>
         )}
