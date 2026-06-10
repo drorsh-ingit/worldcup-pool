@@ -35,6 +35,7 @@ import { WC2026_TEAMS } from "@/lib/data/wc2026";
 import { scoreBets } from "@/lib/scoring";
 import { knockoutWinnerTeamId, syncPhaseBetLocks } from "@/lib/tournament-engine";
 import { recalculateLeaderboard, scoreProgressiveTournamentBets } from "@/lib/actions/results";
+import { snapshotOddsForBetType } from "@/lib/actions/refresh-odds";
 
 const FD_STAGE_TO_PHASE: Record<string, MatchPhase> = {
   GROUP_STAGE: "GROUP",
@@ -51,8 +52,20 @@ const PHASE_MULTIPLIER: Record<string, number> = {
 };
 
 // Expected participant counts per knockout phase — used as guards so we never resolve
-// a bet mid-publication (e.g. group stage done but the feed hasn't filled all R32 teams).
-const PHASE_TEAM_COUNT: Record<string, number> = { R32: 32, R16: 16, QF: 8, SF: 4 };
+// or open a bet mid-publication (e.g. group stage done but the feed hasn't filled all R32 teams).
+const PHASE_TEAM_COUNT: Record<string, number> = { R32: 32, R16: 16, QF: 8, SF: 4, FINAL: 2 };
+
+// A timeline bet (openTrigger) becomes available the moment the feed publishes the round
+// it concerns — e.g. the bracket opens once all 32 R32 fixtures have teams. This replaces
+// the stale hardcoded opensAt dates, which don't match the real schedule (R32 is Jun 28,
+// not the Jul 2 the static data guessed). Lock times are handled by syncPhaseBetLocks.
+const TRIGGER_OPENS_WHEN_PUBLISHED: Record<string, string> = {
+  AFTER_GROUP_STAGE: "R32",
+  AFTER_R32: "R16",
+  AFTER_R16: "QF",
+  AFTER_QF: "SF",
+  AFTER_SF: "FINAL",
+};
 
 const asJson = (v: unknown) => v as unknown as Prisma.InputJsonValue;
 
@@ -159,8 +172,11 @@ export async function reconcileTournament(
   // ── 3. Live bracket + semifinalist scoring from match data (uses winnerTeamId) ──
   await scoreProgressiveTournamentBets(groupId, tournamentId);
 
-  // ── 4. Resolve tournament bets from feed truth (idempotent) ──
+  // ── 4. Open timeline bets whose round the feed has now published ──
   const betTypes = await db.betType.findMany({ where: { tournamentId } });
+  await openTimelineBets(tournamentId, betTypes, phaseTeamCodes);
+
+  // ── 5. Resolve tournament bets from feed truth (idempotent) ──
   const allMatches = await db.match.findMany({
     where: { tournamentId },
     include: { homeTeam: true, awayTeam: true },
@@ -198,7 +214,7 @@ export async function reconcileTournament(
     await resolveGoldenBoot(groupId, tournamentId, betTypes, f.scorers);
   }
 
-  // ── 5. Keep phase bet-locks aligned to real kickoffs, refresh standings ──
+  // ── 6. Keep phase bet-locks aligned to real kickoffs, recalc leaderboard ──
   await syncPhaseBetLocks(tournamentId);
   await recalculateLeaderboard(groupId, tournamentId);
 
@@ -239,6 +255,33 @@ async function applyResult(m: MatchWithTeams, fd: FDMatch): Promise<boolean> {
     },
   });
   return true;
+}
+
+/**
+ * Open each timeline bet the moment the feed has fully published the round it concerns
+ * (e.g. bracket/golden-ball/golden-glove once all 32 R32 fixtures have teams). Freezes
+ * odds at open time, same as the manual openBetType path. Lock times are set by
+ * syncPhaseBetLocks to the real first kickoff of the locking phase. PRE_TOURNAMENT bets
+ * are left alone — their opensAt (relative to the known tournament start) is already correct.
+ */
+async function openTimelineBets(
+  tournamentId: string,
+  betTypes: Array<{ id: string; category: string; subType: string; status: string; openTrigger: string | null }>,
+  phaseTeamCodes: Record<string, Set<string>>
+) {
+  for (const bt of betTypes) {
+    if (bt.status !== "DRAFT" || !bt.openTrigger) continue;
+    const phase = TRIGGER_OPENS_WHEN_PUBLISHED[bt.openTrigger];
+    if (!phase) continue; // PRE_TOURNAMENT — handled by its own (correct) date
+    const known = phaseTeamCodes[phase]?.size ?? 0;
+    if (known < (PHASE_TEAM_COUNT[phase] ?? Number.POSITIVE_INFINITY)) continue; // round not fully published
+
+    const frozenOdds = await snapshotOddsForBetType(tournamentId, bt.category, bt.subType).catch(() => null);
+    await db.betType.update({
+      where: { id: bt.id },
+      data: { status: "OPEN", opensAt: new Date(), ...(frozenOdds != null && { frozenOdds }) },
+    });
+  }
 }
 
 async function resolveGroupPredictions(
