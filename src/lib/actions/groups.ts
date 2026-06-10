@@ -69,16 +69,18 @@ export async function createGroup(formData: FormData) {
   }
 }
 
-export async function joinGroup(formData: FormData) {
+/**
+ * Core join logic, shared by the invite-code dialog and the direct join link.
+ * Joins are auto-approved — anyone with the code/link becomes an APPROVED member.
+ * Returns the joined group's id on success (also when already a member).
+ */
+export async function joinGroupBySlug(rawSlug: string) {
   const session = await auth();
   if (!session?.user?.id) {
     return { error: "You must be signed in to join a group" };
   }
 
-  const parsed = joinGroupSchema.safeParse({
-    slug: formData.get("slug"),
-  });
-
+  const parsed = joinGroupSchema.safeParse({ slug: rawSlug });
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
@@ -103,14 +105,16 @@ export async function joinGroup(formData: FormData) {
 
     if (existingMembership) {
       if (existingMembership.status === "APPROVED") {
-        return { error: "You're already a member of this group" };
+        return { success: true, groupId: group.id, alreadyMember: true, groupName: group.name };
       }
-      if (existingMembership.status === "PENDING") {
-        return { error: "Your request to join is already pending approval" };
-      }
-      if (existingMembership.status === "REJECTED") {
-        return { error: "Your request to join this group was declined" };
-      }
+      // Previously PENDING/REJECTED → promote to APPROVED now that joins are open.
+      await db.groupMembership.update({
+        where: { id: existingMembership.id },
+        data: { status: "APPROVED" },
+      });
+      revalidatePath("/dashboard");
+      revalidatePath(`/group/${group.id}`);
+      return { success: true, groupId: group.id, groupName: group.name };
     }
 
     await db.groupMembership.create({
@@ -118,16 +122,30 @@ export async function joinGroup(formData: FormData) {
         userId: session.user.id,
         groupId: group.id,
         role: "MEMBER",
-        status: "PENDING",
+        status: "APPROVED",
       },
     });
 
     revalidatePath("/dashboard");
-    return { success: true, message: "Join request sent. Waiting for admin approval." };
+    revalidatePath(`/group/${group.id}`);
+    return { success: true, groupId: group.id, groupName: group.name };
   } catch (error) {
     console.error("Join group error:", error);
     return { error: "Failed to join group. Please try again." };
   }
+}
+
+export async function joinGroup(formData: FormData) {
+  const result = await joinGroupBySlug(String(formData.get("slug") ?? ""));
+  if ("error" in result && result.error) {
+    return { error: result.error };
+  }
+  return {
+    success: true,
+    message: ("alreadyMember" in result && result.alreadyMember)
+      ? "You're already in this group."
+      : "You're in! Welcome to the group.",
+  };
 }
 
 export async function updateMembership(membershipId: string, action: "approve" | "reject") {

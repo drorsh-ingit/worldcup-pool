@@ -2,8 +2,10 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft, Users, Bell } from "lucide-react";
 import { CopySlugButton } from "@/components/copy-slug-button";
+import { CopyInviteLinkButton } from "@/components/copy-invite-link-button";
+import { TestPushButton } from "@/components/admin/test-push-button";
 import { SimulationControl } from "@/components/admin/simulation-control";
 import { ScoringSettings, type OddsData } from "@/components/admin/scoring-settings";
 import { DeleteGroupButton } from "@/components/admin/delete-group-button";
@@ -128,9 +130,24 @@ export default async function AdminPage({ params }: AdminPageProps) {
           <h2 className="font-display text-sm font-semibold text-neutral-900">Invite code</h2>
         </div>
         <p className="text-sm text-neutral-500">
-          Share this code so friends can request to join your group.
+          Share the code, or send a direct link that adds them straight into the group.
         </p>
-        <CopySlugButton slug={group.slug} />
+        <div className="flex items-center flex-wrap" style={{ gap: 12 }}>
+          <CopySlugButton slug={group.slug} />
+          <CopyInviteLinkButton slug={group.slug} />
+        </div>
+      </section>
+
+      {/* Notifications */}
+      <section style={{ padding: 20 }} className="rounded-xl border border-neutral-200 bg-white space-y-3">
+        <div className="flex items-center gap-2">
+          <Bell className="w-4 h-4 text-neutral-400" />
+          <h2 className="font-display text-sm font-semibold text-neutral-900">Notifications</h2>
+        </div>
+        <p className="text-sm text-neutral-500">
+          Send a test push to every group member who has enabled notifications on their device.
+        </p>
+        <TestPushButton groupId={groupId} />
       </section>
 
       {/* Simulation control */}

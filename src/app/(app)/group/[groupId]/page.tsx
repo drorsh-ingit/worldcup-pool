@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { PendingMembers } from "@/components/pending-members";
+import { CopySlugButton } from "@/components/copy-slug-button";
+import { CopyInviteLinkButton } from "@/components/copy-invite-link-button";
 import { cn } from "@/lib/utils";
 import { getInitials, getAvatarColor, AVATAR_COLOR_OPTIONS, dicebearUrl } from "@/lib/avatar";
 
@@ -88,6 +90,11 @@ export default async function GroupPage({ params }: GroupPageProps) {
           {group.name}
         </span>
         <h1 className="text-4xl font-black tracking-tight text-neutral-900">Standings</h1>
+        <div className="flex items-center flex-wrap" style={{ gap: 12, marginTop: 6 }}>
+          <span className="text-xs text-neutral-400">Invite code</span>
+          <CopySlugButton slug={group.slug} />
+          <CopyInviteLinkButton slug={group.slug} />
+        </div>
       </div>
 
       {/* Pending members (admin only) */}

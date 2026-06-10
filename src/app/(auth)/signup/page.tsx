@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 import { MatchdayLogo } from "@/components/matchday-logo";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawCallback = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = rawCallback.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/dashboard";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -49,7 +52,7 @@ export default function SignupPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(callbackUrl);
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
@@ -84,7 +87,7 @@ export default function SignupPage() {
         {/* Google sign-up */}
         <button
           type="button"
-          onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+          onClick={() => signIn("google", { callbackUrl })}
           className="w-full h-11 rounded-xl border border-neutral-300 bg-white text-sm font-medium text-neutral-700 hover:bg-neutral-50 active:scale-[0.98] transition-all inline-flex items-center justify-center"
           style={{ gap: 10, marginBottom: 20 }}
         >
@@ -172,11 +175,29 @@ export default function SignupPage() {
 
         <p className="text-center text-sm text-neutral-500" style={{ marginTop: 24 }}>
           Already have an account?{" "}
-          <Link href="/login" className="font-medium" style={{ color: "#3d7a28" }}>
+          <Link
+            href={callbackUrl !== "/dashboard" ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login"}
+            className="font-medium"
+            style={{ color: "#3d7a28" }}
+          >
             Sign in
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div style={{ width: "100%", maxWidth: 440, margin: "0 auto", display: "flex", justifyContent: "center", paddingTop: 80 }}>
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+        </div>
+      }
+    >
+      <SignupForm />
+    </Suspense>
   );
 }

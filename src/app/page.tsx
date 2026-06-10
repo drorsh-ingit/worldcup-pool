@@ -7,11 +7,8 @@ import { signIn, useSession } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 import { MatchdayLogo } from "@/components/matchday-logo";
 
-function LoginForm() {
+function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const rawCallback = searchParams.get("callbackUrl") || "/dashboard";
-  const callbackUrl = rawCallback.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/dashboard";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -100,12 +97,15 @@ function LoginForm() {
 function HomePageInner() {
   const { status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawCallback = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = rawCallback.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/dashboard";
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/dashboard");
+      router.replace(callbackUrl);
     }
-  }, [status, router]);
+  }, [status, router, callbackUrl]);
 
   if (status === "loading" || status === "authenticated") {
     return (
@@ -146,7 +146,7 @@ function HomePageInner() {
 
           {/* Google sign-in */}
           <button
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            onClick={() => signIn("google", { callbackUrl })}
             className="w-full h-11 rounded-xl border border-neutral-300 bg-white text-sm font-medium text-neutral-700 hover:bg-neutral-50 active:scale-[0.98] transition-all inline-flex items-center justify-center"
             style={{ gap: 10, marginBottom: 20 }}
           >
@@ -165,13 +165,15 @@ function HomePageInner() {
             <hr style={{ flex: 1, borderColor: "#e5e5e5" }} />
           </div>
 
-          <Suspense fallback={<div style={{ height: 160 }} />}>
-            <LoginForm />
-          </Suspense>
+          <LoginForm callbackUrl={callbackUrl} />
 
           <p className="text-center text-sm text-neutral-500" style={{ marginTop: 24 }}>
             No account?{" "}
-            <Link href="/signup" className="font-medium" style={{ color: "#3d7a28" }}>
+            <Link
+              href={callbackUrl !== "/dashboard" ? `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/signup"}
+              className="font-medium"
+              style={{ color: "#3d7a28" }}
+            >
               Create one free
             </Link>
           </p>
@@ -182,5 +184,15 @@ function HomePageInner() {
 }
 
 export default function HomePage() {
-  return <HomePageInner />;
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+        </div>
+      }
+    >
+      <HomePageInner />
+    </Suspense>
+  );
 }
