@@ -68,9 +68,10 @@ function oddsScaler(prob: number, thresholdOdds: number, divisor = 30): number {
  * @param phase match phase (for per-game multiplier)
  * @param totalPool total pool for the group
  * @param _memberCount unused (kept for call-site compatibility)
- * @param samePickCount per-game only: how many members made this exact pick.
- *        The bonus is split between them — rewards contrarian picks, and makes
- *        the displayed potential (samePickCount=1) the lone-pick maximum.
+ *
+ * Awarded points always equal the displayed potential — every correct picker
+ * gets the full base + bonus, independent of how many other members made the
+ * same pick.
  */
 export function calculatePoints(
   isCorrect: boolean,
@@ -79,8 +80,7 @@ export function calculatePoints(
   settings: GroupSettings,
   phase: keyof typeof DEFAULT_GROUP_SETTINGS["knockoutMultipliers"] = "GROUP",
   totalPool = 1000,
-  _memberCount = 10,
-  samePickCount = 1
+  _memberCount = 10
 ): { basePoints: number; bonusPoints: number; totalPoints: number } {
   if (!isCorrect) return { basePoints: 0, bonusPoints: 0, totalPoints: 0 };
 
@@ -106,14 +106,11 @@ export function calculatePoints(
 
   const basePoints = (subPool * basePct) / matchDivisor;
 
-  // Bonus: scaled by oddsScaler.
-  // Per-game bets split the bonus between members who made the same pick (herding divisor):
-  // piling onto the obvious favorite shares the reward, a lone contrarian keeps it all.
-  // Tournament/curated bets don't split — picks are spread across many teams/players.
+  // Bonus: scaled by oddsScaler. Whole bonus goes to each correct picker —
+  // no herding divisor — so awarded matches the displayed potential.
   const scalerDivisor = tierKey === "perGame" ? 3 : 30;
   const scaler = oddsScaler(impliedProbability, threshold, scalerDivisor);
-  const effectiveDivisor = tierKey === "perGame" ? Math.max(samePickCount, 1) : 1;
-  const bonusPoints = (subPool * (1 - basePct) * Math.min(scaler, 5)) / effectiveDivisor / matchDivisor;
+  const bonusPoints = (subPool * (1 - basePct) * Math.min(scaler, 5)) / matchDivisor;
 
   // Apply knockout multiplier for per-game bets
   const multiplier =
@@ -186,22 +183,9 @@ export async function scoreBets(
     });
 
     for (const bt of perGameBetTypes) {
-      // Fetch ALL bets on this market (scored or not) to count identical picks —
-      // the bonus is split between members who made the same prediction.
-      const allMarketBets = await db.bet.findMany({
-        where: { betTypeId: bt.id, matchId },
+      const bets = await db.bet.findMany({
+        where: { betTypeId: bt.id, matchId, scoredAt: null },
       });
-      const pickKey = (p: Record<string, unknown>) =>
-        bt.subType === "match_winner"
-          ? `o:${String(p.outcome)}`
-          : `s:${Number(p.homeScore)}-${Number(p.awayScore)}`;
-      const samePickCounts = new Map<string, number>();
-      for (const b of allMarketBets) {
-        const key = pickKey(b.prediction as Record<string, unknown>);
-        samePickCounts.set(key, (samePickCounts.get(key) ?? 0) + 1);
-      }
-
-      const bets = allMarketBets.filter((b) => b.scoredAt === null);
 
       for (const bet of bets) {
         const pred = bet.prediction as Record<string, unknown>;
@@ -244,8 +228,7 @@ export async function scoreBets(
         }
 
         const phase = match.phase as keyof typeof DEFAULT_GROUP_SETTINGS["knockoutMultipliers"];
-        const samePickCount = samePickCounts.get(pickKey(pred)) ?? 1;
-        const pts = calculatePoints(isCorrect, subType, impliedProbability, settings, phase, totalPool, memberCount, samePickCount);
+        const pts = calculatePoints(isCorrect, subType, impliedProbability, settings, phase, totalPool, memberCount);
 
         await db.bet.update({
           where: { id: bet.id },

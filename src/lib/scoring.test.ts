@@ -4,13 +4,13 @@ import { calculatePoints, bracketPickPotential } from "./scoring";
 import { DEFAULT_GROUP_SETTINGS, type GroupSettings } from "./settings";
 
 // Economy regression tests for the Jun 2026 re-tune:
-//  P1 exact score pays ~2-2.5x a direction pick, P2 herding divisor, P3 bracket bonus alive.
+//  P1 exact score pays ~2-2.5x a direction pick, P3 bracket bonus alive.
 // Odds scales: per-game odds are decimal (1.4 = heavy favorite); team odds are
 // American-style (550 = +550). calculatePoints takes impliedProbability = 1/odds either way.
 
 const S = DEFAULT_GROUP_SETTINGS as GroupSettings;
-const pts = (sub: string, odds: number, samePick = 1) =>
-  calculatePoints(true, sub, 1 / odds, S, "GROUP", 1000, 5, samePick).totalPoints;
+const pts = (sub: string, odds: number) =>
+  calculatePoints(true, sub, 1 / odds, S, "GROUP", 1000, 5).totalPoints;
 
 test("match direction: favorite vs upset spread is meaningful", () => {
   assert.equal(pts("match_winner", 1.4), 1.9); // MEX over RSA
@@ -23,12 +23,11 @@ test("exact score pays ~2-2.5x a direction pick (P1)", () => {
   assert.ok(ratio >= 2 && ratio <= 2.6, `ratio ${ratio} outside 2-2.6`);
 });
 
-test("herding divisor splits only the bonus between same picks (P2)", () => {
-  const lone = calculatePoints(true, "match_winner", 1 / 1.4, S, "GROUP", 1000, 5, 1);
-  const shared = calculatePoints(true, "match_winner", 1 / 1.4, S, "GROUP", 1000, 5, 3);
-  assert.equal(shared.basePoints, lone.basePoints); // base never splits
-  assert.ok(Math.abs(shared.bonusPoints - lone.bonusPoints / 3) < 0.1);
-  assert.equal(shared.totalPoints, 1.0);
+test("awarded points equal displayed potential regardless of group pick distribution", () => {
+  // No herding divisor — every correct picker gets the full base + bonus,
+  // matching the "potential pts" displayed at bet placement time.
+  const result = calculatePoints(true, "match_winner", 1 / 1.4, S, "GROUP", 1000, 5);
+  assert.equal(result.totalPoints, 1.9);
 });
 
 test("group size no longer changes per-game points", () => {
