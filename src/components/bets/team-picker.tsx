@@ -75,6 +75,7 @@ export function TeamPicker({
   async function handleSelect(code: string) {
     setOpen(false);
     if (isLocked || !code || code === selected) return;
+    const previous = selected;
     setSelected(code);
     setSaved(false);
     setError(null);
@@ -85,7 +86,10 @@ export function TeamPicker({
         betTypeId,
         prediction: { teamCode: code, ...(odds != null && { odds }) },
       });
-      if (result.error) setError(result.error);
+      if (result.error) {
+        setSelected(previous);
+        setError(result.error);
+      }
       else { setSaved(true); router.refresh(); }
     });
   }
@@ -317,12 +321,15 @@ export function GroupPredictionsPicker({
 
   const groups = Object.entries(teamsByGroup).sort(([a], [b]) => a.localeCompare(b));
 
-  async function save(newPicks: Record<string, string[]>) {
+  async function save(newPicks: Record<string, string[]>, previousPicks: Record<string, string[]>) {
     setSaving(true);
     setSaved(false);
     const result = await placeBet(groupId, { tournamentId, betTypeId, prediction: newPicks });
     setSaving(false);
-    if (result.error) setError(result.error);
+    if (result.error) {
+      setPicks(previousPicks);
+      setError(result.error);
+    }
     else { setSaved(true); router.refresh(); }
   }
 
@@ -332,12 +339,13 @@ export function GroupPredictionsPicker({
   function commitGroup(letter: string, winner: string, advancers: string[]) {
     const filtered = advancers.filter((c) => c && c !== winner);
     const newGroup = winner || filtered.length > 0 ? [winner, ...filtered] : [];
+    const previousPicks = picks;
     const newPicks = { ...picks };
     if (newGroup.length === 0) delete newPicks[letter];
     else newPicks[letter] = newGroup;
     setPicks(newPicks);
     setError(null);
-    save(newPicks);
+    save(newPicks, previousPicks);
   }
 
   function handleWinner(letter: string, code: string) {
@@ -677,6 +685,7 @@ export function SemifinalistsPicker({
 
   async function handleToggle(code: string) {
     if (isLocked) return;
+    const previous = picks;
     const next = new Set(picks);
     if (next.has(code)) {
       next.delete(code);
@@ -695,7 +704,10 @@ export function SemifinalistsPicker({
         prediction: { teams: [...next] },
       });
       setSaving(false);
-      if (result.error) setError(result.error);
+      if (result.error) {
+        setPicks(previous);
+        setError(result.error);
+      }
       else { setSaved(true); router.refresh(); }
     }
   }

@@ -191,7 +191,13 @@ export function MatchBetCard({
       const results = await Promise.all(ops);
       setSaving(false);
       const firstError = results.find((r) => r.error)?.error;
-      if (firstError) { setError(firstError); } else { lastSavedRef.current = current; setSaved(true); router.refresh(); }
+      if (firstError) {
+        setError(firstError);
+        const [revertH, revertA] = lastSavedRef.current.split("-");
+        setHomeScore(revertH ?? "");
+        setAwayScore(revertA ?? "");
+        dirtyRef.current = false;
+      } else { lastSavedRef.current = current; setSaved(true); router.refresh(); }
     }, 500);
 
     return () => clearTimeout(timer);
