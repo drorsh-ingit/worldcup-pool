@@ -20,19 +20,19 @@ export function CopyInviteLinkButton({ slug }: { slug: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="inline-flex items-center rounded-xl border border-neutral-200 text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 transition-colors"
-      style={{ height: 36, paddingLeft: 14, paddingRight: 14, gap: 8 }}
+      className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
+      style={{ gap: 4, padding: 0 }}
       title="Copy a direct join link"
     >
       {copied ? (
         <>
           <Check className="w-4 h-4 text-emerald-500" />
-          Link copied
+          <span className="text-xs">Link copied</span>
         </>
       ) : (
         <>
           <Link2 className="w-4 h-4 text-neutral-400" />
-          Copy invite link
+          <span className="text-xs">Share link</span>
         </>
       )}
     </button>
