@@ -7,6 +7,7 @@ import { fetchWCSchedule, fetchCLSchedule, fetchLiveMatch, regulationScore, fdWi
 import { fdTlaToCode } from "@/lib/wc-team-map";
 import { scoreBets } from "@/lib/scoring";
 import { recalculateLeaderboard, scoreProgressiveTournamentBets } from "@/lib/actions/results";
+import { fetchEspnLiveMatch } from "@/lib/espn-live";
 
 async function requireAdmin(groupId: string) {
   const session = await auth();
@@ -76,7 +77,11 @@ export async function getLiveMatchScore(
 ): Promise<{ data?: LiveScore; error?: string }> {
   const match = await db.match.findUnique({
     where: { id: matchId },
-    include: { tournament: { select: { groupId: true } } },
+    include: {
+      tournament: { select: { groupId: true } },
+      homeTeam: { select: { code: true } },
+      awayTeam: { select: { code: true } },
+    },
   });
   if (!match || match.tournament.groupId !== groupId) return { error: "Not found" };
   if (!match.externalId) return { error: "Not linked" };
@@ -106,6 +111,25 @@ export async function getLiveMatchScore(
       : "OTHER",
     minute: fdMatch.minute ?? null,
   };
+
+  // Stale-feed fallback: football-data.org's free tier sometimes lags hours
+  // behind reality. When their feed still reports SCHEDULED/TIMED past the real
+  // kickoff, ask ESPN for a fresher snapshot. ESPN is display-only — finished
+  // results still flow through football-data.org so penalties / regulation-time
+  // scoring stays authoritative (see autoCompleteMatch + regulationScore).
+  const fdIsStale =
+    (fdMatch.status === "SCHEDULED" || fdMatch.status === "TIMED") &&
+    new Date() >= match.kickoffAt;
+  if (fdIsStale) {
+    const espn = await fetchEspnLiveMatch(
+      match.homeTeam.code,
+      match.awayTeam.code,
+      match.kickoffAt
+    );
+    if (espn && (espn.status === "IN_PLAY" || espn.status === "PAUSED" || espn.status === "FINISHED")) {
+      return { data: espn };
+    }
+  }
 
   // Auto-complete when API says FINISHED and our DB hasn't recorded it yet
   if (fdMatch.status === "FINISHED" && match.status !== "COMPLETED") {
