@@ -162,6 +162,25 @@ export function MatchBetCard({
     ? (outcomeCorrect ? (savedDirectionPts ?? 0) : 0) + (scoreCorrect ? (savedScorePts ?? 0) : 0)
     : null;
 
+  // Live "pts so far": what the user would earn if the in-play score froze right now.
+  // Same maths as earnedPts but against liveScore instead of the final result.
+  const liveOutcome =
+    isInPlay && liveScore?.home != null && liveScore?.away != null
+      ? outcomeFromScore(liveScore.home, liveScore.away)
+      : null;
+  const liveOutcomeCorrect =
+    liveOutcome && savedPredictedOutcome ? savedPredictedOutcome === liveOutcome : null;
+  const liveScoreCorrect =
+    isInPlay &&
+    hasSavedBet &&
+    liveScore?.home === currentCorrectScore?.homeScore &&
+    liveScore?.away === currentCorrectScore?.awayScore;
+  const livePts =
+    isInPlay && hasSavedBet
+      ? (liveOutcomeCorrect ? (savedDirectionPts ?? 0) : 0) +
+        (liveScoreCorrect ? (savedScorePts ?? 0) : 0)
+      : null;
+
   const scorePts = hasValidScore ? scorePointsMap?.[`${Math.min(parsedHome, 6)}-${Math.min(parsedAway, 6)}`] : undefined;
 
   // Potential: predicted direction pts + predicted score bonus
@@ -341,15 +360,19 @@ export function MatchBetCard({
               {earnedPts != null && earnedPts > 0 ? `${earnedPts.toFixed(1)} pts earned` : "0 pts earned"}
             </span>
           )
+        ) : isInPlay && hasSavedBet ? (
+          <span
+            className={`text-base font-bold tabular-nums ${(livePts ?? 0) > 0 ? "text-amber-700" : "text-neutral-500"}`}
+            title="Points based on the current live score — locked in when the match ends"
+          >
+            {(livePts ?? 0).toFixed(1)} pts so far
+          </span>
         ) : betsNotOpenYet ? (
           <span className="text-sm font-medium text-neutral-400">Potential points TBD</span>
         ) : isPastKickoff && !hasSavedBet ? (
           <span className="text-sm font-medium text-neutral-400">No bet placed</span>
         ) : potentialPts != null ? (
-          <span
-            className="text-base font-bold text-neutral-700 tabular-nums"
-            title="Maximum if you're the only one with this pick — the bonus part is split between members who predict the same thing"
-          >
+          <span className="text-base font-bold text-neutral-700 tabular-nums">
             {potentialPts.toFixed(1)} potential pts
           </span>
         ) : (
