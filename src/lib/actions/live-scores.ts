@@ -112,31 +112,90 @@ export async function getLiveMatchScore(
     minute: fdMatch.minute ?? null,
   };
 
-  // Stale-feed fallback: football-data.org's free tier sometimes lags hours
-  // behind reality. When their feed still reports SCHEDULED/TIMED past the real
-  // kickoff, ask ESPN for a fresher snapshot. ESPN is display-only — finished
-  // results still flow through football-data.org so penalties / regulation-time
-  // scoring stays authoritative (see autoCompleteMatch + regulationScore).
-  const fdIsStale =
-    (fdMatch.status === "SCHEDULED" || fdMatch.status === "TIMED") &&
-    new Date() >= match.kickoffAt;
-  if (fdIsStale) {
+  // Two ESPN fallbacks when football-data.org's free-tier feed lags behind reality:
+  //   1. Live-display: fd still reports SCHEDULED/TIMED past kickoff → use ESPN
+  //      for the live status so the UI flips the lock icon to ⚽ on time.
+  //   2. Finished-detection (GROUP only): fd hasn't marked FINISHED yet but ESPN
+  //      sees the final whistle → write the result and trigger scoring without
+  //      waiting for fd to catch up. Restricted to GROUP because groups can't go
+  //      to penalties, so ESPN's final score equals the regulation score we use
+  //      for bet scoring. Knockouts stay on fd-org via regulationScore() so the
+  //      pens-excluded score and the via-pens advancer (winnerTeamId) are right.
+  const now = new Date();
+  const isPastKickoff = now >= match.kickoffAt;
+  const fdLooksPreGame = fdMatch.status === "SCHEDULED" || fdMatch.status === "TIMED";
+  const groupMatchPossiblyFinished =
+    match.phase === "GROUP" &&
+    match.status !== "COMPLETED" &&
+    fdMatch.status !== "FINISHED" &&
+    now.getTime() >= match.kickoffAt.getTime() + 100 * 60 * 1000;
+
+  if (isPastKickoff && (fdLooksPreGame || groupMatchPossiblyFinished)) {
     const espn = await fetchEspnLiveMatch(
       match.homeTeam.code,
       match.awayTeam.code,
       match.kickoffAt
     );
-    if (espn && (espn.status === "IN_PLAY" || espn.status === "PAUSED" || espn.status === "FINISHED")) {
-      return { data: espn };
+    if (espn) {
+      if (
+        groupMatchPossiblyFinished &&
+        espn.status === "FINISHED" &&
+        espn.home != null &&
+        espn.away != null
+      ) {
+        await autoCompleteGroupMatchFromEspn(
+          groupId,
+          matchId,
+          match.tournamentId,
+          espn.home,
+          espn.away
+        );
+        return { data: espn };
+      }
+      if (
+        fdLooksPreGame &&
+        (espn.status === "IN_PLAY" || espn.status === "PAUSED" || espn.status === "FINISHED")
+      ) {
+        return { data: espn };
+      }
     }
   }
 
-  // Auto-complete when API says FINISHED and our DB hasn't recorded it yet
+  // Auto-complete when fd-org marks FINISHED and our DB hasn't recorded it yet.
+  // For knockouts, this is the only path — keeps regulationScore + via-pens
+  // advancer detection authoritative.
   if (fdMatch.status === "FINISHED" && match.status !== "COMPLETED") {
     await autoCompleteMatch(groupId, matchId, match.tournamentId, fdMatch);
   }
 
   return { data: liveScore };
+}
+
+/**
+ * Group-stage-only finished writer driven by ESPN. Groups can't go to penalties,
+ * so ESPN's final score is the regulation score — safe to use for bet scoring.
+ * Mirrors autoCompleteMatch except: no winnerTeamId (groups can draw, and the
+ * field is only used for KO advancement) and no FDMatch input.
+ */
+async function autoCompleteGroupMatchFromEspn(
+  groupId: string,
+  matchId: string,
+  tournamentId: string,
+  home: number,
+  away: number
+) {
+  const current = await db.match.findUnique({ where: { id: matchId } });
+  if (!current || current.status === "COMPLETED") return;
+
+  await db.match.update({
+    where: { id: matchId },
+    data: { actualHomeScore: home, actualAwayScore: away, status: "COMPLETED" },
+  });
+
+  await scoreBets(groupId, tournamentId, matchId);
+  await scoreProgressiveTournamentBets(groupId, tournamentId);
+  await recalculateLeaderboard(groupId, tournamentId);
+  revalidatePath(`/group/${groupId}`);
 }
 
 /** Map a finished FD match's winner (penalties included) to our team id. */
