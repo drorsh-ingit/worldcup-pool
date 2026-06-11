@@ -88,15 +88,18 @@ export async function loadBetsPageData(groupId: string, userId: string) {
     }
   }
 
-  const betTypesWithEffectiveStatus = tournament.betTypes.map((bt) => ({
-    ...bt,
-    effectiveStatus:
-      bt.status === "DRAFT" && bt.opensAt && effectiveNow >= bt.opensAt
-        ? bt.locksAt && effectiveNow >= bt.locksAt
-          ? ("LOCKED" as const)
-          : ("OPEN" as const)
-        : (bt.status as "DRAFT" | "OPEN" | "LOCKED" | "RESOLVED"),
-  }));
+  const betTypesWithEffectiveStatus = tournament.betTypes.map((bt) => {
+    let effectiveStatus: "DRAFT" | "OPEN" | "LOCKED" | "RESOLVED";
+    if (bt.status === "DRAFT" && bt.opensAt && effectiveNow >= bt.opensAt) {
+      effectiveStatus =
+        bt.locksAt && effectiveNow >= bt.locksAt ? "LOCKED" : "OPEN";
+    } else if (bt.status === "OPEN" && bt.locksAt && effectiveNow >= bt.locksAt) {
+      effectiveStatus = "LOCKED";
+    } else {
+      effectiveStatus = bt.status as "DRAFT" | "OPEN" | "LOCKED" | "RESOLVED";
+    }
+    return { ...bt, effectiveStatus };
+  });
 
   const userBets = await db.bet.findMany({
     where: { userId, tournamentId: tournament.id },

@@ -355,17 +355,18 @@ export const R32_MATCHUPS: Array<{ home: string; away: string }> = [
 ];
 
 /**
- * Knockout kickoff times.
- * R32: Jul 2–5 (4/day), R16: Jul 6–9 (2/day), QF: Jul 10–11 (2/day),
- * SF: Jul 13–14 (1/day), Final: Jul 19
+ * Knockout kickoff times. Each base is the actual UTC kickoff of the first match
+ * of the round per the official FIFA 2026 schedule. The matchIndex calc estimates
+ * subsequent matches in the round, but only the base (matchIndex=0) is currently
+ * load-bearing — it drives lock times for the AFTER_* triggers in resolveOpenTrigger.
  */
 export function knockoutKickoff(phase: string, matchIndex: number): Date {
   const bases: Record<string, string> = {
-    R32: "2026-07-02T18:00:00Z",
-    R16: "2026-07-06T18:00:00Z",
-    QF: "2026-07-10T18:00:00Z",
-    SF: "2026-07-13T18:00:00Z",
-    FINAL: "2026-07-19T18:00:00Z",
+    R32: "2026-06-28T19:00:00Z",
+    R16: "2026-07-04T17:00:00Z",
+    QF: "2026-07-09T20:00:00Z",
+    SF: "2026-07-14T19:00:00Z",
+    FINAL: "2026-07-19T19:00:00Z",
   };
   const perDay: Record<string, number> = { R32: 4, R16: 2, QF: 2, SF: 1, FINAL: 1 };
 
@@ -405,7 +406,13 @@ export const BET_OPEN_TRIGGERS: BetOpenTrigger[] = [
   "AFTER_SF",
 ];
 
-const TOURNAMENT_START = new Date("2026-06-11T00:00:00Z");
+/** Real tournament start = kickoff of the earliest scheduled group match. */
+const TOURNAMENT_START = new Date(
+  WC2026_GROUP_MATCHES.reduce(
+    (earliest, m) => (m.kickoffAt < earliest ? m.kickoffAt : earliest),
+    WC2026_GROUP_MATCHES[0].kickoffAt
+  )
+);
 
 /**
  * Resolve an open trigger into concrete (opensAt, locksAt) dates.
@@ -418,10 +425,10 @@ export function resolveOpenTrigger(trigger: BetOpenTrigger): { opensAt: Date; lo
     case "PRE_TOURNAMENT":
       return { opensAt: oneWeekBefore, locksAt: TOURNAMENT_START };
     case "AFTER_GROUP_STAGE":
-      // Group stage ends ~Jun 30 evening; R32 starts Jul 2.
-      return { opensAt: new Date("2026-07-01T00:00:00Z"), locksAt: knockoutKickoff("R32", 0) };
+      // Group stage ends Jun 27; R32 starts Jun 28 19:00 UTC.
+      return { opensAt: new Date("2026-06-28T05:00:00Z"), locksAt: knockoutKickoff("R32", 0) };
     case "AFTER_R32":
-      // R32 ends Jul 5; R16 starts Jul 6.
+      // R32 runs Jun 28 – Jul 1; R16 starts Jul 4.
       return { opensAt: new Date("2026-07-05T23:00:00Z"), locksAt: knockoutKickoff("R16", 0) };
     case "AFTER_R16":
       return { opensAt: new Date("2026-07-09T23:00:00Z"), locksAt: knockoutKickoff("QF", 0) };
