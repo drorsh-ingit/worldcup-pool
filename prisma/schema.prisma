@@ -18,6 +18,7 @@ model User {
   avatarColor  Int?
   avatarStyle  String?
   avatarSeed   String?
+  defaultGroupId String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

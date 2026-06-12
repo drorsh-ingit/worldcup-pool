@@ -18,9 +18,11 @@ interface Props {
   initialSeed: string | null;
   userId: string;
   hasAnyPushSubscription: boolean;
+  approvedGroups: { id: string; name: string }[];
+  initialDefaultGroupId: string | null;
 }
 
-export function SettingsForm({ initialName, realName, email, initialColor, initialStyle, initialSeed, userId, hasAnyPushSubscription }: Props) {
+export function SettingsForm({ initialName, realName, email, initialColor, initialStyle, initialSeed, userId, hasAnyPushSubscription, approvedGroups, initialDefaultGroupId }: Props) {
   const { update } = useSession();
   const router = useRouter();
   const { permission, subscribed, loading: pushLoading, subscribe, unsubscribe, debugInfo, canPush } = usePushNotifications();
@@ -31,6 +33,7 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
   const [selectedColor, setSelectedColor] = useState<number | null>(initialColor);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(initialStyle);
   const [seed, setSeed] = useState<string>(initialSeed ?? userId.slice(-8));
+  const [defaultGroupId, setDefaultGroupId] = useState<string>(initialDefaultGroupId ?? "");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -47,6 +50,7 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
     if (selectedColor != null) formData.set("avatarColor", String(selectedColor));
     formData.set("avatarStyle", selectedStyle ?? "");
     formData.set("avatarSeed", seed);
+    if (approvedGroups.length > 1) formData.set("defaultGroupId", defaultGroupId);
     const result = await updateProfile(formData);
 
     if (result.error) {
@@ -104,6 +108,26 @@ export function SettingsForm({ initialName, realName, email, initialColor, initi
             <label className="text-sm font-medium text-neutral-700">Email</label>
             <p className="text-sm text-neutral-500 h-11 flex items-center" style={{ paddingLeft: 14 }}>{email}</p>
           </div>
+
+          {/* Default group — only when user has more than one */}
+          {approvedGroups.length > 1 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label htmlFor="defaultGroupId" className="text-sm font-medium text-neutral-700">Default group</label>
+              <p className="text-xs text-neutral-500">Which group to open when you log in.</p>
+              <select
+                id="defaultGroupId"
+                value={defaultGroupId}
+                onChange={(e) => setDefaultGroupId(e.target.value)}
+                className="w-full h-11 rounded-xl border border-neutral-300 text-sm text-neutral-900 hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                style={{ paddingLeft: 14, paddingRight: 14 }}
+              >
+                <option value="">Most recently joined</option>
+                {approvedGroups.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Avatar style picker */}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

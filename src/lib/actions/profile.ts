@@ -15,6 +15,7 @@ const schema = z.object({
   avatarColor: z.coerce.number().int().min(0).max(11).optional(),
   avatarStyle: z.enum(VALID_AVATAR_STYLES).optional(),
   avatarSeed: z.string().max(20).optional(),
+  defaultGroupId: z.string().optional(),
 });
 
 export async function updateProfile(formData: FormData) {
@@ -26,8 +27,24 @@ export async function updateProfile(formData: FormData) {
     avatarColor: formData.get("avatarColor") ?? undefined,
     avatarStyle: formData.get("avatarStyle") ?? undefined,
     avatarSeed: formData.get("avatarSeed") ?? undefined,
+    defaultGroupId: formData.get("defaultGroupId") ?? undefined,
   });
   if (!parsed.success) return { error: "Name must be 1–50 characters" };
+
+  let defaultGroupId: string | null | undefined = undefined;
+  if (parsed.data.defaultGroupId !== undefined) {
+    const raw = parsed.data.defaultGroupId;
+    if (raw === "") {
+      defaultGroupId = null;
+    } else {
+      const membership = await db.groupMembership.findFirst({
+        where: { userId: session.user.id, groupId: raw, status: "APPROVED" },
+        select: { id: true },
+      });
+      if (!membership) return { error: "Not a member of the selected group" };
+      defaultGroupId = raw;
+    }
+  }
 
   await db.user.update({
     where: { id: session.user.id },
@@ -36,6 +53,7 @@ export async function updateProfile(formData: FormData) {
       ...(parsed.data.avatarColor != null && { avatarColor: parsed.data.avatarColor }),
       avatarStyle: parsed.data.avatarStyle || null,
       avatarSeed: parsed.data.avatarSeed || null,
+      ...(defaultGroupId !== undefined && { defaultGroupId }),
     },
   });
 

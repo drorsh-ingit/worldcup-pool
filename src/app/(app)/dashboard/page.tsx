@@ -15,17 +15,26 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const { new: showWelcome } = await searchParams;
 
-  const memberships = await db.groupMembership.findMany({
-    where: { userId: session.user.id },
-    include: { group: { select: { id: true, name: true } } },
-    orderBy: { joinedAt: "desc" },
-  });
+  const [memberships, user] = await Promise.all([
+    db.groupMembership.findMany({
+      where: { userId: session.user.id },
+      include: { group: { select: { id: true, name: true } } },
+      orderBy: { joinedAt: "desc" },
+    }),
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { defaultGroupId: true },
+    }),
+  ]);
 
   const approved = memberships.filter((m) => m.status === "APPROVED");
   const pending = memberships.filter((m) => m.status === "PENDING");
 
   if (approved.length > 0 && !showWelcome) {
-    redirect(`/group/${approved[0].group.id}`);
+    const preferred = user?.defaultGroupId
+      ? approved.find((m) => m.group.id === user.defaultGroupId)
+      : null;
+    redirect(`/group/${(preferred ?? approved[0]).group.id}`);
   }
 
   return (
