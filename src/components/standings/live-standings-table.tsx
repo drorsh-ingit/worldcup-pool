@@ -182,7 +182,7 @@ export function LiveStandingsTable({ groupId, currentUserId, baseStandings }: Pr
               )}
             >
               <span className="text-sm font-bold tabular-nums">{s.totalPoints.toFixed(1)}</span>
-              {s.delta > 0 && (
+              {inPlayCount > 0 && (
                 <span className="text-[11px] italic font-semibold text-amber-700 tabular-nums">
                   +{s.delta.toFixed(1)} live
                 </span>
