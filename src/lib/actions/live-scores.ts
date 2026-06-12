@@ -86,89 +86,89 @@ export async function getLiveMatchScore(
   if (!match || match.tournament.groupId !== groupId) return { error: "Not found" };
   if (!match.externalId) return { error: "Not linked" };
 
-  let fdMatch;
-  try {
-    fdMatch = await fetchLiveMatch(parseInt(match.externalId));
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : "Fetch failed" };
+  // ESPN is the primary live-display source — observed faster than fd-org's
+  // free-tier feed at both kickoff and final whistle. fd-org remains the
+  // authoritative completion source for knockouts (penalty-aware scoring via
+  // regulationScore + via-pens advancer detection in autoCompleteMatch).
+  const espn = await fetchEspnLiveMatch(
+    match.homeTeam.code,
+    match.awayTeam.code,
+    match.kickoffAt
+  );
+  const espnHasLiveData =
+    !!espn &&
+    (espn.status === "IN_PLAY" || espn.status === "PAUSED" || espn.status === "FINISHED");
+
+  let liveScore: LiveScore | null = null;
+  if (espnHasLiveData) {
+    liveScore = espn;
   }
 
-  // During IN_PLAY/PAUSED use fullTime (updated live); fall back to halfTime
-  const isActive = fdMatch.status === "IN_PLAY" || fdMatch.status === "PAUSED";
-  const currentHome = isActive
-    ? (fdMatch.score.fullTime.home ?? fdMatch.score.halfTime.home)
-    : fdMatch.score.fullTime.home;
-  const currentAway = isActive
-    ? (fdMatch.score.fullTime.away ?? fdMatch.score.halfTime.away)
-    : fdMatch.score.fullTime.away;
+  // Fetch fd-org only when (a) ESPN didn't give live data — we need a display
+  // backup; or (b) we need its pens-aware completion data for a KO match ESPN
+  // has marked finished. Group-stage completion goes through ESPN directly so
+  // we can skip fd-org entirely for those.
+  const koNeedsFdCompletion =
+    match.phase !== "GROUP" &&
+    espn?.status === "FINISHED" &&
+    match.status !== "COMPLETED";
 
-  const knownStatuses = ["SCHEDULED", "TIMED", "IN_PLAY", "PAUSED", "FINISHED"] as const;
-  const liveScore: LiveScore = {
-    home: currentHome,
-    away: currentAway,
-    status: (knownStatuses as readonly string[]).includes(fdMatch.status)
-      ? (fdMatch.status as LiveScore["status"])
-      : "OTHER",
-    minute: fdMatch.minute ?? null,
-  };
-
-  // Two ESPN fallbacks when football-data.org's free-tier feed lags behind reality:
-  //   1. Live-display: fd still reports SCHEDULED/TIMED past kickoff → use ESPN
-  //      for the live status so the UI flips the lock icon to ⚽ on time.
-  //   2. Finished-detection (GROUP only): fd hasn't marked FINISHED yet but ESPN
-  //      sees the final whistle → write the result and trigger scoring without
-  //      waiting for fd to catch up. Restricted to GROUP because groups can't go
-  //      to penalties, so ESPN's final score equals the regulation score we use
-  //      for bet scoring. Knockouts stay on fd-org via regulationScore() so the
-  //      pens-excluded score and the via-pens advancer (winnerTeamId) are right.
-  const now = new Date();
-  const isPastKickoff = now >= match.kickoffAt;
-  const fdLooksPreGame = fdMatch.status === "SCHEDULED" || fdMatch.status === "TIMED";
-  const groupMatchPossiblyFinished =
-    match.phase === "GROUP" &&
-    match.status !== "COMPLETED" &&
-    fdMatch.status !== "FINISHED" &&
-    now.getTime() >= match.kickoffAt.getTime() + 100 * 60 * 1000;
-
-  if (isPastKickoff && (fdLooksPreGame || groupMatchPossiblyFinished)) {
-    const espn = await fetchEspnLiveMatch(
-      match.homeTeam.code,
-      match.awayTeam.code,
-      match.kickoffAt
-    );
-    if (espn) {
-      if (
-        groupMatchPossiblyFinished &&
-        espn.status === "FINISHED" &&
-        espn.home != null &&
-        espn.away != null
-      ) {
-        await autoCompleteGroupMatchFromEspn(
-          groupId,
-          matchId,
-          match.tournamentId,
-          espn.home,
-          espn.away
-        );
-        return { data: espn };
-      }
-      if (
-        fdLooksPreGame &&
-        (espn.status === "IN_PLAY" || espn.status === "PAUSED" || espn.status === "FINISHED")
-      ) {
-        return { data: espn };
-      }
+  let fdMatch: FDMatch | null = null;
+  if (!espnHasLiveData || koNeedsFdCompletion) {
+    try {
+      fdMatch = await fetchLiveMatch(parseInt(match.externalId));
+    } catch {
+      // Swallow — fd is the backup; if ESPN already gave us live data we still return it.
     }
   }
 
-  // Auto-complete when fd-org marks FINISHED and our DB hasn't recorded it yet.
-  // For knockouts, this is the only path — keeps regulationScore + via-pens
-  // advancer detection authoritative.
-  if (fdMatch.status === "FINISHED" && match.status !== "COMPLETED") {
+  if (!liveScore && fdMatch) {
+    const isActive = fdMatch.status === "IN_PLAY" || fdMatch.status === "PAUSED";
+    const currentHome = isActive
+      ? (fdMatch.score.fullTime.home ?? fdMatch.score.halfTime.home)
+      : fdMatch.score.fullTime.home;
+    const currentAway = isActive
+      ? (fdMatch.score.fullTime.away ?? fdMatch.score.halfTime.away)
+      : fdMatch.score.fullTime.away;
+    const knownStatuses = ["SCHEDULED", "TIMED", "IN_PLAY", "PAUSED", "FINISHED"] as const;
+    liveScore = {
+      home: currentHome,
+      away: currentAway,
+      status: (knownStatuses as readonly string[]).includes(fdMatch.status)
+        ? (fdMatch.status as LiveScore["status"])
+        : "OTHER",
+      minute: fdMatch.minute ?? null,
+    };
+  }
+
+  // Group-stage finished auto-complete from ESPN. Groups can't go to pens, so
+  // ESPN's final score equals the regulation score we score bets against.
+  // 100min buffer guards against ESPN flapping to "post" mid-match.
+  const now = new Date();
+  if (
+    match.phase === "GROUP" &&
+    espn?.status === "FINISHED" &&
+    espn.home != null &&
+    espn.away != null &&
+    match.status !== "COMPLETED" &&
+    now.getTime() >= match.kickoffAt.getTime() + 100 * 60 * 1000
+  ) {
+    await autoCompleteGroupMatchFromEspn(
+      groupId,
+      matchId,
+      match.tournamentId,
+      espn.home,
+      espn.away
+    );
+  }
+
+  // KO finished auto-complete via fd-org — keeps regulationScore + via-pens
+  // advancer detection authoritative for matches that can go to a shootout.
+  if (fdMatch?.status === "FINISHED" && match.status !== "COMPLETED") {
     await autoCompleteMatch(groupId, matchId, match.tournamentId, fdMatch);
   }
 
-  return { data: liveScore };
+  return { data: liveScore ?? undefined };
 }
 
 /**
