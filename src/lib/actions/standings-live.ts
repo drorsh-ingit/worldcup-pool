@@ -160,5 +160,10 @@ export async function getLiveStandingsDeltas(groupId: string): Promise<LiveDelta
 
   const result: LiveDeltasResult = { deltas, inPlayCount };
   deltasCache.set(groupId, { fetchedAt: Date.now(), result });
+  // Server-side observability for the live-deltas path. Shows up in Vercel logs
+  // under /api or the page route the server action was bound to.
+  console.log(
+    `[live-deltas] group=${groupId} userId=${session.user.id} inPlay=${inPlayCount} deltas=${JSON.stringify(deltas)} matches=${inPlayMatches.length}`
+  );
   return result;
 }
