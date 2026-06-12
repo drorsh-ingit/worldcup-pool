@@ -396,7 +396,9 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
               <div key={dateKey} className="flex flex-col gap-4">
                 <span className="text-xs font-medium text-neutral-400">{dateKey}</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {byDate[dateKey].map((match) => {
+                  {[...byDate[dateKey]]
+                    .sort((a, b) => new Date(b.kickoffAt).getTime() - new Date(a.kickoffAt).getTime())
+                    .map((match) => {
                     const props = buildMatchCardProps(data, match);
                     return (
                       <MatchBetCard
