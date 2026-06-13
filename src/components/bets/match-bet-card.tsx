@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, MapPin, Clock, ChevronUp, ChevronDown, Check, Loader2 } from "lucide-react";
-import { placeBet } from "@/lib/actions/bets";
+import { placeMatchPrediction } from "@/lib/actions/bets";
 import { getLiveMatchScore, type LiveScore } from "@/lib/actions/live-scores";
 import { TeamBadge } from "@/components/team-badge";
 import { cn } from "@/lib/utils";
@@ -199,24 +199,39 @@ export function MatchBetCard({
 
     const timer = setTimeout(async () => {
       setSaving(true); setSaved(false); setError(null);
-      const outcome = outcomeFromScore(parsedHome, parsedAway);
-      const ops: Promise<{ error?: string }>[] = [];
-      if (correctScoreBetTypeId) {
-        ops.push(placeBet(groupId, { tournamentId, betTypeId: correctScoreBetTypeId, matchId: match.id, prediction: { homeScore: parsedHome, awayScore: parsedAway } }));
-      }
-      if (matchWinnerBetTypeId) {
-        ops.push(placeBet(groupId, { tournamentId, betTypeId: matchWinnerBetTypeId, matchId: match.id, prediction: { outcome } }));
-      }
-      const results = await Promise.all(ops);
-      setSaving(false);
-      const firstError = results.find((r) => r.error)?.error;
-      if (firstError) {
-        setError(firstError);
+      // Both the correct-score and derived match-winner bets are written in a
+      // single atomic server action — they can never persist partially.
+      const revert = () => {
         const [revertH, revertA] = lastSavedRef.current.split("-");
         setHomeScore(revertH ?? "");
         setAwayScore(revertA ?? "");
         dirtyRef.current = false;
-      } else { lastSavedRef.current = current; setSaved(true); router.refresh(); }
+      };
+      try {
+        const result = await placeMatchPrediction(groupId, {
+          tournamentId,
+          matchId: match.id,
+          correctScoreBetTypeId: correctScoreBetTypeId ?? undefined,
+          matchWinnerBetTypeId: matchWinnerBetTypeId ?? undefined,
+          homeScore: parsedHome,
+          awayScore: parsedAway,
+        });
+        if (result.error) {
+          setError(result.error);
+          revert();
+        } else {
+          lastSavedRef.current = current;
+          setSaved(true);
+          router.refresh();
+        }
+      } catch {
+        // Network / server failure (e.g. a DB connection-pool timeout). Surface
+        // it instead of silently leaving the score looking saved.
+        setError("Couldn't save — please try again");
+        revert();
+      } finally {
+        setSaving(false);
+      }
     }, 500);
 
     return () => clearTimeout(timer);
