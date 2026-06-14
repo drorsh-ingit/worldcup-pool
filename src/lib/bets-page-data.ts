@@ -21,6 +21,22 @@ export function phaseLabel(phase: string): string {
   return PHASE_LABELS[phase] ?? phase;
 }
 
+/**
+ * A match is "locked" — predictions can no longer change and are safe to reveal —
+ * once it has been explicitly locked/completed or kickoff has passed. Uses the
+ * simulation-aware effectiveNow so test groups behave consistently.
+ */
+export function isMatchLocked(
+  match: { kickoffAt: Date | string; status: string },
+  effectiveNow: Date
+): boolean {
+  return (
+    match.status === "LOCKED" ||
+    match.status === "COMPLETED" ||
+    effectiveNow >= new Date(match.kickoffAt)
+  );
+}
+
 /** Shared data loader for /matches and /bets pages. Returns null if tournament missing. */
 export async function loadBetsPageData(groupId: string, userId: string) {
   const group = await db.group.findUnique({ where: { id: groupId } });

@@ -144,6 +144,8 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
           actualHomeScore: match.actualHomeScore,
           actualAwayScore: match.actualAwayScore,
         }}
+        href={`/group/${groupId}/match/${match.id}`}
+        effectiveNow={effectiveNow}
         matchWinnerBetTypeId={props.mwBetId}
         correctScoreBetTypeId={props.csBetId}
         betsOpen={props.betsOpen}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, MapPin, Clock, ChevronUp, ChevronDown, Check, Loader2 } from "lucide-react";
 import { placeMatchPrediction } from "@/lib/actions/bets";
@@ -32,6 +33,10 @@ interface MatchBetCardProps {
   currentCorrectScore?: { homeScore?: number; awayScore?: number };
   outcomePoints?: Record<string, number>;
   scorePointsMap?: Record<string, number>;
+  /** When set, a locked card links here (the all-predictions match page). */
+  href?: string;
+  /** Simulation-aware "now" — falls back to the real clock when omitted. */
+  effectiveNow?: Date;
 }
 
 function teamNameSize(name: string): number {
@@ -75,6 +80,8 @@ export function MatchBetCard({
   currentCorrectScore,
   outcomePoints,
   scorePointsMap,
+  href,
+  effectiveNow,
 }: MatchBetCardProps) {
   const [homeScore, setHomeScore] = useState<string>(
     currentCorrectScore?.homeScore?.toString() ?? ""
@@ -95,9 +102,14 @@ export function MatchBetCard({
   );
 
   const kickoff = new Date(match.kickoffAt);
-  const isPastKickoff = new Date() > kickoff;
+  const isPastKickoff = (effectiveNow ? new Date(effectiveNow) : new Date()) > kickoff;
   const isLocked = !betsOpen || match.status === "LOCKED" || match.status === "COMPLETED" || isPastKickoff;
   const betsNotOpenYet = !betsOpen && match.status === "UPCOMING" && !isPastKickoff;
+  // Predictions are revealed (and the card becomes a link) once the match is truly
+  // locked — kickoff passed or explicitly locked/completed. Distinct from `isLocked`,
+  // which is also true when betting simply never opened.
+  const revealLocked = match.status === "LOCKED" || match.status === "COMPLETED" || isPastKickoff;
+  const linkable = !!href && revealLocked;
 
   useEffect(() => {
     const now = new Date();
@@ -261,11 +273,11 @@ export function MatchBetCard({
   const directionPts = (pts: number | undefined) =>
     pts != null ? `${pts.toFixed(1)} pts` : "TBD";
 
-  return (
+  const cardBody = (
     <div
       className={cn(
         "rounded-3xl border border-neutral-200 bg-white shadow-sm",
-        !isLocked && "transition-shadow hover:shadow-md"
+        (!isLocked || linkable) && "transition-shadow hover:shadow-md"
       )}
     >
       {/* Header: phase + time, optional stats button */}
@@ -411,6 +423,18 @@ export function MatchBetCard({
       </div>
     </div>
   );
+
+  if (linkable) {
+    return (
+      <Link
+        href={href!}
+        className="block rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+      >
+        {cardBody}
+      </Link>
+    );
+  }
+  return cardBody;
 }
 
 function ScoreCell({
