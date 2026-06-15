@@ -32,7 +32,11 @@ export default async function StatsPage({ params }: StatsPageProps) {
         </p>
       </div>
 
-      <StatsSummary summary={selfSummary} />
+      {/* Capped so the cards don't stretch edge-to-edge on wide screens; on mobile
+          the viewport is narrower than the cap, so it stays full-width. */}
+      <div style={{ maxWidth: 560, width: "100%" }}>
+        <StatsSummary summary={selfSummary} />
+      </div>
 
       <LiveScoresProvider groupId={groupId} matchIds={inPlayMatchIds}>
         {/* Desktop / tablet: full grid */}

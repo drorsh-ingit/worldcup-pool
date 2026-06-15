@@ -22,7 +22,12 @@ export function StatsGrid({ data }: { data: GroupStatsData }) {
   return (
     <div className="flex flex-col" style={{ gap: 12 }}>
       <Legend />
-      <div className="rounded-2xl border border-neutral-200 bg-white overflow-x-auto">
+      {/* Hug the table's content width (scroll if it ever exceeds the viewport)
+          rather than stretching the box across the whole page. */}
+      <div
+        className="rounded-2xl border border-neutral-200 bg-white overflow-x-auto"
+        style={{ width: "fit-content", maxWidth: "100%", alignSelf: "flex-start" }}
+      >
         <table className="border-collapse" style={{ minWidth: "max-content" }}>
           <thead>
             <tr>
