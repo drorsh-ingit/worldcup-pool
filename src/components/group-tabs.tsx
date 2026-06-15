@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Trophy, CalendarDays, BarChart2, Table2, Settings } from "lucide-react";
+import { Trophy, CalendarDays, BarChart2, Table2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface GroupTabsProps {
@@ -12,16 +12,17 @@ interface GroupTabsProps {
   mobileOnly?: boolean;
 }
 
-export function GroupTabs({ groupId, isAdmin, pendingBets, mobileOnly }: GroupTabsProps) {
+export function GroupTabs({ groupId, pendingBets, mobileOnly }: GroupTabsProps) {
   const pathname = usePathname();
   const base = `/group/${groupId}`;
 
+  // Admin is intentionally excluded from the mobile bottom bar — it lives as a
+  // gear in the top bar (see AppNav) so the bar doesn't overflow.
   const tabs = [
     { href: base, label: "Standings", icon: BarChart2, exact: true, pending: 0 },
     { href: `${base}/matches`, label: "Matches", icon: CalendarDays, pending: pendingBets?.matches ?? 0 },
     { href: `${base}/bets`, label: "Tournament Bets", icon: Trophy, pending: pendingBets?.tournament ?? 0 },
     { href: `${base}/stats`, label: "Stats", icon: Table2, pending: 0 },
-    ...(isAdmin ? [{ href: `${base}/admin`, label: "Admin", icon: Settings, exact: false, pending: 0 }] : []),
   ];
 
   const isActive = (href: string, exact?: boolean) =>

@@ -34,6 +34,10 @@ function AppNavInner({ user, groups }: AppNavProps) {
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
+  // Admin lives in the top bar on mobile (it's excluded from the bottom tab bar).
+  // The layout only injects the /admin tab when the user is a group admin.
+  const adminTab = tabs.find((t) => t.href.endsWith("/admin"));
+
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userRef = useRef<HTMLDivElement>(null);
 
@@ -125,8 +129,26 @@ function AppNavInner({ user, groups }: AppNavProps) {
           <div className="flex-1" />
         )}
 
+        {/* Right cluster: admin gear (mobile) + user menu */}
+        <div className="flex items-center shrink-0" style={{ gap: 6 }}>
+        {adminTab && (
+          <Link
+            href={adminTab.href}
+            aria-label="Admin"
+            title="Admin"
+            className={cn(
+              "sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors",
+              isActive(adminTab.href, false)
+                ? "bg-neutral-900 text-white"
+                : "text-neutral-500 hover:bg-neutral-100"
+            )}
+          >
+            <Settings className="w-5 h-5" />
+          </Link>
+        )}
+
         {/* User menu */}
-        <div className="relative shrink-0" ref={userRef}>
+        <div className="relative" ref={userRef}>
           <button
             onClick={() => setUserMenuOpen((v) => !v)}
             className="flex items-center h-9 rounded-xl hover:bg-neutral-100 transition-colors"
@@ -237,6 +259,7 @@ function AppNavInner({ user, groups }: AppNavProps) {
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
     </header>
