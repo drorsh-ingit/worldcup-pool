@@ -9,6 +9,8 @@ export interface StatsCell {
   homeScore: number | null;
   awayScore: number | null;
   result: CellResult;
+  /** Points earned for this match (completed only); null while in-play. */
+  points: number | null;
 }
 
 export interface StatsMatchRow {
@@ -36,6 +38,8 @@ export interface UserSummary {
   wrong: number;
   /** completed matches with no prediction */
   missed: number;
+  /** total points earned across completed matches */
+  points: number;
 }
 
 export interface GroupStatsData {
@@ -102,20 +106,32 @@ export async function getGroupStats(
   });
   const matchIds = startedMatches.map((m) => m.id);
 
-  // All correct_score predictions across the group for these matches.
+  // Per-game bets across the group: correct_score holds the prediction; points are
+  // the sum of correct_score + match_winner totalPoints (populated once scored).
   const bets = matchIds.length
     ? await db.bet.findMany({
-        where: { matchId: { in: matchIds }, betType: { subType: "correct_score" } },
+        where: { matchId: { in: matchIds }, betType: { subType: { in: ["correct_score", "match_winner"] } } },
+        include: { betType: { select: { subType: true } } },
       })
     : [];
   // matchId -> userId -> { h, a }
   const predByMatch = new Map<string, Map<string, { h: number; a: number }>>();
+  // matchId -> userId -> points earned
+  const pointsByMatch = new Map<string, Map<string, number>>();
   for (const b of bets) {
     if (!b.matchId) continue;
-    const pred = b.prediction as { homeScore?: number; awayScore?: number } | null;
-    if (pred?.homeScore == null || pred?.awayScore == null) continue;
-    if (!predByMatch.has(b.matchId)) predByMatch.set(b.matchId, new Map());
-    predByMatch.get(b.matchId)!.set(b.userId, { h: pred.homeScore, a: pred.awayScore });
+    if (b.betType.subType === "correct_score") {
+      const pred = b.prediction as { homeScore?: number; awayScore?: number } | null;
+      if (pred?.homeScore != null && pred?.awayScore != null) {
+        if (!predByMatch.has(b.matchId)) predByMatch.set(b.matchId, new Map());
+        predByMatch.get(b.matchId)!.set(b.userId, { h: pred.homeScore, a: pred.awayScore });
+      }
+    }
+    if (b.totalPoints != null) {
+      if (!pointsByMatch.has(b.matchId)) pointsByMatch.set(b.matchId, new Map());
+      const mm = pointsByMatch.get(b.matchId)!;
+      mm.set(b.userId, (mm.get(b.userId) ?? 0) + b.totalPoints);
+    }
   }
 
   const summaryByUser: Record<string, UserSummary> = {};
@@ -128,26 +144,31 @@ export async function getGroupStats(
       winner: 0,
       wrong: 0,
       missed: 0,
+      points: 0,
     };
   }
 
   const matches: StatsMatchRow[] = startedMatches.map((m) => {
     const completed = m.status === "COMPLETED" && m.actualHomeScore != null && m.actualAwayScore != null;
     const userPreds = predByMatch.get(m.id);
+    const userPoints = pointsByMatch.get(m.id);
     const cells: Record<string, StatsCell> = {};
 
     for (const member of members) {
       const pred = userPreds?.get(member.userId);
+      // Points only count once the match is scored (completed); null while in-play.
+      const pts = completed ? userPoints?.get(member.userId) ?? 0 : null;
+      if (pts != null) summaryByUser[member.userId].points += pts;
 
       if (!pred) {
         // No prediction: a no-show on a finished match counts as wrong; on an
         // in-play match it's just blank (nothing to score yet).
         if (completed) {
-          cells[member.userId] = { homeScore: null, awayScore: null, result: "wrong" };
+          cells[member.userId] = { homeScore: null, awayScore: null, result: "wrong", points: pts };
           summaryByUser[member.userId].wrong += 1;
           summaryByUser[member.userId].missed += 1;
         } else {
-          cells[member.userId] = { homeScore: null, awayScore: null, result: "none" };
+          cells[member.userId] = { homeScore: null, awayScore: null, result: "none", points: null };
         }
         continue;
       }
@@ -167,7 +188,7 @@ export async function getGroupStats(
         summaryByUser[member.userId].wrong += 1;
       }
 
-      cells[member.userId] = { homeScore: pred.h, awayScore: pred.a, result };
+      cells[member.userId] = { homeScore: pred.h, awayScore: pred.a, result, points: pts };
     }
 
     return {
@@ -185,6 +206,11 @@ export async function getGroupStats(
       cells,
     };
   });
+
+  // Tidy float drift from summing stored point values.
+  for (const uid of Object.keys(summaryByUser)) {
+    summaryByUser[uid].points = parseFloat(summaryByUser[uid].points.toFixed(1));
+  }
 
   return {
     data: { tournamentKind: tournament.kind, members, matches, summaryByUser, selfId },

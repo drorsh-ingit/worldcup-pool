@@ -3,9 +3,27 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { CellResult, GroupStatsData } from "@/lib/group-stats";
+import type { CellResult, GroupStatsData, StatsCell, StatsMatchRow } from "@/lib/group-stats";
 import { RESULT_CLASSES, scoreResult } from "./result-color";
 import { useLiveScore } from "./live-scores-context";
+
+function SidePick({ m, cell }: { m: StatsMatchRow; cell: StatsCell }) {
+  return (
+    <div className="flex flex-col items-center" style={{ gap: 3 }}>
+      <PredChip matchId={m.id} completed={m.completed} result={cell.result} h={cell.homeScore} a={cell.awayScore} />
+      {m.completed && cell.points != null && (
+        <span
+          className={cn(
+            "text-[11px] font-semibold tabular-nums leading-none",
+            cell.points > 0 ? "text-pitch-700" : "text-neutral-400"
+          )}
+        >
+          {cell.points.toFixed(1)} pts
+        </span>
+      )}
+    </div>
+  );
+}
 
 function PredChip({
   matchId,
@@ -122,8 +140,8 @@ export function StatsH2H({ data }: { data: GroupStatsData }) {
                     </span>
                   )}
                 </div>
-                <PredChip matchId={m.id} completed={m.completed} result={mine.result} h={mine.homeScore} a={mine.awayScore} />
-                <PredChip matchId={m.id} completed={m.completed} result={theirs.result} h={theirs.homeScore} a={theirs.awayScore} />
+                <SidePick m={m} cell={mine} />
+                <SidePick m={m} cell={theirs} />
               </li>
             );
           })}
@@ -138,10 +156,15 @@ export function StatsH2H({ data }: { data: GroupStatsData }) {
   );
 }
 
-function TallyCard({ title, s, highlight }: { title: string; s: { exact: number; winner: number; wrong: number }; highlight?: boolean }) {
+function TallyCard({ title, s, highlight }: { title: string; s: { exact: number; winner: number; wrong: number; points: number }; highlight?: boolean }) {
   return (
     <div className={cn("rounded-2xl border", highlight ? "border-amber-200 bg-amber-50/50" : "border-neutral-200 bg-white")} style={{ padding: "12px 14px" }}>
-      <div className="text-sm font-semibold text-neutral-800 truncate" style={{ marginBottom: 8 }}>{title}</div>
+      <div className="flex items-baseline justify-between" style={{ gap: 8, marginBottom: 8 }}>
+        <span className="text-sm font-semibold text-neutral-800 truncate">{title}</span>
+        <span className="shrink-0 text-base font-black tabular-nums text-neutral-900 leading-none">
+          {s.points.toFixed(1)}<span className="text-[11px] font-semibold text-neutral-400" style={{ marginLeft: 2 }}>pts</span>
+        </span>
+      </div>
       <div className="flex items-center" style={{ gap: 12 }}>
         <Stat n={s.exact} cls="text-emerald-600" label="exact" />
         <Stat n={s.winner} cls="text-amber-600" label="win" />
