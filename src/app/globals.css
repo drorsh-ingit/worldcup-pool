@@ -157,3 +157,12 @@ button, a, input, select, textarea {
     padding-right: 3rem;
   }
 }
+
+/* Slow flicker for live (in-play) stats cells — provisional, still changing. */
+@keyframes stats-live-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.stats-live-flicker {
+  animation: stats-live-flicker 2.2s ease-in-out infinite;
+}

@@ -18,6 +18,29 @@
 - [x] Uses `promoteBetTypeGlobally` for cross-group opening + notifications
 - [x] No circular imports (progression.ts doesn't import from results.ts)
 
+## Feature: Stats tab
+New tab next to Standings/Matches/Tournament Bets. Shows per-user prediction
+accuracy: correct scores / correct winners / wrong.
+
+- [x] 1. `src/lib/group-stats.ts` → `getGroupStats(groupId)`
+- [x] 2. `src/components/stats/stats-summary.tsx` — personal 3 cards
+- [x] 3. `src/components/stats/stats-grid.tsx` — desktop matrix, color-coded, legend
+- [x] 4. `src/components/stats/stats-h2h.tsx` — mobile, pick one user, side-by-side
+- [x] 5. Route `src/app/(app)/group/[groupId]/stats/page.tsx`
+- [x] 6. Nav wired (layout + group-tabs + app-nav ICON_MAP; inline grid cols)
+- [x] 7. Verified: tsc clean; SSR render OK (login redirect, no errors); data logic vs
+        live הפועל שופן = 12 completed, per-user exact+winner+wrong sums to 12
+
+## Review (Stats tab)
+- Result coding computed directly from prediction vs actual score (not reliant on
+  scoring having run): exact/winner/wrong; pending = locked-not-completed; none = no pick.
+- Only locked matches included → no unrevealed prediction exposed.
+- Desktop: full members×matches grid (sticky first col, horizontal scroll, legend).
+  Mobile: H2H picker comparing you vs one chosen member + tallies.
+- Mobile bottom-bar grid switched to inline gridTemplateColumns so 4–5 tabs lay out
+  (Tailwind dynamic grid-cols-5 would be scanned-out per known quirk).
+- NOT visually verified in-browser (needs auth session). Layout confirmed via tsc + SSR.
+
 ## Phase 3 Remaining
 - [ ] Scoring settings UI (admin can configure tier weights from UI)
 - [ ] Dark horse / advancing / reverse dark horse bet types UI (data model supports them)

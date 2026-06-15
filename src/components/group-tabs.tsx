@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Trophy, CalendarDays, BarChart2, Settings } from "lucide-react";
+import { Trophy, CalendarDays, BarChart2, Table2, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface GroupTabsProps {
@@ -20,6 +20,7 @@ export function GroupTabs({ groupId, isAdmin, pendingBets, mobileOnly }: GroupTa
     { href: base, label: "Standings", icon: BarChart2, exact: true, pending: 0 },
     { href: `${base}/matches`, label: "Matches", icon: CalendarDays, pending: pendingBets?.matches ?? 0 },
     { href: `${base}/bets`, label: "Tournament Bets", icon: Trophy, pending: pendingBets?.tournament ?? 0 },
+    { href: `${base}/stats`, label: "Stats", icon: Table2, pending: 0 },
     ...(isAdmin ? [{ href: `${base}/admin`, label: "Admin", icon: Settings, exact: false, pending: 0 }] : []),
   ];
 
@@ -66,7 +67,7 @@ export function GroupTabs({ groupId, isAdmin, pendingBets, mobileOnly }: GroupTa
         className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-neutral-200"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className={cn("grid", tabs.length > 3 ? "grid-cols-4" : "grid-cols-3")}>
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
           {tabs.map((t) => {
             const active = isActive(t.href, t.exact);
             const Icon = t.icon;

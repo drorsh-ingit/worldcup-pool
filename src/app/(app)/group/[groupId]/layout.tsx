@@ -53,6 +53,7 @@ export default async function GroupLayout({ children, params }: GroupLayoutProps
     { href: base, label: "Standings", iconName: "BarChart2", exact: true, pending: 0 },
     { href: `${base}/matches`, label: "Matches", iconName: "CalendarDays", pending: pendingBets?.matches ?? 0 },
     { href: `${base}/bets`, label: "Tournament Bets", iconName: "Trophy", pending: pendingBets?.tournament ?? 0 },
+    { href: `${base}/stats`, label: "Stats", iconName: "Table2", pending: 0 },
     ...(isAdmin ? [{ href: `${base}/admin`, label: "Admin", iconName: "Settings", exact: false as const, pending: 0 }] : []),
   ];
 

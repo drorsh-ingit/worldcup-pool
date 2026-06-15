@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, ChevronDown, Check, Plus, Trophy, CalendarDays, BarChart2, Settings, UserPen, type LucideProps } from "lucide-react";
+import { LogOut, ChevronDown, Check, Plus, Trophy, CalendarDays, BarChart2, Table2, Settings, UserPen, type LucideProps } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
-  Trophy, CalendarDays, BarChart2, Settings,
+  Trophy, CalendarDays, BarChart2, Table2, Settings,
 };
 import { MatchdayLogo } from "@/components/matchday-logo";
 import { useNavMeta } from "@/lib/nav-tabs-context";
