@@ -6,8 +6,13 @@ import { cn } from "@/lib/utils";
 import type { CellResult, GroupStatsData, StatsCell, StatsMatchRow } from "@/lib/group-stats";
 import { RESULT_CLASSES, scoreResult } from "./result-color";
 import { useLiveScore } from "./live-scores-context";
+import { useLiveMatchDelta } from "@/components/live-deltas-context";
 
-function SidePick({ m, cell }: { m: StatsMatchRow; cell: StatsCell }) {
+function SidePick({ m, cell, userId }: { m: StatsMatchRow; cell: StatsCell; userId: string }) {
+  const provisionalPts = useLiveMatchDelta(m.id, userId);
+  const live = useLiveScore(m.id);
+  const isLive = !m.completed && cell.homeScore != null && !!live && live.home != null;
+
   return (
     <div className="flex flex-col items-center" style={{ gap: 3 }}>
       <PredChip matchId={m.id} completed={m.completed} result={cell.result} h={cell.homeScore} a={cell.awayScore} />
@@ -19,6 +24,11 @@ function SidePick({ m, cell }: { m: StatsMatchRow; cell: StatsCell }) {
           )}
         >
           {cell.points.toFixed(1)} pts
+        </span>
+      )}
+      {isLive && (
+        <span className="text-[11px] font-semibold tabular-nums leading-none text-amber-600 stats-live-flicker">
+          {provisionalPts > 0 ? `${provisionalPts.toFixed(1)} pts` : "—"}
         </span>
       )}
     </div>
@@ -140,8 +150,8 @@ export function StatsH2H({ data }: { data: GroupStatsData }) {
                     </span>
                   )}
                 </div>
-                <SidePick m={m} cell={mine} />
-                <SidePick m={m} cell={theirs} />
+                <SidePick m={m} cell={mine} userId={data.selfId} />
+                <SidePick m={m} cell={theirs} userId={otherId} />
               </li>
             );
           })}

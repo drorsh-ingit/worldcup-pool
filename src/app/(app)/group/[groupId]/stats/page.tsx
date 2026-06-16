@@ -5,6 +5,7 @@ import { StatsSummary } from "@/components/stats/stats-summary";
 import { StatsGrid } from "@/components/stats/stats-grid";
 import { StatsH2H } from "@/components/stats/stats-h2h";
 import { LiveScoresProvider } from "@/components/stats/live-scores-context";
+import { LiveDeltasProvider } from "@/components/live-deltas-context";
 
 interface StatsPageProps {
   params: Promise<{ groupId: string }>;
@@ -38,17 +39,19 @@ export default async function StatsPage({ params }: StatsPageProps) {
         <StatsSummary summary={selfSummary} />
       </div>
 
-      <LiveScoresProvider groupId={groupId} matchIds={inPlayMatchIds}>
-        {/* Desktop / tablet: full grid */}
-        <div className="hidden sm:block">
-          <StatsGrid data={data} />
-        </div>
+      <LiveDeltasProvider groupId={groupId}>
+        <LiveScoresProvider groupId={groupId} matchIds={inPlayMatchIds}>
+          {/* Desktop / tablet: full grid */}
+          <div className="hidden sm:block">
+            <StatsGrid data={data} />
+          </div>
 
-        {/* Mobile: head-to-head with one other member */}
-        <div className="sm:hidden">
-          <StatsH2H data={data} />
-        </div>
-      </LiveScoresProvider>
+          {/* Mobile: head-to-head with one other member */}
+          <div className="sm:hidden">
+            <StatsH2H data={data} />
+          </div>
+        </LiveScoresProvider>
+      </LiveDeltasProvider>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { resolveGroupSettings, DEFAULT_GROUP_SETTINGS } from "@/lib/settings";
 
 export interface LiveDeltasResult {
   deltas: Record<string, number>;
+  matchDeltas: Record<string, Record<string, number>>; // matchId → userId → pts
   inPlayCount: number;
 }
 
@@ -31,13 +32,13 @@ function impliedProb(odds: number): number {
  */
 export async function getLiveStandingsDeltas(groupId: string): Promise<LiveDeltasResult> {
   const session = await auth();
-  if (!session) return { deltas: {}, inPlayCount: 0 };
+  if (!session) return { deltas: {}, matchDeltas: {}, inPlayCount: 0 };
 
   const membership = await db.groupMembership.findUnique({
     where: { userId_groupId: { userId: session.user.id, groupId } },
   });
   if (!membership || membership.status !== "APPROVED") {
-    return { deltas: {}, inPlayCount: 0 };
+    return { deltas: {}, matchDeltas: {}, inPlayCount: 0 };
   }
 
   const cached = deltasCache.get(groupId);
@@ -51,7 +52,7 @@ export async function getLiveStandingsDeltas(groupId: string): Promise<LiveDelta
     where: { groupId },
     select: { id: true },
   });
-  if (!tournament) return { deltas: {}, inPlayCount: 0 };
+  if (!tournament) return { deltas: {}, matchDeltas: {}, inPlayCount: 0 };
 
   const now = new Date();
   // Window: kicked off, not yet marked COMPLETED, and within a 4h tail so a
@@ -109,6 +110,7 @@ export async function getLiveStandingsDeltas(groupId: string): Promise<LiveDelta
   );
 
   const deltas: Record<string, number> = {};
+  const matchDeltas: Record<string, Record<string, number>> = {};
   let inPlayCount = 0;
 
   for (const entry of liveData) {
@@ -155,10 +157,12 @@ export async function getLiveStandingsDeltas(groupId: string): Promise<LiveDelta
 
       const pts = calculatePoints(true, bet.betType.subType, impliedProbability, settings, phase, totalPool);
       deltas[bet.userId] = (deltas[bet.userId] ?? 0) + pts.totalPoints;
+      if (!matchDeltas[match.id]) matchDeltas[match.id] = {};
+      matchDeltas[match.id][bet.userId] = (matchDeltas[match.id][bet.userId] ?? 0) + pts.totalPoints;
     }
   }
 
-  const result: LiveDeltasResult = { deltas, inPlayCount };
+  const result: LiveDeltasResult = { deltas, matchDeltas, inPlayCount };
   deltasCache.set(groupId, { fetchedAt: Date.now(), result });
   // Server-side observability for the live-deltas path. Shows up in Vercel logs
   // under /api or the page route the server action was bound to.

@@ -86,17 +86,24 @@ export function StatsGrid({ data }: { data: GroupStatsData }) {
                       style={{ padding: 6 }}
                     >
                       {!match.completed && hasPred ? (
-                        <StatsLiveCell matchId={match.id} predH={cell.homeScore!} predA={cell.awayScore!} />
+                        <StatsLiveCell matchId={match.id} predH={cell.homeScore!} predA={cell.awayScore!} userId={m.userId} />
                       ) : (
-                        <span
-                          className={cn(
-                            "inline-flex items-center justify-center rounded-lg border text-sm font-semibold tabular-nums",
-                            RESULT_CLASSES[cell.result]
+                        <div className="flex flex-col items-center" style={{ gap: 3 }}>
+                          <span
+                            className={cn(
+                              "inline-flex items-center justify-center rounded-lg border text-sm font-semibold tabular-nums",
+                              RESULT_CLASSES[cell.result]
+                            )}
+                            style={{ minWidth: 44, height: 30, paddingLeft: 8, paddingRight: 8 }}
+                          >
+                            {hasPred ? `${cell.homeScore}–${cell.awayScore}` : "–"}
+                          </span>
+                          {hasPred && cell.points != null && (
+                            <span className={cn("text-[11px] font-semibold tabular-nums leading-none", cell.points > 0 ? "text-pitch-700" : "text-neutral-400")}>
+                              {cell.points.toFixed(1)} pts
+                            </span>
                           )}
-                          style={{ minWidth: 44, height: 30, paddingLeft: 8, paddingRight: 8 }}
-                        >
-                          {hasPred ? `${cell.homeScore}–${cell.awayScore}` : "–"}
-                        </span>
+                        </div>
                       )}
                     </td>
                   );

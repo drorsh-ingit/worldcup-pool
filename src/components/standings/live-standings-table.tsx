@@ -174,17 +174,15 @@ export function LiveStandingsTable({ groupId, currentUserId, baseStandings }: Pr
               {s.curatedPts.toFixed(1)}
             </span>
 
-            {/* Total + live delta */}
-            <span
-              className={cn(
-                "flex flex-col items-end leading-tight",
-                isMe ? "text-emerald-700" : "text-neutral-900"
-              )}
-            >
-              <span className="text-sm font-bold tabular-nums">{s.totalPoints.toFixed(1)}</span>
-              {inPlayCount > 0 && (
-                <span className="text-[11px] italic font-semibold text-amber-700 tabular-nums">
-                  +{s.delta.toFixed(1)} live
+            {/* Total — merges live delta when in play */}
+            <span className="flex items-end leading-tight">
+              {inPlayCount > 0 ? (
+                <span className="text-sm font-bold tabular-nums text-amber-600 animate-pulse">
+                  {(s.totalPoints + s.delta).toFixed(1)}
+                </span>
+              ) : (
+                <span className={cn("text-sm font-bold tabular-nums", isMe ? "text-emerald-700" : "text-neutral-900")}>
+                  {s.totalPoints.toFixed(1)}
                 </span>
               )}
             </span>
