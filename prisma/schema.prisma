@@ -15,6 +15,7 @@ model User {
   passwordHash String?
   name         String
   realName     String?
+  gender       String?  // "M" | "F" — used for correct Hebrew grammatical gender in the daily analysis
   avatarColor  Int?
   avatarStyle  String?
   avatarSeed   String?
@@ -266,4 +267,20 @@ model LeaderboardEntry {
 
   @@unique([userId, groupId, tournamentId])
   @@map("leaderboard")
+}
+
+// ─── DAILY AI ANALYSIS (cached, one per group per day) ───
+
+model DailyAnalysis {
+  id           String   @id @default(cuid())
+  groupId      String
+  tournamentId String
+  dateKey      String   // YYYY-MM-DD (UTC) — one analysis per group per day
+  content      String   // Hebrew analysis text
+  standings    Json     // snapshot of standings at generation time (for next-day diff)
+  createdAt    DateTime @default(now())
+
+  @@unique([groupId, dateKey])
+  @@index([groupId, createdAt])
+  @@map("daily_analyses")
 }

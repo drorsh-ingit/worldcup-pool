@@ -2,10 +2,13 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Users, Bell } from "lucide-react";
+import { ArrowLeft, Users, Bell, Sparkles } from "lucide-react";
 import { CopySlugButton } from "@/components/copy-slug-button";
 import { CopyInviteLinkButton } from "@/components/copy-invite-link-button";
 import { TestPushButton } from "@/components/admin/test-push-button";
+import { GenerateAnalysisButton } from "@/components/admin/generate-analysis-button";
+import { EditAnalysisForm } from "@/components/admin/edit-analysis-form";
+import { getLatestAnalysis } from "@/lib/actions/daily-analysis";
 import { SimulationControl } from "@/components/admin/simulation-control";
 import { ScoringSettings, type OddsData } from "@/components/admin/scoring-settings";
 import { DeleteGroupButton } from "@/components/admin/delete-group-button";
@@ -38,6 +41,8 @@ export default async function AdminPage({ params }: AdminPageProps) {
       betTypes: { orderBy: { category: "asc" } },
     },
   });
+
+  const latestAnalysis = await getLatestAnalysis(groupId);
 
   const approvedCount = await db.groupMembership.count({
     where: { groupId, status: "APPROVED" },
@@ -166,6 +171,23 @@ export default async function AdminPage({ params }: AdminPageProps) {
           oddsData={oddsData}
           locked={tournament.betTypes.some((bt) => bt.status !== "DRAFT")}
         />
+      )}
+
+      {/* Daily analysis */}
+      {tournament && (
+        <section style={{ padding: 20 }} className="rounded-xl border border-neutral-200 bg-white space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-neutral-400" />
+            <h2 className="font-display text-sm font-semibold text-neutral-900">Daily analysis</h2>
+          </div>
+          <p className="text-sm text-neutral-500">
+            Generate today&apos;s Hebrew standings analysis. Runs automatically every morning at 07:00 UTC — use this to regenerate on demand.
+          </p>
+          <GenerateAnalysisButton groupId={groupId} tournamentId={tournament.id} />
+          {latestAnalysis && (
+            <EditAnalysisForm id={latestAnalysis.id} initialContent={latestAnalysis.content} />
+          )}
+        </section>
       )}
 
       {/* Danger zone */}

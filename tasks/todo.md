@@ -47,6 +47,16 @@ accuracy: correct scores / correct winners / wrong.
 - [ ] Improved user predictions page (format predictions nicely by bet subType)
 - [ ] Milestone bets beyond semifinalists (golden_glove, biggest_upset, penalty_in_final)
 
+## Feature: Daily AI standings analysis (Hebrew roast)
+- [x] `@anthropic-ai/sdk` dependency; Claude Opus 4.8, adaptive thinking, effort medium
+- [x] `DailyAnalysis` model (one per group per day) — caches Hebrew text + standings snapshot for day-over-day diff; applied via `prisma db push`
+- [x] `src/lib/actions/daily-analysis.ts` — gatherContext (standings deltas, recent results w/ per-user picks, no-shows) + generateDailyAnalysis (idempotent per UTC day) + getLatestAnalysis
+- [x] Cron `src/app/api/cron/daily-analysis/route.ts` (CRON_SECRET-auth) + vercel.json entry (07:00 UTC)
+- [x] `DailyAnalysisCard` (RTL Hebrew) on the Standings page
+- [x] `.env.example`: ANTHROPIC_API_KEY + CRON_SECRET
+- Verified: tsc clean; context build correct vs live group; standings SSR + cron 401 OK
+- PENDING (user): add ANTHROPIC_API_KEY to .env + Vercel; then live generation can be tested
+
 ## Feature: Match predictions page (all users)
 Dedicated page per match: game status (live score if in-play, final if done) +
 every member's prediction. Reveal gate = **at kickoff** (locked). Reachable by

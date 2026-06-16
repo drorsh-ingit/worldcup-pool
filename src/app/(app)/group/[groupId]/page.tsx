@@ -5,6 +5,8 @@ import { PendingMembers } from "@/components/pending-members";
 import { CopySlugButton } from "@/components/copy-slug-button";
 import { CopyInviteLinkButton } from "@/components/copy-invite-link-button";
 import { LiveStandingsTable } from "@/components/standings/live-standings-table";
+import { DailyAnalysisCard } from "@/components/standings/daily-analysis-card";
+import { getLatestAnalysis } from "@/lib/actions/daily-analysis";
 
 interface GroupPageProps {
   params: Promise<{ groupId: string }>;
@@ -49,6 +51,9 @@ export default async function GroupPage({ params }: GroupPageProps) {
     where: { groupId },
     orderBy: { totalPoints: "desc" },
   });
+
+  // Latest AI standings analysis (generated daily by the cron).
+  const dailyAnalysis = await getLatestAnalysis(groupId);
 
   // Map leaderboard to members
   const standings = approvedMembers
@@ -98,6 +103,11 @@ export default async function GroupPage({ params }: GroupPageProps) {
       {/* Pending members (admin only) */}
       {isAdmin && pendingMembers.length > 0 && (
         <PendingMembers members={pendingMembers} />
+      )}
+
+      {/* Daily AI analysis */}
+      {dailyAnalysis && (
+        <DailyAnalysisCard content={dailyAnalysis.content} dateKey={dailyAnalysis.dateKey} />
       )}
 
       {/* Standings table */}
