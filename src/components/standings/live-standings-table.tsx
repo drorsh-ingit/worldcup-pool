@@ -175,7 +175,7 @@ export function LiveStandingsTable({ groupId, currentUserId, baseStandings }: Pr
             </span>
 
             {/* Total — merges live delta when in play */}
-            <span className="flex items-end leading-tight">
+            <span className="flex flex-col items-end">
               {inPlayCount > 0 ? (
                 <span className="text-sm font-bold tabular-nums text-amber-600 animate-pulse">
                   {(s.totalPoints + s.delta).toFixed(1)}
