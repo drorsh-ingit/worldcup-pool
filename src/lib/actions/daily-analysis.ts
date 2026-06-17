@@ -194,11 +194,10 @@ export async function generateDailyAnalysis(
 
   const anthropic = new Anthropic();
 
-  // First pass: draft in Hebrew with Sonnet (extended thinking for better reasoning).
+  // First pass: draft in Hebrew with Sonnet.
   const draft = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 4000,
-    thinking: { type: "enabled", budget_tokens: 2000 },
+    max_tokens: 1000,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: JSON.stringify(context, null, 2) }],
   });
