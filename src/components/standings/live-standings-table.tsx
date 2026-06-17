@@ -182,7 +182,7 @@ export function LiveStandingsTable({ groupId, currentUserId, baseStandings }: Pr
                     {(s.totalPoints + s.delta).toFixed(1)}
                   </span>
                   <span className="text-[11px] italic font-semibold tabular-nums text-amber-500 animate-pulse">
-                    +{s.delta.toFixed(1)} live
+                    {s.delta.toFixed(1)} live
                   </span>
                 </>
               ) : (
