@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, X, Minus } from "lucide-react";
+import { Check, X, Minus, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MatchPredictionsData, MatchPredictionRow } from "@/lib/match-predictions";
 import { useLiveMatchDelta } from "@/components/live-deltas-context";
@@ -22,16 +22,25 @@ export function MatchPredictionsTable({
 }) {
   const { rows, missing, match } = data;
   const isCompleted = match.status === "COMPLETED" && match.actualHomeScore != null;
-  const isInPlay = match.status === "LOCKED" && !isCompleted;
+  // Use the time-based `locked` flag — the DB status field lags behind kickoff.
+  const isInPlay = data.locked && !isCompleted;
   const total = rows.length + missing.length;
 
   return (
     <div className="rounded-3xl border border-neutral-200 bg-white overflow-hidden">
       <div className="flex items-center justify-between border-b border-neutral-100" style={{ padding: "16px 20px" }}>
         <h2 className="text-base font-semibold text-neutral-900">Predictions</h2>
-        <span className="text-sm text-neutral-400 tabular-nums">
-          {rows.length} of {total} picked
-        </span>
+        <div className="flex items-center" style={{ gap: 12 }}>
+          {isInPlay && (
+            <span className="inline-flex items-center text-xs font-semibold text-red-500 animate-pulse" style={{ gap: 5 }}>
+              <Zap className="w-3.5 h-3.5" />
+              Live
+            </span>
+          )}
+          <span className="text-sm text-neutral-400 tabular-nums">
+            {rows.length} of {total} picked
+          </span>
+        </div>
       </div>
 
       <ul className="divide-y divide-neutral-100">

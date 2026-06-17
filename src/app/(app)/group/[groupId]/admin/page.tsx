@@ -175,17 +175,21 @@ export default async function AdminPage({ params }: AdminPageProps) {
 
       {/* Daily analysis */}
       {tournament && (
-        <section style={{ padding: 20 }} className="rounded-xl border border-neutral-200 bg-white space-y-3">
+        <section style={{ padding: 20, display: "flex", flexDirection: "column", gap: 0 }} className="rounded-xl border border-neutral-200 bg-white">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-neutral-400" />
             <h2 className="font-display text-sm font-semibold text-neutral-900">Daily analysis</h2>
           </div>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-neutral-500" style={{ marginTop: 4 }}>
             Generate today&apos;s Hebrew standings analysis. Runs automatically every morning at 07:00 UTC — use this to regenerate on demand.
           </p>
-          <GenerateAnalysisButton groupId={groupId} tournamentId={tournament.id} />
+          <div style={{ marginTop: 16 }}>
+            <GenerateAnalysisButton groupId={groupId} tournamentId={tournament.id} />
+          </div>
           {latestAnalysis && (
-            <EditAnalysisForm id={latestAnalysis.id} initialContent={latestAnalysis.content} />
+            <div style={{ marginTop: 16 }}>
+              <EditAnalysisForm id={latestAnalysis.id} initialContent={latestAnalysis.content} />
+            </div>
           )}
         </section>
       )}
