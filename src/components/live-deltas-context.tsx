@@ -30,7 +30,7 @@ export function LiveDeltasProvider({ groupId, children }: { groupId: string; chi
       } catch { /* silent */ }
     }
     poll();
-    const id = setInterval(poll, 60_000);
+    const id = setInterval(poll, 20_000);
     return () => { cancelled = true; clearInterval(id); };
   }, [groupId]);
 

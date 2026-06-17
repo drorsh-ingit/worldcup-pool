@@ -15,6 +15,10 @@ export function useLiveScore(matchId: string): LiveCellScore | undefined {
   return useContext(LiveScoresContext)[matchId];
 }
 
+export function useLiveScores(): Record<string, LiveCellScore> {
+  return useContext(LiveScoresContext);
+}
+
 /**
  * Polls live scores for the given in-play matches (once per match, shared) and
  * exposes them by matchId. Refreshes every 60s, matching the match card cadence.
@@ -50,7 +54,7 @@ export function LiveScoresProvider({
     }
 
     poll();
-    const interval = setInterval(poll, 60_000);
+    const interval = setInterval(poll, 30_000);
     return () => {
       cancelled = true;
       clearInterval(interval);

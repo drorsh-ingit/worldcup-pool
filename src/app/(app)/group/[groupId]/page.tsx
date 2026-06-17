@@ -7,6 +7,8 @@ import { CopyInviteLinkButton } from "@/components/copy-invite-link-button";
 import { LiveStandingsTable } from "@/components/standings/live-standings-table";
 import { DailyAnalysisCard } from "@/components/standings/daily-analysis-card";
 import { getLatestAnalysis } from "@/lib/actions/daily-analysis";
+import { LiveScoresProvider } from "@/components/stats/live-scores-context";
+import { resolveGroupSettings } from "@/lib/settings";
 
 interface GroupPageProps {
   params: Promise<{ groupId: string }>;
@@ -54,6 +56,51 @@ export default async function GroupPage({ params }: GroupPageProps) {
 
   // Latest AI standings analysis (generated daily by the cron).
   const dailyAnalysis = await getLatestAnalysis(groupId);
+
+  // In-play matches: kicked off, not yet COMPLETED, within a 4h tail.
+  const tournament = await db.tournament.findFirst({ where: { groupId }, select: { id: true } });
+  const groupSettings = resolveGroupSettings(group.settings);
+
+  const now = new Date();
+  const tailCutoff = new Date(now.getTime() - 4 * 60 * 60 * 1000);
+  const inPlayMatches = tournament
+    ? await db.match.findMany({
+        where: {
+          tournamentId: tournament.id,
+          status: { not: "COMPLETED" },
+          kickoffAt: { lte: now, gte: tailCutoff },
+        },
+        include: { homeTeam: true, awayTeam: true },
+      })
+    : [];
+
+  const inPlayMatchIds = inPlayMatches.map((m) => m.id);
+  const rawInPlayBets = inPlayMatchIds.length
+    ? await db.bet.findMany({
+        where: {
+          matchId: { in: inPlayMatchIds },
+          betType: { subType: { in: ["match_winner", "correct_score"] } },
+        },
+        include: { betType: { select: { subType: true } } },
+      })
+    : [];
+
+  const inPlayMatchMeta = inPlayMatches.map((m) => ({
+    matchId: m.id,
+    phase: m.phase,
+    homeOdds: (m.homeTeam.odds as { winnerOdds?: number } | null)?.winnerOdds ?? 1000,
+    awayOdds: (m.awayTeam.odds as { winnerOdds?: number } | null)?.winnerOdds ?? 1000,
+    oddsData: (m.oddsData ?? {}) as Record<string, unknown>,
+  }));
+
+  const inPlayBets = rawInPlayBets
+    .filter((b) => b.matchId != null)
+    .map((b) => ({
+      matchId: b.matchId!,
+      userId: b.userId,
+      subType: b.betType.subType,
+      prediction: (b.prediction ?? {}) as Record<string, unknown>,
+    }));
 
   // Map leaderboard to members
   const standings = approvedMembers
@@ -116,11 +163,16 @@ export default async function GroupPage({ params }: GroupPageProps) {
           No scores yet. Bets will appear once the tournament starts.
         </div>
       ) : (
-        <LiveStandingsTable
-          groupId={groupId}
-          currentUserId={currentUserId}
-          baseStandings={standings}
-        />
+        <LiveScoresProvider groupId={groupId} matchIds={inPlayMatchIds}>
+          <LiveStandingsTable
+            groupId={groupId}
+            currentUserId={currentUserId}
+            baseStandings={standings}
+            inPlayMatchMeta={inPlayMatchMeta}
+            inPlayBets={inPlayBets}
+            groupSettings={groupSettings}
+          />
+        </LiveScoresProvider>
       )}
     </div>
   );

@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getInitials, getAvatarColor, AVATAR_COLOR_OPTIONS, dicebearUrl } from "@/lib/avatar";
-import { getLiveStandingsDeltas } from "@/lib/actions/standings-live";
+import { useLiveScores } from "@/components/stats/live-scores-context";
+import { calculatePoints } from "@/lib/scoring";
+import { deriveMatchOdds, deriveScoreOdds } from "@/lib/match-odds";
+import type { GroupSettings } from "@/lib/settings";
 
 export interface StandingRow {
   userId: string;
@@ -23,37 +26,94 @@ export interface StandingRow {
   totalBets: number;
 }
 
+export interface InPlayMatchMeta {
+  matchId: string;
+  phase: string;
+  homeOdds: number;
+  awayOdds: number;
+  oddsData: Record<string, unknown>;
+}
+
+export interface InPlayBet {
+  matchId: string;
+  userId: string;
+  subType: string;
+  prediction: Record<string, unknown>;
+}
+
 interface Props {
   groupId: string;
   currentUserId: string;
   baseStandings: StandingRow[];
+  inPlayMatchMeta: InPlayMatchMeta[];
+  inPlayBets: InPlayBet[];
+  groupSettings: GroupSettings;
 }
 
-const POLL_INTERVAL_MS = 60_000;
+function impliedProb(odds: number): number {
+  return 1 / Math.max(odds, 1);
+}
 
-export function LiveStandingsTable({ groupId, currentUserId, baseStandings }: Props) {
-  const [deltas, setDeltas] = useState<Record<string, number>>({});
-  const [inPlayCount, setInPlayCount] = useState(0);
+export function LiveStandingsTable({
+  groupId,
+  currentUserId,
+  baseStandings,
+  inPlayMatchMeta,
+  inPlayBets,
+  groupSettings,
+}: Props) {
+  const liveScores = useLiveScores();
 
-  useEffect(() => {
-    let cancelled = false;
-    async function poll() {
-      try {
-        const res = await getLiveStandingsDeltas(groupId);
-        if (cancelled) return;
-        setDeltas(res.deltas);
-        setInPlayCount(res.inPlayCount);
-      } catch {
-        // silent — keep stored standings as-is
+  // Compute per-user deltas client-side — all users update simultaneously when scores change.
+  const { deltas, inPlayCount } = useMemo(() => {
+    const deltas: Record<string, number> = {};
+    let inPlayCount = 0;
+    const totalPool = groupSettings.totalPool ?? 1000;
+
+    for (const meta of inPlayMatchMeta) {
+      const score = liveScores[meta.matchId];
+      if (!score || score.home == null || score.away == null) continue;
+      if (score.status !== "IN_PLAY" && score.status !== "PAUSED") continue;
+
+      inPlayCount++;
+      const { home, away } = score;
+      const liveOutcome = home > away ? "home" : away > home ? "away" : "draw";
+      const phase = meta.phase as Parameters<typeof calculatePoints>[4];
+
+      for (const bet of inPlayBets) {
+        if (bet.matchId !== meta.matchId) continue;
+
+        let impliedProbability = 0;
+
+        if (bet.subType === "match_winner") {
+          if (bet.prediction.outcome !== liveOutcome) continue;
+          const oddsMap = meta.oddsData as Record<string, number>;
+          const oddsKey = liveOutcome === "home" ? "homeWin" : liveOutcome === "away" ? "awayWin" : "draw";
+          const derived = deriveMatchOdds(meta.homeOdds, meta.awayOdds);
+          const fallback = oddsKey === "homeWin" ? derived.homeWin : oddsKey === "awayWin" ? derived.awayWin : derived.draw;
+          impliedProbability = impliedProb(oddsMap[oddsKey] ?? fallback);
+        } else {
+          // correct_score
+          if (Number(bet.prediction.homeScore) !== home || Number(bet.prediction.awayScore) !== away) continue;
+          const scoreOddsMap = (meta.oddsData as Record<string, Record<string, number>>).correctScores;
+          const clampedH = Math.min(home, 6);
+          const clampedA = Math.min(away, 6);
+          const scoreKey = `${clampedH}-${clampedA}`;
+          const storedOdds = scoreOddsMap?.[scoreKey];
+          const rawOdds = storedOdds ?? (() => {
+            const derived = deriveScoreOdds(meta.homeOdds, meta.awayOdds);
+            return derived[scoreKey] ?? 1500;
+          })();
+          impliedProbability = impliedProb(rawOdds);
+        }
+
+        const pts = calculatePoints(true, bet.subType, impliedProbability, groupSettings, phase, totalPool);
+        deltas[bet.userId] = (deltas[bet.userId] ?? 0) + pts.totalPoints;
       }
     }
-    poll();
-    const id = setInterval(poll, POLL_INTERVAL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [groupId]);
+
+    return { deltas, inPlayCount };
+  }, [liveScores, inPlayMatchMeta, inPlayBets, groupSettings]);
 
   const merged = baseStandings
     .map((s) => ({ ...s, delta: deltas[s.userId] ?? 0 }))
@@ -69,7 +129,7 @@ export function LiveStandingsTable({ groupId, currentUserId, baseStandings }: Pr
           <Zap className="w-3.5 h-3.5" />
           <span className="text-xs font-semibold uppercase tracking-widest">Live</span>
           <span className="text-xs text-amber-700">
-            {inPlayCount === 1 ? "1 match in play" : `${inPlayCount} matches in play`} — points update every minute
+            {inPlayCount === 1 ? "1 match in play" : `${inPlayCount} matches in play`} — points update every 30 seconds
           </span>
         </div>
       )}
