@@ -134,11 +134,11 @@ function PredictionRow({
           <span
             className={cn(
               "text-sm font-bold tabular-nums stats-live-flicker",
-              provisionalPts > 0 ? "text-amber-600" : "text-neutral-300"
+              provisionalPts > 0 ? "text-amber-600" : "text-neutral-400"
             )}
             style={{ minWidth: 52, textAlign: "right" }}
           >
-            {provisionalPts > 0 ? `${provisionalPts.toFixed(1)} pts` : "—"}
+            {provisionalPts.toFixed(1)} pts
           </span>
         )}
       </div>
