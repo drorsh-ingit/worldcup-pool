@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { generateDailyAnalysis } from "@/lib/actions/daily-analysis";
 
@@ -11,6 +12,7 @@ export function GenerateAnalysisButton({
   groupId: string;
   tournamentId: string;
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
@@ -22,6 +24,7 @@ export function GenerateAnalysisButton({
       setResult(`Error: ${res.error}`);
     } else {
       setResult(res.cached ? "Already generated today (cached)" : "Generated");
+      router.refresh();
     }
     setLoading(false);
   }
