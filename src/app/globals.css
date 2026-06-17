@@ -166,3 +166,12 @@ button, a, input, select, textarea {
 .stats-live-flicker {
   animation: stats-live-flicker 2.2s ease-in-out infinite;
 }
+
+/* Lighter flicker for live indicators (soccer icon, LIVE label). */
+@keyframes live-light-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.live-light-flicker {
+  animation: live-light-flicker 2.4s ease-in-out infinite;
+}

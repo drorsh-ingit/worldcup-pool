@@ -292,7 +292,7 @@ export function MatchBetCard({
           </span>
         </div>
         {isInPlay ? (
-          <span className="text-base shrink-0" title="In play">⚽</span>
+          <span className={`text-base shrink-0${liveScore?.status === "IN_PLAY" ? " live-light-flicker" : ""}`} title="In play">⚽</span>
         ) : isLocked ? (
           effectivelyFinished
             ? <Check className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -355,17 +355,23 @@ export function MatchBetCard({
       </div>
 
       {/* Live indicator */}
-      {isInPlay && (
-        <div className="flex items-center justify-center text-xs font-semibold text-red-500" style={{ gap: 8, paddingTop: 8, paddingBottom: 8 }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          <span>{liveScore?.status === "PAUSED" ? "Half-time" : liveScore?.minute ? `LIVE ${liveScore.minute}'` : "LIVE"}</span>
-          {displayHome != null && displayAway != null && (
-            <span className="text-neutral-700 tabular-nums">
-              {displayHome}–{displayAway}
+      {isInPlay && (() => {
+        const isActivePlay = liveScore?.status === "IN_PLAY";
+        const isHalfTime = liveScore?.status === "PAUSED";
+        return (
+          <div className="flex items-center justify-center text-xs font-semibold text-red-500" style={{ gap: 8, paddingTop: 8, paddingBottom: 8 }}>
+            <span className={`w-1.5 h-1.5 rounded-full bg-red-500${isActivePlay ? " animate-pulse" : ""}`} />
+            <span className={isActivePlay ? "live-light-flicker" : ""}>
+              {isHalfTime ? "Half-time" : liveScore?.minute ? `LIVE ${liveScore.minute}'` : "LIVE"}
             </span>
-          )}
-        </div>
-      )}
+            {!isHalfTime && displayHome != null && displayAway != null && (
+              <span className={`text-neutral-700 tabular-nums${isActivePlay ? " live-light-flicker" : ""}`}>
+                {displayHome}–{displayAway}
+              </span>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Direction Pts row */}
       <div className="border-t border-neutral-100" style={{ padding: "14px 20px" }}>

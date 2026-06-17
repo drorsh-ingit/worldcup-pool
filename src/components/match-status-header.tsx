@@ -72,14 +72,17 @@ export function MatchStatusHeader(props: MatchStatusHeaderProps) {
   const showScore =
     (isCompleted || isInPlay || isFinishedLive) && home != null && away != null;
 
+  const isActivePlay = isInPlay && liveScore?.status === "IN_PLAY";
+
   let statusLine: React.ReactNode;
   if (isCompleted || isFinishedLive) {
     statusLine = <span className="text-sm font-medium text-neutral-500">Full time</span>;
   } else if (isInPlay) {
+    const isHalfTime = liveScore?.status === "PAUSED";
     statusLine = (
-      <span className="inline-flex items-center text-sm font-semibold text-red-500" style={{ gap: 8 }}>
-        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-        {liveScore?.status === "PAUSED" ? "Half-time" : liveScore?.minute ? `LIVE ${liveScore.minute}'` : "LIVE"}
+      <span className={`inline-flex items-center text-sm font-semibold text-red-500${isActivePlay ? " live-light-flicker" : ""}`} style={{ gap: 8 }}>
+        <span className={`w-1.5 h-1.5 rounded-full bg-red-500${isActivePlay ? " animate-pulse" : ""}`} />
+        {isHalfTime ? "Half-time" : liveScore?.minute ? `LIVE ${liveScore.minute}'` : "LIVE"}
       </span>
     );
   } else {
@@ -92,7 +95,16 @@ export function MatchStatusHeader(props: MatchStatusHeaderProps) {
   }
 
   return (
-    <div className="rounded-3xl border border-neutral-200 bg-white shadow-sm" style={{ padding: "20px 24px 24px" }}>
+    <div className="relative rounded-3xl border border-neutral-200 bg-white shadow-sm" style={{ padding: "20px 24px 24px" }}>
+      {isInPlay && (
+        <span
+          className={`absolute text-lg${isActivePlay ? " live-light-flicker" : ""}`}
+          style={{ top: 16, right: 20 }}
+          title={isActivePlay ? "In play" : "Half-time"}
+        >
+          ⚽
+        </span>
+      )}
       <div className="flex items-center justify-center text-sm text-neutral-600" style={{ gap: 6, marginBottom: 20 }}>
         <MapPin className="w-4 h-4 text-neutral-400" />
         <span className="font-medium text-neutral-800">{phaseLabel(phase, groupLetter)}</span>
