@@ -1,14 +1,21 @@
 "use client";
 
+import { useMemo } from "react";
 import { Check, X, Minus, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MatchPredictionsData, MatchPredictionRow } from "@/lib/match-predictions";
-import { useLiveMatchDelta } from "@/components/live-deltas-context";
+import { useLiveScore } from "@/components/stats/live-scores-context";
+import { calculatePoints } from "@/lib/scoring";
+import { deriveMatchOdds, deriveScoreOdds } from "@/lib/match-odds";
 
 function outcomeBadge(outcome: MatchPredictionRow["outcome"], homeCode: string, awayCode: string): string {
   if (outcome === "home") return homeCode;
   if (outcome === "away") return awayCode;
   return "Draw";
+}
+
+function impliedProb(odds: number): number {
+  return 1 / Math.max(odds, 1);
 }
 
 export function MatchPredictionsTable({
@@ -20,11 +27,60 @@ export function MatchPredictionsTable({
   homeCode: string;
   awayCode: string;
 }) {
-  const { rows, missing, match } = data;
+  const { rows, missing, match, scoringMeta } = data;
   const isCompleted = match.status === "COMPLETED" && match.actualHomeScore != null;
-  // Use the time-based `locked` flag — the DB status field lags behind kickoff.
   const isInPlay = data.locked && !isCompleted;
   const total = rows.length + missing.length;
+
+  const liveScore = useLiveScore(match.id);
+  const isLiveActive =
+    isInPlay &&
+    liveScore != null &&
+    liveScore.home != null &&
+    liveScore.away != null &&
+    (liveScore.status === "IN_PLAY" || liveScore.status === "PAUSED");
+
+  // One-pass client-side point computation — all rows update simultaneously.
+  const provisionalPtsByUser = useMemo<Record<string, number>>(() => {
+    if (!isLiveActive || liveScore?.home == null || liveScore?.away == null) return {};
+    const { home, away } = liveScore as { home: number; away: number };
+    const liveOutcome = home > away ? "home" : away > home ? "away" : "draw";
+    const { homeOdds, awayOdds, oddsData, groupSettings } = scoringMeta;
+    const totalPool = groupSettings.totalPool ?? 1000;
+    const phase = match.phase as Parameters<typeof calculatePoints>[4];
+    const result: Record<string, number> = {};
+
+    for (const row of rows) {
+      let pts = 0;
+
+      // match_winner contribution
+      if (row.outcome === liveOutcome) {
+        const oddsMap = oddsData as Record<string, number>;
+        const oddsKey = liveOutcome === "home" ? "homeWin" : liveOutcome === "away" ? "awayWin" : "draw";
+        const derived = deriveMatchOdds(homeOdds, awayOdds);
+        const fallback =
+          oddsKey === "homeWin" ? derived.homeWin : oddsKey === "awayWin" ? derived.awayWin : derived.draw;
+        pts += calculatePoints(true, "match_winner", impliedProb(oddsMap[oddsKey] ?? fallback), groupSettings, phase, totalPool).totalPoints;
+      }
+
+      // correct_score contribution
+      if (row.homeScore === home && row.awayScore === away) {
+        const scoreOddsMap = (oddsData as Record<string, Record<string, number>>).correctScores;
+        const clampedH = Math.min(home, 6);
+        const clampedA = Math.min(away, 6);
+        const scoreKey = `${clampedH}-${clampedA}`;
+        const storedOdds = scoreOddsMap?.[scoreKey];
+        const rawOdds = storedOdds ?? (() => {
+          const derived = deriveScoreOdds(homeOdds, awayOdds);
+          return derived[scoreKey] ?? 1500;
+        })();
+        pts += calculatePoints(true, "correct_score", impliedProb(rawOdds), groupSettings, phase, totalPool).totalPoints;
+      }
+
+      result[row.userId] = pts;
+    }
+    return result;
+  }, [isLiveActive, liveScore, rows, scoringMeta, match.phase]);
 
   return (
     <div className="rounded-3xl border border-neutral-200 bg-white overflow-hidden">
@@ -48,11 +104,11 @@ export function MatchPredictionsTable({
           <PredictionRow
             key={row.userId}
             row={row}
-            matchId={match.id}
             homeCode={homeCode}
             awayCode={awayCode}
             isCompleted={isCompleted}
             isInPlay={isInPlay}
+            provisionalPts={provisionalPtsByUser[row.userId] ?? 0}
           />
         ))}
 
@@ -82,17 +138,20 @@ export function MatchPredictionsTable({
 }
 
 function PredictionRow({
-  row, matchId, homeCode, awayCode, isCompleted, isInPlay,
+  row,
+  homeCode,
+  awayCode,
+  isCompleted,
+  isInPlay,
+  provisionalPts,
 }: {
   row: MatchPredictionRow;
-  matchId: string;
   homeCode: string;
   awayCode: string;
   isCompleted: boolean;
   isInPlay: boolean;
+  provisionalPts: number;
 }) {
-  const provisionalPts = useLiveMatchDelta(matchId, row.userId);
-
   return (
     <li
       className={cn("flex items-center justify-between", row.isSelf && "bg-amber-50/60")}

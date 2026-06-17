@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { resolveGroupSettings } from "@/lib/settings";
+import { resolveGroupSettings, type GroupSettings } from "@/lib/settings";
 import { getEffectiveDate } from "@/lib/simulation";
 import { isMatchLocked } from "@/lib/bets-page-data";
 
@@ -41,6 +41,13 @@ export interface MatchPredictionsData {
   rows: MatchPredictionRow[];
   /** Approved members who placed no prediction. */
   missing: { userId: string; name: string; isSelf: boolean }[];
+  /** Scoring inputs for client-side provisional point computation during live matches. */
+  scoringMeta: {
+    homeOdds: number;
+    awayOdds: number;
+    oddsData: Record<string, unknown>;
+    groupSettings: GroupSettings;
+  };
 }
 
 function outcomeFromScore(h: number, a: number): Outcome {
@@ -68,16 +75,24 @@ export async function getMatchPredictions(
     where: { id: matchId },
     include: {
       tournament: { select: { groupId: true, kind: true } },
-      homeTeam: { select: { code: true, name: true } },
-      awayTeam: { select: { code: true, name: true } },
+      homeTeam: { select: { code: true, name: true, odds: true } },
+      awayTeam: { select: { code: true, name: true, odds: true } },
     },
   });
   // Scope check — the match must belong to this group's tournament.
   if (!match || match.tournament.groupId !== groupId) return { error: "notfound" };
 
   const group = await db.group.findUnique({ where: { id: groupId } });
-  const effectiveNow = getEffectiveDate(resolveGroupSettings(group?.settings));
+  const groupSettings = resolveGroupSettings(group?.settings);
+  const effectiveNow = getEffectiveDate(groupSettings);
   const locked = isMatchLocked(match, effectiveNow);
+
+  const scoringMeta = {
+    homeOdds: (match.homeTeam.odds as { winnerOdds?: number } | null)?.winnerOdds ?? 1000,
+    awayOdds: (match.awayTeam.odds as { winnerOdds?: number } | null)?.winnerOdds ?? 1000,
+    oddsData: (match.oddsData ?? {}) as Record<string, unknown>,
+    groupSettings,
+  };
 
   const header: MatchPredictionsData["match"] = {
     id: match.id,
@@ -97,7 +112,7 @@ export async function getMatchPredictions(
 
   // Hard gate: don't load anyone else's picks until the match is locked.
   if (!locked) {
-    return { data: { match: header, locked: false, rows: [], missing: [] } };
+    return { data: { match: header, locked: false, rows: [], missing: [], scoringMeta } };
   }
 
   const members = await db.groupMembership.findMany({
@@ -161,5 +176,5 @@ export async function getMatchPredictions(
   });
   missing.sort((a, b) => a.name.localeCompare(b.name));
 
-  return { data: { match: header, locked: true, rows, missing } };
+  return { data: { match: header, locked: true, rows, missing, scoringMeta } };
 }

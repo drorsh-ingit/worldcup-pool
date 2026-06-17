@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { getMatchPredictions } from "@/lib/match-predictions";
 import { MatchStatusHeader } from "@/components/match-status-header";
 import { MatchPredictionsTable } from "@/components/match-predictions-table";
-import { LiveDeltasProvider } from "@/components/live-deltas-context";
+import { LiveScoresProvider } from "@/components/stats/live-scores-context";
 
 interface MatchPageProps {
   params: Promise<{ groupId: string; matchId: string }>;
@@ -50,13 +50,13 @@ export default async function MatchPage({ params }: MatchPageProps) {
       />
 
       {locked ? (
-        <LiveDeltasProvider groupId={groupId}>
+        <LiveScoresProvider groupId={groupId} matchIds={[match.id]}>
           <MatchPredictionsTable
             data={data}
             homeCode={match.homeTeamCode}
             awayCode={match.awayTeamCode}
           />
-        </LiveDeltasProvider>
+        </LiveScoresProvider>
       ) : (
         <div className="rounded-3xl border border-neutral-200 bg-white text-center" style={{ padding: "48px 24px" }}>
           <div className="inline-flex items-center justify-center rounded-2xl bg-neutral-100" style={{ width: 48, height: 48, marginBottom: 14 }}>
