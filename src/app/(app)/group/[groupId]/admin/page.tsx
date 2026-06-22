@@ -6,8 +6,7 @@ import { ArrowLeft, Users, Bell, Sparkles } from "lucide-react";
 import { CopySlugButton } from "@/components/copy-slug-button";
 import { CopyInviteLinkButton } from "@/components/copy-invite-link-button";
 import { TestPushButton } from "@/components/admin/test-push-button";
-import { GenerateAnalysisButton } from "@/components/admin/generate-analysis-button";
-import { EditAnalysisForm } from "@/components/admin/edit-analysis-form";
+import { AnalysisPanel } from "@/components/admin/analysis-panel";
 import { getLatestAnalysis } from "@/lib/actions/daily-analysis";
 import { SimulationControl } from "@/components/admin/simulation-control";
 import { ScoringSettings, type OddsData } from "@/components/admin/scoring-settings";
@@ -181,16 +180,15 @@ export default async function AdminPage({ params }: AdminPageProps) {
             <h2 className="font-display text-sm font-semibold text-neutral-900">Daily analysis</h2>
           </div>
           <p className="text-sm text-neutral-500" style={{ marginTop: 4 }}>
-            Generate today&apos;s Hebrew standings analysis. Runs automatically every morning at 07:00 UTC — use this to regenerate on demand.
+            Generate today&apos;s Hebrew standings analysis. Runs automatically every morning at 07:00 UTC. Generating here only drafts a preview — it isn&apos;t published until you click Save.
           </p>
           <div style={{ marginTop: 16 }}>
-            <GenerateAnalysisButton groupId={groupId} tournamentId={tournament.id} />
+            <AnalysisPanel
+              groupId={groupId}
+              tournamentId={tournament.id}
+              latest={latestAnalysis ? { id: latestAnalysis.id, content: latestAnalysis.content } : null}
+            />
           </div>
-          {latestAnalysis && (
-            <div style={{ marginTop: 16 }}>
-              <EditAnalysisForm id={latestAnalysis.id} initialContent={latestAnalysis.content} />
-            </div>
-          )}
         </section>
       )}
 

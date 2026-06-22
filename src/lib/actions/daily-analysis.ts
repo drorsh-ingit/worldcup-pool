@@ -22,7 +22,7 @@ function resolveGender(dbGender: string | null, name: string): "M" | "F" {
   return FEMALE_FIRST_NAMES.has(firstName(name).toLowerCase()) ? "F" : "M";
 }
 
-type SnapshotRow = { userId: string; name: string; points: number; rank: number };
+export type SnapshotRow = { userId: string; name: string; points: number; rank: number };
 
 function outcomeOf(h: number, a: number): "home" | "draw" | "away" {
   return h > a ? "home" : a > h ? "away" : "draw";
@@ -48,10 +48,14 @@ async function gatherContext(groupId: string, tournamentId: string) {
     orderBy: { totalPoints: "desc" },
   });
 
-  // Previous snapshot — the most recent earlier analysis, used for the diff.
+  // Previous snapshot — the most recent analysis from an EARLIER day, used for
+  // the day-over-day diff. Filtering on dateKey (not just createdAt) means
+  // regenerating today still compares against yesterday, not against a draft we
+  // just produced moments ago.
+  const today = dateKeyOf(new Date());
   const prev = await db.dailyAnalysis.findFirst({
-    where: { groupId },
-    orderBy: { createdAt: "desc" },
+    where: { groupId, dateKey: { lt: today } },
+    orderBy: { dateKey: "desc" },
   });
   const prevRows = (prev?.standings as SnapshotRow[] | null) ?? [];
   const prevByUser = new Map(prevRows.map((r) => [r.userId, r]));
@@ -238,19 +242,16 @@ function buildSystemPrompt(dateKey: string, personaOverride?: PersonaName): stri
 }
 
 /**
- * Generates (or returns the cached) daily analysis for a group. Idempotent per
- * UTC day — returns the existing row if today's analysis already exists.
+ * Runs the two-pass model generation and returns the content plus the standings
+ * snapshot it was built from. Does NOT persist anything — callers decide whether
+ * to save (cron) or just preview (admin).
  */
-export async function generateDailyAnalysis(
+async function runGeneration(
   groupId: string,
   tournamentId: string,
-  opts: { force?: boolean; persona?: PersonaName } = {}
-): Promise<{ id: string; content: string; cached?: boolean } | { error: string }> {
+  persona?: PersonaName
+): Promise<{ content: string; snapshot: SnapshotRow[] } | { error: string }> {
   if (!process.env.ANTHROPIC_API_KEY) return { error: "ANTHROPIC_API_KEY not configured" };
-
-  const dateKey = dateKeyOf(new Date());
-  const existing = await db.dailyAnalysis.findUnique({ where: { groupId_dateKey: { groupId, dateKey } } });
-  if (existing && !opts.force) return { id: existing.id, content: existing.content, cached: true };
 
   const { context, snapshot } = await gatherContext(groupId, tournamentId);
   if (context.standings.length === 0) return { error: "No standings yet" };
@@ -261,7 +262,7 @@ export async function generateDailyAnalysis(
   const draft = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 1000,
-    system: buildSystemPrompt(dateKey, opts.persona),
+    system: buildSystemPrompt(dateKeyOf(new Date()), persona),
     messages: [{ role: "user", content: JSON.stringify(context, null, 2) }],
   });
   const draftText = draft.content
@@ -285,7 +286,18 @@ export async function generateDailyAnalysis(
     .trim() || draftText;
   if (!content) return { error: "Empty model response" };
 
-  const row = await db.dailyAnalysis.upsert({
+  return { content, snapshot };
+}
+
+/** Upsert today's analysis row with the given content + standings snapshot. */
+async function persistAnalysis(
+  groupId: string,
+  tournamentId: string,
+  content: string,
+  snapshot: SnapshotRow[]
+) {
+  const dateKey = dateKeyOf(new Date());
+  return db.dailyAnalysis.upsert({
     where: { groupId_dateKey: { groupId, dateKey } },
     create: {
       groupId,
@@ -296,7 +308,52 @@ export async function generateDailyAnalysis(
     },
     update: { content, standings: snapshot as unknown as Prisma.InputJsonValue },
   });
+}
 
+/**
+ * Generates AND saves the daily analysis for a group. Idempotent per UTC day —
+ * returns the existing row if today's analysis already exists. Used by the cron.
+ */
+export async function generateDailyAnalysis(
+  groupId: string,
+  tournamentId: string,
+  opts: { force?: boolean; persona?: PersonaName } = {}
+): Promise<{ id: string; content: string; cached?: boolean } | { error: string }> {
+  if (!process.env.ANTHROPIC_API_KEY) return { error: "ANTHROPIC_API_KEY not configured" };
+
+  const dateKey = dateKeyOf(new Date());
+  const existing = await db.dailyAnalysis.findUnique({ where: { groupId_dateKey: { groupId, dateKey } } });
+  if (existing && !opts.force) return { id: existing.id, content: existing.content, cached: true };
+
+  const gen = await runGeneration(groupId, tournamentId, opts.persona);
+  if ("error" in gen) return gen;
+
+  const row = await persistAnalysis(groupId, tournamentId, gen.content, gen.snapshot);
+  return { id: row.id, content: row.content };
+}
+
+/**
+ * Generates a draft analysis WITHOUT saving it. The admin previews it in a text
+ * box and persists it explicitly via saveDailyAnalysis. Returns the standings
+ * snapshot too, so the eventual save records the correct day-over-day baseline.
+ */
+export async function previewDailyAnalysis(
+  groupId: string,
+  tournamentId: string,
+  opts: { persona?: PersonaName } = {}
+): Promise<{ content: string; snapshot: SnapshotRow[] } | { error: string }> {
+  return runGeneration(groupId, tournamentId, opts.persona);
+}
+
+/** Persist a previewed (and possibly hand-edited) analysis as today's row. */
+export async function saveDailyAnalysis(
+  groupId: string,
+  tournamentId: string,
+  content: string,
+  snapshot: SnapshotRow[]
+): Promise<{ id: string; content: string } | { error: string }> {
+  if (!content.trim()) return { error: "Content cannot be empty" };
+  const row = await persistAnalysis(groupId, tournamentId, content.trim(), snapshot);
   return { id: row.id, content: row.content };
 }
 
