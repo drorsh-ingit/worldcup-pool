@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { createGroupSchema, joinGroupSchema } from "@/lib/validators";
 import { DEFAULT_GROUP_SETTINGS } from "@/lib/settings";
 import { revalidatePath } from "next/cache";
@@ -65,6 +66,13 @@ export async function createGroup(formData: FormData) {
     return { success: true, groupId: group.id, slug: group.slug };
   } catch (error) {
     console.error("Create group error:", error);
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2003" &&
+      String(error.meta?.field_name).includes("userId")
+    ) {
+      return { error: "Your session is invalid. Please sign out and sign in again." };
+    }
     return { error: "Failed to create group. Please try again." };
   }
 }
@@ -131,6 +139,13 @@ export async function joinGroupBySlug(rawSlug: string) {
     return { success: true, groupId: group.id, groupName: group.name };
   } catch (error) {
     console.error("Join group error:", error);
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2003" &&
+      String(error.meta?.field_name).includes("userId")
+    ) {
+      return { error: "Your session is invalid. Please sign out and sign in again." };
+    }
     return { error: "Failed to join group. Please try again." };
   }
 }
@@ -189,6 +204,13 @@ export async function updateMembership(membershipId: string, action: "approve" |
     return { success: true };
   } catch (error) {
     console.error("Update membership error:", error);
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2003" &&
+      String(error.meta?.field_name).includes("userId")
+    ) {
+      return { error: "Your session is invalid. Please sign out and sign in again." };
+    }
     return { error: "Failed to update membership. Please try again." };
   }
 }
