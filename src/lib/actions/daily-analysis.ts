@@ -224,7 +224,6 @@ const PERSONAS = [
 ] as const;
 
 export type PersonaName = (typeof PERSONAS)[number]["name"];
-export const PERSONA_NAMES = PERSONAS.map((p) => p.name);
 
 /** Stable per-day persona pick — same persona for every group on a given UTC date. */
 function pickPersona(dateKey: string) {
