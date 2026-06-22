@@ -1,7 +1,8 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getGroupStats } from "@/lib/group-stats";
+import { getGroupStats, getStandingsTrend } from "@/lib/group-stats";
 import { StatsSummary } from "@/components/stats/stats-summary";
+import { StandingsTrendChart } from "@/components/stats/standings-trend";
 import { StatsGrid } from "@/components/stats/stats-grid";
 import { StatsH2H } from "@/components/stats/stats-h2h";
 import { LiveScoresProvider } from "@/components/stats/live-scores-context";
@@ -21,6 +22,8 @@ export default async function StatsPage({ params }: StatsPageProps) {
   if (error === "forbidden") notFound();
   if (error || !data) notFound();
 
+  const { data: trend } = await getStandingsTrend(groupId);
+
   const selfSummary = data.summaryByUser[data.selfId];
   const inPlayMatchIds = data.matches.filter((m) => !m.completed).map((m) => m.id);
 
@@ -38,6 +41,8 @@ export default async function StatsPage({ params }: StatsPageProps) {
       <div style={{ maxWidth: 560, width: "100%" }}>
         <StatsSummary summary={selfSummary} />
       </div>
+
+      {trend && <StandingsTrendChart trend={trend} />}
 
       <LiveDeltasProvider groupId={groupId}>
         <LiveScoresProvider groupId={groupId} matchIds={inPlayMatchIds}>

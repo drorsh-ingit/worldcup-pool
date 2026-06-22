@@ -54,6 +54,86 @@ function outcome(h: number, a: number): "home" | "draw" | "away" {
   return h > a ? "home" : a > h ? "away" : "draw";
 }
 
+function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0];
+}
+
+type SnapshotRow = { userId: string; name: string; points: number; rank: number };
+
+export interface TrendSeries {
+  userId: string;
+  name: string;
+  isSelf: boolean;
+  /** points per date, aligned to StandingsTrend.dates; null where the user has no snapshot that day. */
+  points: (number | null)[];
+}
+
+export interface StandingsTrend {
+  /** UTC date keys (YYYY-MM-DD), ascending. */
+  dates: string[];
+  /** One line per current member, ordered by latest points (highest first). */
+  series: TrendSeries[];
+}
+
+/**
+ * Standings over time, reconstructed from the per-day DailyAnalysis snapshots.
+ * Each saved analysis stores every member's points/rank, so the snapshots form a
+ * daily time series of the leaderboard. Returns one line per current member.
+ */
+export async function getStandingsTrend(
+  groupId: string
+): Promise<{ data?: StandingsTrend; error?: "forbidden" }> {
+  const session = await auth();
+  if (!session) return { error: "forbidden" };
+
+  const membership = await db.groupMembership.findUnique({
+    where: { userId_groupId: { userId: session.user.id, groupId } },
+  });
+  if (!membership || membership.status !== "APPROVED") return { error: "forbidden" };
+  const selfId = session.user.id;
+
+  const memberRows = await db.groupMembership.findMany({
+    where: { groupId, status: "APPROVED" },
+    include: { user: { select: { id: true, name: true } } },
+  });
+  const nameById = new Map(memberRows.map((m) => [m.userId, m.user.name]));
+
+  const analyses = await db.dailyAnalysis.findMany({
+    where: { groupId },
+    orderBy: { dateKey: "asc" },
+    select: { dateKey: true, standings: true },
+  });
+
+  const dates = analyses.map((a) => a.dateKey);
+  // userId -> points per date index (sparse until filled).
+  const pointsByUser = new Map<string, (number | null)[]>();
+  for (const userId of nameById.keys()) pointsByUser.set(userId, dates.map(() => null));
+
+  analyses.forEach((a, dateIdx) => {
+    const rows = (a.standings as SnapshotRow[] | null) ?? [];
+    for (const row of rows) {
+      const series = pointsByUser.get(row.userId);
+      if (series) series[dateIdx] = parseFloat(row.points.toFixed(1));
+    }
+  });
+
+  const series: TrendSeries[] = [...pointsByUser.entries()].map(([userId, points]) => ({
+    userId,
+    name: firstName(nameById.get(userId) ?? "?"),
+    isSelf: userId === selfId,
+    points,
+  }));
+
+  // Order by latest known points (highest first) so the legend mirrors the standings.
+  const latestPoints = (s: TrendSeries) => {
+    for (let i = s.points.length - 1; i >= 0; i--) if (s.points[i] != null) return s.points[i]!;
+    return -1;
+  };
+  series.sort((a, b) => latestPoints(b) - latestPoints(a));
+
+  return { data: { dates, series } };
+}
+
 /**
  * Builds the members × locked-matches prediction matrix plus a per-user accuracy
  * summary. Only locked matches (kickoff passed / LOCKED / COMPLETED) are included,
