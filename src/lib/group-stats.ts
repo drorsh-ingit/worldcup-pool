@@ -64,21 +64,23 @@ export interface TrendSeries {
   userId: string;
   name: string;
   isSelf: boolean;
-  /** points per date, aligned to StandingsTrend.dates; null where the user has no snapshot that day. */
-  points: (number | null)[];
+  /** standings place (1 = first) per date, aligned to StandingsTrend.dates; null where the user has no snapshot that day. */
+  ranks: (number | null)[];
 }
 
 export interface StandingsTrend {
   /** UTC date keys (YYYY-MM-DD), ascending. */
   dates: string[];
-  /** One line per current member, ordered by latest points (highest first). */
+  /** Largest place across the series (used to scale the axis). */
+  maxRank: number;
+  /** One line per current member, ordered by latest place (first place first). */
   series: TrendSeries[];
 }
 
 /**
  * Standings over time, reconstructed from the per-day DailyAnalysis snapshots.
  * Each saved analysis stores every member's points/rank, so the snapshots form a
- * daily time series of the leaderboard. Returns one line per current member.
+ * daily time series of the leaderboard. Returns each member's place per day.
  */
 export async function getStandingsTrend(
   groupId: string
@@ -105,33 +107,37 @@ export async function getStandingsTrend(
   });
 
   const dates = analyses.map((a) => a.dateKey);
-  // userId -> points per date index (sparse until filled).
-  const pointsByUser = new Map<string, (number | null)[]>();
-  for (const userId of nameById.keys()) pointsByUser.set(userId, dates.map(() => null));
+  // userId -> place per date index (sparse until filled).
+  const ranksByUser = new Map<string, (number | null)[]>();
+  for (const userId of nameById.keys()) ranksByUser.set(userId, dates.map(() => null));
 
+  let maxRank = 1;
   analyses.forEach((a, dateIdx) => {
     const rows = (a.standings as SnapshotRow[] | null) ?? [];
     for (const row of rows) {
-      const series = pointsByUser.get(row.userId);
-      if (series) series[dateIdx] = parseFloat(row.points.toFixed(1));
+      const series = ranksByUser.get(row.userId);
+      if (series) {
+        series[dateIdx] = row.rank;
+        if (row.rank > maxRank) maxRank = row.rank;
+      }
     }
   });
 
-  const series: TrendSeries[] = [...pointsByUser.entries()].map(([userId, points]) => ({
+  const series: TrendSeries[] = [...ranksByUser.entries()].map(([userId, ranks]) => ({
     userId,
     name: firstName(nameById.get(userId) ?? "?"),
     isSelf: userId === selfId,
-    points,
+    ranks,
   }));
 
-  // Order by latest known points (highest first) so the legend mirrors the standings.
-  const latestPoints = (s: TrendSeries) => {
-    for (let i = s.points.length - 1; i >= 0; i--) if (s.points[i] != null) return s.points[i]!;
-    return -1;
+  // Order by latest known place (first place first) so the legend mirrors the standings.
+  const latestRank = (s: TrendSeries) => {
+    for (let i = s.ranks.length - 1; i >= 0; i--) if (s.ranks[i] != null) return s.ranks[i]!;
+    return Number.MAX_SAFE_INTEGER;
   };
-  series.sort((a, b) => latestPoints(b) - latestPoints(a));
+  series.sort((a, b) => latestRank(a) - latestRank(b));
 
-  return { data: { dates, series } };
+  return { data: { dates, maxRank, series } };
 }
 
 /**

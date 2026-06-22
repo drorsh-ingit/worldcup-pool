@@ -24,6 +24,13 @@ function shortDate(key: string): string {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 }
 
+/** Ordinal suffix for a place number: 1 → "st", 2 → "nd", 3 → "rd", else "th". */
+function ordinalSuffix(n: number): string {
+  const t = n % 100;
+  if (t >= 11 && t <= 13) return "th";
+  return ["th", "st", "nd", "rd"][n % 10] ?? "th";
+}
+
 export function StandingsTrendChart({ trend }: { trend: StandingsTrend }) {
   const [active, setActive] = useState<string | null>(null);
 
@@ -40,19 +47,17 @@ export function StandingsTrendChart({ trend }: { trend: StandingsTrend }) {
   }
 
   const n = trend.dates.length;
-  const maxPoints = Math.max(
-    1,
-    ...trend.series.flatMap((s) => s.points.filter((p): p is number => p != null))
-  );
-  // Round the axis ceiling up to a tidy step.
-  const step = maxPoints <= 20 ? 5 : maxPoints <= 50 ? 10 : maxPoints <= 100 ? 25 : 50;
-  const yMax = Math.ceil(maxPoints / step) * step;
+  const maxRank = Math.max(2, trend.maxRank);
 
   const x = (i: number) => PAD.left + (n === 1 ? PLOT_W / 2 : (PLOT_W * i) / (n - 1));
-  const y = (v: number) => PAD.top + PLOT_H - (PLOT_H * v) / yMax;
+  // Inverted: place 1 (best) sits at the top, maxRank at the bottom.
+  const y = (rank: number) => PAD.top + (PLOT_H * (rank - 1)) / (maxRank - 1);
 
+  // One gridline/label per integer place, thinned if there are many members.
+  const rankEvery = Math.max(1, Math.ceil(maxRank / 10));
   const yTicks: number[] = [];
-  for (let v = 0; v <= yMax; v += step) yTicks.push(v);
+  for (let r = 1; r <= maxRank; r += rankEvery) yTicks.push(r);
+  if (yTicks[yTicks.length - 1] !== maxRank) yTicks.push(maxRank);
 
   // X labels: thin to ~6 to avoid crowding.
   const labelEvery = Math.max(1, Math.ceil(n / 6));
@@ -62,13 +67,14 @@ export function StandingsTrendChart({ trend }: { trend: StandingsTrend }) {
       <Header />
 
       <div style={{ marginTop: 16, width: "100%" }}>
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Standings points over time" style={{ display: "block" }}>
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Standings place over time" style={{ display: "block" }}>
           {/* Y grid + labels */}
           {yTicks.map((v) => (
             <g key={v}>
               <line x1={PAD.left} y1={y(v)} x2={W - PAD.right} y2={y(v)} stroke="#f1f1f1" strokeWidth={1} />
               <text x={PAD.left - 8} y={y(v) + 4} textAnchor="end" fontSize={11} fill="#a3a3a3">
                 {v}
+                <tspan dx={1}>{ordinalSuffix(v)}</tspan>
               </text>
             </g>
           ))}
@@ -86,8 +92,8 @@ export function StandingsTrendChart({ trend }: { trend: StandingsTrend }) {
           {trend.series.map((s, idx) => {
             const color = colorFor(idx, s.isSelf);
             const dimmed = active != null && active !== s.userId;
-            const pts = s.points
-              .map((p, i) => (p == null ? null : `${x(i)},${y(p)}`))
+            const pts = s.ranks
+              .map((r, i) => (r == null ? null : `${x(i)},${y(r)}`))
               .filter((p): p is string => p != null);
             if (pts.length === 0) return null;
             return (
@@ -110,13 +116,13 @@ export function StandingsTrendChart({ trend }: { trend: StandingsTrend }) {
             const color = colorFor(idx, s.isSelf);
             const dimmed = active != null && active !== s.userId;
             let lastI = -1;
-            for (let i = s.points.length - 1; i >= 0; i--) if (s.points[i] != null) { lastI = i; break; }
+            for (let i = s.ranks.length - 1; i >= 0; i--) if (s.ranks[i] != null) { lastI = i; break; }
             if (lastI < 0) return null;
             return (
               <circle
                 key={s.userId}
                 cx={x(lastI)}
-                cy={y(s.points[lastI]!)}
+                cy={y(s.ranks[lastI]!)}
                 r={s.isSelf ? 4 : 3}
                 fill={color}
                 opacity={dimmed ? 0.15 : 1}
@@ -160,7 +166,7 @@ function Header() {
       </div>
       <div>
         <h2 className="text-sm font-semibold text-neutral-900 leading-tight">Standings trend</h2>
-        <p className="text-xs text-neutral-500 leading-tight">Total points per member over time</p>
+        <p className="text-xs text-neutral-500 leading-tight">Each member&apos;s place over time</p>
       </div>
     </div>
   );
