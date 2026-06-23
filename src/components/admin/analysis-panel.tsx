@@ -16,7 +16,7 @@ const PERSONA_OPTIONS: { value: PersonaName | ""; label: string }[] = [
   { value: "cynical", label: "Cynical" },
   { value: "nice", label: "Extremely nice" },
   { value: "harsh", label: "Extremely harsh" },
-  { value: "hillbilly", label: "Hillbilly conspiracist" },
+  { value: "prophet", label: "Biblical prophet" },
 ];
 
 export function AnalysisPanel({
