@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { fetchWCFeed, reconcileTournament } from "@/lib/actions/reconcile";
 
-// Hit by an external scheduler (GitHub Actions / cron-job.org) every ~10 min during the
-// tournament — Vercel's free tier only allows daily cron. Pulls the WC feed once and
-// reconciles every WC tournament: scores (pens excluded), knockout fixtures, bet resolution.
+// Hit by an external scheduler (GitHub Actions) during the tournament — Vercel's free tier
+// only allows daily cron. The workflow requests */10, but GitHub throttles scheduled runs
+// heavily: in practice it fires roughly once an hour (observed gaps of 1–3+ hours) and can
+// skip runs under load. Treat freshness as "within a couple of hours", not minutes. Pulls
+// the WC feed once and reconciles every WC tournament: scores, knockout fixtures, bet resolution.
 // Auth is the same CRON_SECRET bearer pattern as the other cron routes; the middleware
 // lets /api/cron/* through so this self-authenticates.
 
