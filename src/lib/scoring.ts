@@ -378,34 +378,37 @@ function scoreGroupPredictionsPerSlot(
   let bonus = 0;
   let total = 0;
 
+  // Award one per-slot share. Each base/bonus/total is rounded to 1dp before summing so
+  // the awarded total equals the sum of the per-team badges shown in the UI.
+  const addSlot = (oddsValue: number, share: number) => {
+    const pts = calculatePoints(true, "group_predictions", impliedProb(oddsValue), settings, "GROUP", totalPool, memberCount);
+    base += parseFloat((pts.basePoints * share).toFixed(1));
+    bonus += parseFloat((pts.bonusPoints * share).toFixed(1));
+    total += parseFloat((pts.totalPoints * share).toFixed(1));
+  };
+
   for (const [letter, picks] of Object.entries(prediction)) {
     if (!picks || picks.length === 0) continue;
 
     const winnerPick = picks[0];
     const advancerPicks = picks.slice(1);
 
-    if (winnerPick && actualWinners[letter] === winnerPick) {
-      const odds = teamOddsForGroupWinner(teamByCode[winnerPick]?.odds);
-      const pts = calculatePoints(true, "group_predictions", impliedProb(odds), settings, "GROUP", totalPool, memberCount);
-      const slotBase = parseFloat((pts.basePoints * WINNER_SHARE).toFixed(1));
-      const slotBonus = parseFloat((pts.bonusPoints * WINNER_SHARE).toFixed(1));
-      const slotTotal = parseFloat((pts.totalPoints * WINNER_SHARE).toFixed(1));
-      base += slotBase;
-      bonus += slotBonus;
-      total += slotTotal;
+    // Winner slot. A team picked to win its group also implicitly advances, so if it
+    // qualifies but isn't the actual group winner, award the (smaller) qualifier credit
+    // instead of nothing. Mirrors the per-slot UI display in team-picker.tsx and the
+    // "pts earned" summary on the user page exactly.
+    if (winnerPick) {
+      if (actualWinners[letter] === winnerPick) {
+        addSlot(teamOddsForGroupWinner(teamByCode[winnerPick]?.odds), WINNER_SHARE);
+      } else if (actualAdvancing.has(winnerPick)) {
+        addSlot(teamOddsForQualify(teamByCode[winnerPick]?.odds), QUALIFIER_SHARE);
+      }
     }
 
     for (const code of advancerPicks) {
       if (!code) continue;
       if (actualAdvancing.has(code)) {
-        const odds = teamOddsForQualify(teamByCode[code]?.odds);
-        const pts = calculatePoints(true, "group_predictions", impliedProb(odds), settings, "GROUP", totalPool, memberCount);
-        const slotBase = parseFloat((pts.basePoints * QUALIFIER_SHARE).toFixed(1));
-        const slotBonus = parseFloat((pts.bonusPoints * QUALIFIER_SHARE).toFixed(1));
-        const slotTotal = parseFloat((pts.totalPoints * QUALIFIER_SHARE).toFixed(1));
-        base += slotBase;
-        bonus += slotBonus;
-        total += slotTotal;
+        addSlot(teamOddsForQualify(teamByCode[code]?.odds), QUALIFIER_SHARE);
       }
     }
   }

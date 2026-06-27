@@ -53,6 +53,15 @@ export async function progressTournament(groupId: string, tournamentId: string) 
 
     if (!hasR32) {
       await createR32Matches(tournamentId, standings);
+    }
+
+    // Open knockout-stage bets (bracket, golden ball, golden glove) once the full
+    // 16-match R32 bracket exists — whether auto-created above from standings or
+    // progressively published by the live feed (reconcile.ts). Decoupled from the
+    // !hasR32 creation guard above so feed-created fixtures don't block the opening.
+    // openBetsByTrigger only promotes DRAFT bet types, so re-running it is a no-op.
+    const r32Count = await db.match.count({ where: { tournamentId, phase: "R32" } });
+    if (r32Count >= 16) {
       await openBetsByTrigger(tournamentId, tournament.kind, "AFTER_GROUP_STAGE");
       await syncPhaseBetLocks(tournamentId);
     }
