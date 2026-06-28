@@ -250,53 +250,35 @@ export function groupStageKickoff(groupLetter: string, matchday: number, matchIn
   return match ? new Date(match.kickoffAt) : new Date("2026-06-11T18:00:00Z");
 }
 
-/** Best player candidates (Golden Ball) — sourced from Fox Sports / BetMGM odds (Jun 2026) */
-/** Best player candidates (Golden Ball) — sourced from FOX Sports / bookies.com (Jun 2026) */
+/** Best player candidates (Golden Ball) — sourced from Oddschecker (best price across books,
+ *  fractional converted to American scale ×100), pulled 28 Jun 2026 (mid-tournament). */
 export const GOLDEN_BALL_CANDIDATES = [
-  { playerName: "Lamine Yamal", teamCode: "ESP", odds: 650 },
-  { playerName: "Harry Kane", teamCode: "ENG", odds: 700 },
-  { playerName: "Kylian Mbappé", teamCode: "FRA", odds: 1000 },
-  { playerName: "Michael Olise", teamCode: "FRA", odds: 1000 },
-  { playerName: "Lionel Messi", teamCode: "ARG", odds: 1000 },
-  { playerName: "Vinicius Jr.", teamCode: "BRA", odds: 2000 },
+  { playerName: "Lionel Messi", teamCode: "ARG", odds: 250 },
+  { playerName: "Kylian Mbappé", teamCode: "FRA", odds: 300 },
+  { playerName: "Michael Olise", teamCode: "FRA", odds: 600 },
+  { playerName: "Vinicius Jr.", teamCode: "BRA", odds: 650 },
+  { playerName: "Ousmane Dembélé", teamCode: "FRA", odds: 800 },
+  { playerName: "Harry Kane", teamCode: "ENG", odds: 900 },
+  { playerName: "Lamine Yamal", teamCode: "ESP", odds: 900 },
+  { playerName: "Cristiano Ronaldo", teamCode: "POR", odds: 1000 },
+  { playerName: "Erling Haaland", teamCode: "NOR", odds: 1400 },
   { playerName: "Bruno Fernandes", teamCode: "POR", odds: 1800 },
-  { playerName: "Erling Haaland", teamCode: "NOR", odds: 2200 },
+  { playerName: "Mikel Oyarzabal", teamCode: "ESP", odds: 2000 },
   { playerName: "Jude Bellingham", teamCode: "ENG", odds: 2500 },
-  { playerName: "Pedri", teamCode: "ESP", odds: 2500 },
-  { playerName: "Rodri", teamCode: "ESP", odds: 2500 },
-  { playerName: "Nico Williams", teamCode: "ESP", odds: 2500 },
-  { playerName: "Raphinha", teamCode: "BRA", odds: 2800 },
-  { playerName: "Rayan Cherki", teamCode: "FRA", odds: 2800 },
-  { playerName: "Ousmane Dembélé", teamCode: "FRA", odds: 3000 },
-  { playerName: "Florian Wirtz", teamCode: "GER", odds: 3000 },
-  { playerName: "Cristiano Ronaldo", teamCode: "POR", odds: 3300 },
-  { playerName: "Bernardo Silva", teamCode: "POR", odds: 3300 },
-  { playerName: "Julián Álvarez", teamCode: "ARG", odds: 4000 },
-  { playerName: "Lautaro Martínez", teamCode: "ARG", odds: 4000 },
-  { playerName: "Désiré Doué", teamCode: "FRA", odds: 4000 },
-  { playerName: "Declan Rice", teamCode: "ENG", odds: 4500 },
-  { playerName: "Vitinha", teamCode: "POR", odds: 5000 },
-  { playerName: "Bukayo Saka", teamCode: "ENG", odds: 5000 },
-  { playerName: "Jeremy Doku", teamCode: "BEL", odds: 5000 },
-  { playerName: "Mikel Oyarzabal", teamCode: "ESP", odds: 5000 },
-  { playerName: "Virgil van Dijk", teamCode: "NED", odds: 5000 },
+  { playerName: "Vitinha", teamCode: "POR", odds: 2500 },
 ] as const;
 
-/** Best goalkeeper candidates (Golden Glove) — sourced from FOX Sports / Squawka (Jun 2026) */
+/** Best goalkeeper candidates (Golden Glove) — sourced from FOX Sports (moneyline), 27 Jun 2026. */
 export const GOLDEN_GLOVE_CANDIDATES = [
-  { playerName: "Alisson", teamCode: "BRA", odds: 625 },
-  { playerName: "Emiliano Martínez", teamCode: "ARG", odds: 700 },
-  { playerName: "Thibaut Courtois", teamCode: "BEL", odds: 825 },
-  { playerName: "Mike Maignan", teamCode: "FRA", odds: 1050 },
-  { playerName: "Ederson", teamCode: "BRA", odds: 950 },
-  { playerName: "Unai Simón", teamCode: "ESP", odds: 1000 },
+  { playerName: "Emiliano Martínez", teamCode: "ARG", odds: 390 },
+  { playerName: "Unai Simón", teamCode: "ESP", odds: 440 },
+  { playerName: "Mike Maignan", teamCode: "FRA", odds: 440 },
+  { playerName: "Alisson", teamCode: "BRA", odds: 750 },
   { playerName: "Jordan Pickford", teamCode: "ENG", odds: 1100 },
-  { playerName: "David Raya", teamCode: "ESP", odds: 1200 },
   { playerName: "Diogo Costa", teamCode: "POR", odds: 1400 },
-  { playerName: "Oliver Baumann", teamCode: "GER", odds: 1600 },
-  { playerName: "Joan García", teamCode: "ESP", odds: 2000 },
-  { playerName: "Yann Sommer", teamCode: "SUI", odds: 2500 },
-  { playerName: "Andriy Lunin", teamCode: "UKR", odds: 3000 },
+  { playerName: "Manuel Neuer", teamCode: "GER", odds: 1800 },
+  { playerName: "Thibaut Courtois", teamCode: "BEL", odds: 2200 },
+  { playerName: "Bart Verbruggen", teamCode: "NED", odds: 3000 },
 ] as const;
 
 /** Top scorer candidates (Golden Boot) — sourced from RotoWire / FOX Sports (Jun 2026) */
