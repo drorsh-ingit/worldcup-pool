@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { fetchWCSchedule, fetchCLSchedule, fetchLiveMatch, regulationScore, fdWinnerCode, type FDMatch } from "@/lib/football-data";
+import { fetchWCSchedule, fetchCLSchedule, fetchLiveMatch, regulationScore, ninetyMinuteScore, fdWinnerCode, type FDMatch } from "@/lib/football-data";
 import { fdTlaToCode } from "@/lib/wc-team-map";
 import { scoreBets } from "@/lib/scoring";
 import { recalculateLeaderboard, scoreProgressiveTournamentBets } from "@/lib/actions/results";
@@ -189,7 +189,13 @@ async function autoCompleteGroupMatchFromEspn(
 
   await db.match.update({
     where: { id: matchId },
-    data: { actualHomeScore: home, actualAwayScore: away, status: "COMPLETED" },
+    data: {
+      actualHomeScore: home,
+      actualAwayScore: away,
+      actualHomeScore90: home,
+      actualAwayScore90: away,
+      status: "COMPLETED",
+    },
   });
 
   await scoreBets(groupId, tournamentId, matchId);
@@ -226,11 +232,19 @@ async function autoCompleteMatch(
   // Store the pens-excluded 90'/120' score; winnerTeamId carries the actual advancer.
   const reg = regulationScore(fd);
   if (!reg) return;
+  const ninety = ninetyMinuteScore(fd);
   const winnerTeamId = resolveWinnerTeamId(fd, current.homeTeam, current.awayTeam);
 
   await db.match.update({
     where: { id: matchId },
-    data: { actualHomeScore: reg.home, actualAwayScore: reg.away, winnerTeamId, status: "COMPLETED" },
+    data: {
+      actualHomeScore: reg.home,
+      actualAwayScore: reg.away,
+      actualHomeScore90: ninety?.home ?? null,
+      actualAwayScore90: ninety?.away ?? null,
+      winnerTeamId,
+      status: "COMPLETED",
+    },
   });
 
   await scoreBets(groupId, tournamentId, matchId);
@@ -344,9 +358,11 @@ export async function syncCompetitionResults(
 
     if (!fdMatch || fdMatch.status !== "FINISHED") continue;
 
-    // Pens-excluded 90'/120' score for bet scoring; winnerTeamId for progression.
+    // Pens-excluded 90'/120' score for bracket display; winnerTeamId for progression;
+    // 90'-only score for match_winner/correct_score bet scoring.
     const reg = regulationScore(fdMatch);
     if (!reg) continue;
+    const ninety = ninetyMinuteScore(fdMatch);
     const winnerTeamId = resolveWinnerTeamId(fdMatch, dbMatch.homeTeam, dbMatch.awayTeam);
 
     await db.match.update({
@@ -354,6 +370,8 @@ export async function syncCompetitionResults(
       data: {
         actualHomeScore: reg.home,
         actualAwayScore: reg.away,
+        actualHomeScore90: ninety?.home ?? null,
+        actualAwayScore90: ninety?.away ?? null,
         winnerTeamId,
         status: "COMPLETED",
         externalId: String(fdMatch.id),

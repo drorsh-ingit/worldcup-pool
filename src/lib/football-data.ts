@@ -60,6 +60,17 @@ export function regulationScore(fd: FDMatch): ScorePair | null {
 }
 
 /**
+ * The 90-minute-only score, even when the match continued into extra time/penalties.
+ * `regularTime` is only present on the feed once a match goes past 90', so for plain
+ * REGULAR-duration matches we fall back to `fullTime`, which already is the 90' score.
+ */
+export function ninetyMinuteScore(fd: FDMatch): ScorePair | null {
+  const reg = fd.score.regularTime ?? fd.score.fullTime;
+  if (reg.home == null || reg.away == null) return null;
+  return { home: reg.home, away: reg.away };
+}
+
+/**
  * The team that actually advanced (penalties included), mapped to one of the two
  * supplied team codes. Returns null for a true draw (group stage) or unknown winner.
  */

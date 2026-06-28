@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { regulationScore, fdWinnerCode, type FDMatch } from "./football-data";
+import { regulationScore, ninetyMinuteScore, fdWinnerCode, type FDMatch } from "./football-data";
 import { fdTlaToCode } from "./wc-team-map";
 
 // Minimal FDMatch builder — only the score-related fields matter for these pure functions.
@@ -94,6 +94,55 @@ test("unplayed / null score → null", () => {
     halfTime: { home: null, away: null },
   });
   assert.equal(regulationScore(m), null);
+});
+
+// ── ninetyMinuteScore: strips extra-time goals too, unlike regulationScore ──
+
+test("ninetyMinuteScore: penalty shootout → 90' score (LIV–PSG 0–1)", () => {
+  const m = fd({
+    winner: "AWAY_TEAM",
+    duration: "PENALTY_SHOOTOUT",
+    fullTime: { home: 1, away: 5 },
+    halfTime: { home: 0, away: 1 },
+    regularTime: { home: 0, away: 1 },
+    extraTime: { home: 0, away: 0 },
+    penalties: { home: 1, away: 4 },
+  });
+  assert.deepEqual(ninetyMinuteScore(m), { home: 0, away: 1 });
+});
+
+test("ninetyMinuteScore: extra time, no pens → 90' score excludes ET goals (INT–FCB 3–3, not 4–3)", () => {
+  const m = fd({
+    winner: "HOME_TEAM",
+    duration: "EXTRA_TIME",
+    fullTime: { home: 4, away: 3 },
+    halfTime: { home: 2, away: 0 },
+    regularTime: { home: 3, away: 3 },
+    extraTime: { home: 1, away: 0 },
+  });
+  assert.deepEqual(ninetyMinuteScore(m), { home: 3, away: 3 });
+  // regulationScore (120') and ninetyMinuteScore (90') diverge for this match.
+  assert.deepEqual(regulationScore(m), { home: 4, away: 3 });
+});
+
+test("ninetyMinuteScore: plain 90' match (no regularTime field) → falls back to fullTime", () => {
+  const m = fd({
+    winner: "HOME_TEAM",
+    duration: "REGULAR",
+    fullTime: { home: 2, away: 1 },
+    halfTime: { home: 1, away: 0 },
+  });
+  assert.deepEqual(ninetyMinuteScore(m), { home: 2, away: 1 });
+});
+
+test("ninetyMinuteScore: unplayed / null score → null", () => {
+  const m = fd({
+    winner: null,
+    duration: null,
+    fullTime: { home: null, away: null },
+    halfTime: { home: null, away: null },
+  });
+  assert.equal(ninetyMinuteScore(m), null);
 });
 
 // ── team-code overrides ──

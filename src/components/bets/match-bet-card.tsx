@@ -25,6 +25,10 @@ interface MatchBetCardProps {
     status: "UPCOMING" | "LOCKED" | "COMPLETED";
     actualHomeScore: number | null;
     actualAwayScore: number | null;
+    /** 90'-only score; only differs from actualHomeScore/actualAwayScore if the match
+     *  went to extra time. match_winner/correct_score correctness is judged on this. */
+    actualHomeScore90: number | null;
+    actualAwayScore90: number | null;
   };
   matchWinnerBetTypeId: string | null;
   correctScoreBetTypeId: string | null;
@@ -147,14 +151,19 @@ export function MatchBetCard({
       ? outcomeFromScore(currentCorrectScore!.homeScore!, currentCorrectScore!.awayScore!)
       : savedOutcome;
 
+  // match_winner/correct_score are graded on the 90'-only score (see scoring.ts), which
+  // can differ from the displayed Final score for matches that went to extra time.
+  const actualHome90 = match.actualHomeScore90 ?? match.actualHomeScore;
+  const actualAway90 = match.actualAwayScore90 ?? match.actualAwayScore;
   const actualOutcome = isCompleted
-    ? outcomeFromScore(match.actualHomeScore!, match.actualAwayScore!)
+    ? outcomeFromScore(actualHome90!, actualAway90!)
     : null;
   const outcomeCorrect = actualOutcome && savedPredictedOutcome ? savedPredictedOutcome === actualOutcome : null;
   const scoreCorrect =
     isCompleted &&
-    currentCorrectScore?.homeScore === match.actualHomeScore &&
-    currentCorrectScore?.awayScore === match.actualAwayScore;
+    currentCorrectScore?.homeScore === actualHome90 &&
+    currentCorrectScore?.awayScore === actualAway90;
+  const wentToExtraTime = isCompleted && (actualHome90 !== match.actualHomeScore || actualAway90 !== match.actualAwayScore);
 
   const homeWinPts = outcomePoints?.["home"];
   const drawPts = outcomePoints?.["draw"];
@@ -337,6 +346,7 @@ export function MatchBetCard({
                 scoreCorrect ? "text-emerald-600 font-semibold" : "text-neutral-500"
               )}>
                 Final: {match.actualHomeScore}–{match.actualAwayScore}
+                {wentToExtraTime ? ` (90': ${actualHome90}–${actualAway90})` : ""}
                 {scoreCorrect ? " ✓" : ""}
               </span>
             ) : hasValidScore && scorePts != null ? (

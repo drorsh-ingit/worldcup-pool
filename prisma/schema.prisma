@@ -143,6 +143,8 @@ model Match {
   kickoffAt      DateTime
   actualHomeScore Int?
   actualAwayScore Int?
+  actualHomeScore90 Int?                    // 90'-only score; differs from actualHomeScore only if the match went to ET. Used to score match_winner/correct_score bets.
+  actualAwayScore90 Int?
   status         MatchStatus @default(UPCOMING)
   oddsData       Json        @default("{}") // { homeWin, draw, awayWin, correctScores: {...} }
   oddsLockedAt   DateTime?                  // when set, odds are frozen and match is open for betting

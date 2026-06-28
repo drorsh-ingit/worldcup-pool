@@ -126,6 +126,8 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
           status: match.status as "UPCOMING" | "LOCKED" | "COMPLETED",
           actualHomeScore: match.actualHomeScore,
           actualAwayScore: match.actualAwayScore,
+          actualHomeScore90: match.actualHomeScore90,
+          actualAwayScore90: match.actualAwayScore90,
         }}
         href={`/group/${groupId}/match/${match.id}`}
         effectiveNow={effectiveNow}

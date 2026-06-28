@@ -57,6 +57,8 @@ export async function simulateTournamentProgression(
         data: {
           actualHomeScore: score.homeScore,
           actualAwayScore: score.awayScore,
+          actualHomeScore90: score.homeScore,
+          actualAwayScore90: score.awayScore,
           status: "COMPLETED",
         },
       });
@@ -652,7 +654,7 @@ async function restoreSnapshot(groupId: string, snapshot: SimulationSnapshot) {
     });
     await db.match.updateMany({
       where: { tournamentId: tournament.id },
-      data: { status: "UPCOMING", actualHomeScore: null, actualAwayScore: null },
+      data: { status: "UPCOMING", actualHomeScore: null, actualAwayScore: null, actualHomeScore90: null, actualAwayScore90: null },
     });
   } else {
     // Normal restore: only delete knockout matches that weren't in the original snapshot

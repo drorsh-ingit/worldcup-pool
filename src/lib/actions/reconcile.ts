@@ -9,7 +9,8 @@
  * feed truth. Idempotent — safe to run on a short interval.
  *
  * Source of truth split:
- *   - Bet scoring  → stored 90'/120' score (penalties excluded), via regulationScore().
+ *   - Bracket/progression display → stored 90'/120' score (penalties excluded), via regulationScore().
+ *   - match_winner/correct_score bets → 90'-only score, via ninetyMinuteScore().
  *   - Progression  → who actually advanced, via score.winner → Match.winnerTeamId.
  *   - Group winners→ /standings position 1; advancers → who is actually in the R32 fixtures
  *                    (sidesteps the best-third-place tiebreak entirely).
@@ -25,6 +26,7 @@ import {
   fetchWCStandings,
   fetchWCScorers,
   regulationScore,
+  ninetyMinuteScore,
   fdWinnerCode,
   type FDMatch,
   type FDStandingGroup,
@@ -281,6 +283,7 @@ async function applyResult(m: MatchWithTeams, fd: FDMatch): Promise<boolean> {
 
   const reg = regulationScore(fd);
   if (!reg) return false;
+  const ninety = ninetyMinuteScore(fd);
 
   const winnerCode = fdWinnerCode(fd, m.homeTeam.code, m.awayTeam.code);
   const winnerTeamId =
@@ -300,6 +303,8 @@ async function applyResult(m: MatchWithTeams, fd: FDMatch): Promise<boolean> {
     data: {
       actualHomeScore: ourHomeIsFeedHome ? reg.home : reg.away,
       actualAwayScore: ourHomeIsFeedHome ? reg.away : reg.home,
+      actualHomeScore90: ninety ? (ourHomeIsFeedHome ? ninety.home : ninety.away) : null,
+      actualAwayScore90: ninety ? (ourHomeIsFeedHome ? ninety.away : ninety.home) : null,
       winnerTeamId,
       status: "COMPLETED",
     },

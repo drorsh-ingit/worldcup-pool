@@ -174,8 +174,11 @@ export async function scoreBets(
     });
     if (!match || match.actualHomeScore == null || match.actualAwayScore == null) return;
 
-    const actualHome = match.actualHomeScore;
-    const actualAway = match.actualAwayScore;
+    // match_winner/correct_score are judged on the 90'-only result, even for knockout
+    // matches that went to extra time. Falls back to the final score for matches scored
+    // before actualHomeScore90 existed (manual/feed paths now always populate it).
+    const actualHome = match.actualHomeScore90 ?? match.actualHomeScore;
+    const actualAway = match.actualAwayScore90 ?? match.actualAwayScore;
 
     // Find per-game bet types for this tournament
     const perGameBetTypes = await db.betType.findMany({

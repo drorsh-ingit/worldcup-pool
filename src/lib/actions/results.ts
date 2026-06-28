@@ -44,12 +44,16 @@ export async function enterMatchResult(groupId: string, input: unknown) {
   if (!match) return { error: "Match not found" };
   if (match.tournament.groupId !== groupId) return { error: "Match not in this group" };
 
-  // Update match result
+  // Update match result. Manual entry has no ET/penalty breakdown, so the entered
+  // score is treated as both the final and the 90' result (matches the feed-driven
+  // path's behavior for matches that never go past 90').
   await db.match.update({
     where: { id: matchId },
     data: {
       actualHomeScore: homeScore,
       actualAwayScore: awayScore,
+      actualHomeScore90: homeScore,
+      actualAwayScore90: awayScore,
       status: "COMPLETED",
     },
   });
