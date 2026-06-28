@@ -118,3 +118,55 @@ export async function fetchEspnLiveMatch(
   }
   return null;
 }
+
+export interface EspnKnockoutFixture {
+  /** Kickoff time as epoch ms — the join key against the football-data fixture. */
+  kickoffMs: number;
+  /** FIFA codes (ESPN's team.abbreviation equals our code for every real team). */
+  homeCode: string;
+  awayCode: string;
+}
+
+/**
+ * Fetch ESPN's knockout-bracket pairings for the days around the given kickoff dates.
+ * ESPN publishes the bracket (e.g. R32 fixtures) noticeably sooner than football-data
+ * fills its fixture team slots, so this is used as a fallback fixture source.
+ *
+ * Only fully-decided fixtures are returned — any side that's still a placeholder
+ * ("Group J 2nd Place", "Third Place …") fails isValidCode and is skipped. ESPN groups
+ * the scoreboard by US-Eastern day, so each kickoff date is queried with ±1 day of slack.
+ */
+export async function fetchEspnKnockoutFixtures(
+  kickoffDates: Date[],
+  isValidCode: (code: string) => boolean
+): Promise<EspnKnockoutFixture[]> {
+  const dateStrs = new Set<string>();
+  for (const d of kickoffDates) {
+    for (const off of [-1, 0, 1]) {
+      dateStrs.add(fmtUtcDate(new Date(d.getTime() + off * 24 * 60 * 60 * 1000)));
+    }
+  }
+
+  const out: EspnKnockoutFixture[] = [];
+  const seen = new Set<string>();
+  for (const dateStr of dateStrs) {
+    let events: EspnEvent[] = [];
+    try {
+      events = await fetchScoreboard(dateStr);
+    } catch {
+      continue;
+    }
+    for (const ev of events) {
+      if (seen.has(ev.id)) continue; // a fixture can surface on adjacent ET-day queries
+      const teams = ev.competitions?.[0]?.competitors ?? [];
+      const home = teams.find((t) => t.homeAway === "home")?.team?.abbreviation;
+      const away = teams.find((t) => t.homeAway === "away")?.team?.abbreviation;
+      if (!home || !away || !isValidCode(home) || !isValidCode(away)) continue;
+      const kickoffMs = new Date(ev.date).getTime();
+      if (Number.isNaN(kickoffMs)) continue;
+      seen.add(ev.id);
+      out.push({ kickoffMs, homeCode: home, awayCode: away });
+    }
+  }
+  return out;
+}

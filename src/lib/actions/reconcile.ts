@@ -31,6 +31,7 @@ import {
   type FDScorer,
 } from "@/lib/football-data";
 import { fdTlaToCode } from "@/lib/wc-team-map";
+import { fetchEspnKnockoutFixtures } from "@/lib/espn-live";
 import { WC2026_TEAMS } from "@/lib/data/wc2026";
 import { scoreBets } from "@/lib/scoring";
 import { knockoutWinnerTeamId, syncPhaseBetLocks } from "@/lib/tournament-engine";
@@ -113,13 +114,55 @@ export async function reconcileTournament(
   // Mapped, known participant codes per knockout phase (from the feed fixtures).
   const phaseTeamCodes: Record<string, Set<string>> = {};
 
+  // ESPN publishes the knockout bracket sooner than football-data fills its fixture team
+  // slots. Pre-fetch ESPN pairings for any KO fixture the feed hasn't fully named yet, so
+  // we can fill them in — keyed to the feed's externalId below, so there are never dupes.
+  const fdNamed = (fd: FDMatch) => {
+    const h = fdTlaToCode(fd.homeTeam?.tla);
+    const a = fdTlaToCode(fd.awayTeam?.tla);
+    return !!(h && a && teamByCode.has(h) && teamByCode.has(a));
+  };
+  const unnamedKoDates = f.matches
+    .filter((fd) => {
+      const ph = FD_STAGE_TO_PHASE[fd.stage];
+      return ph && ph !== "GROUP" && !fdNamed(fd);
+    })
+    .map((fd) => new Date(fd.utcDate));
+  const espnFixtures = unnamedKoDates.length
+    ? await fetchEspnKnockoutFixtures(unnamedKoDates, (c) => teamByCode.has(c)).catch(() => [])
+    : [];
+
+  // Resolve a feed KO fixture's teams from ESPN by kickoff (±2h). If the feed already
+  // named one side, require ESPN to agree on it so we never cross-wire two fixtures.
+  const resolveFromEspn = (fd: FDMatch, fdHome: string | null, fdAway: string | null) => {
+    const fdMs = new Date(fd.utcDate).getTime();
+    const named = [fdHome, fdAway].filter(Boolean) as string[];
+    return espnFixtures.find(
+      (e) =>
+        Math.abs(e.kickoffMs - fdMs) <= 2 * 60 * 60 * 1000 &&
+        named.every((c) => e.homeCode === c || e.awayCode === c)
+    );
+  };
+
   // ── 1. Mirror matches: update existing results, create knockout fixtures ──
   for (const fd of f.matches) {
     const phase = FD_STAGE_TO_PHASE[fd.stage];
     if (!phase) continue;
 
-    const homeCode = fdTlaToCode(fd.homeTeam.tla);
-    const awayCode = fdTlaToCode(fd.awayTeam.tla);
+    let homeCode = fdTlaToCode(fd.homeTeam.tla);
+    let awayCode = fdTlaToCode(fd.awayTeam.tla);
+
+    // Feed hasn't named both teams for this KO fixture → fall back to ESPN's pairing.
+    if (
+      phase !== "GROUP" &&
+      !(homeCode && awayCode && teamByCode.has(homeCode) && teamByCode.has(awayCode))
+    ) {
+      const espn = resolveFromEspn(fd, homeCode, awayCode);
+      if (espn) {
+        homeCode = espn.homeCode;
+        awayCode = espn.awayCode;
+      }
+    }
 
     if (phase !== "GROUP") {
       if (homeCode && teamByCode.has(homeCode)) (phaseTeamCodes[phase] ??= new Set()).add(homeCode);
@@ -245,11 +288,18 @@ async function applyResult(m: MatchWithTeams, fd: FDMatch): Promise<boolean> {
     : winnerCode === m.awayTeam.code ? m.awayTeamId
     : null;
 
+  // `reg` is in the feed's home/away orientation. A fixture we created from ESPN may carry
+  // the opposite orientation, so map the score to our row by matching the feed's home team
+  // by code — never by position — so scores can't get flipped. (No-op for feed-created and
+  // seeded rows, where our home always equals the feed's home.)
+  const fdHomeCode = fdTlaToCode(fd.homeTeam?.tla);
+  const ourHomeIsFeedHome = fdHomeCode == null || fdHomeCode === m.homeTeam.code;
+
   await db.match.update({
     where: { id: m.id },
     data: {
-      actualHomeScore: reg.home,
-      actualAwayScore: reg.away,
+      actualHomeScore: ourHomeIsFeedHome ? reg.home : reg.away,
+      actualAwayScore: ourHomeIsFeedHome ? reg.away : reg.home,
       winnerTeamId,
       status: "COMPLETED",
     },
