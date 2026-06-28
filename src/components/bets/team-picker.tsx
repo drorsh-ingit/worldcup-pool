@@ -29,8 +29,14 @@ interface TeamPickerProps {
   tournamentKind?: string;
   /** When the bet is RESOLVED, the answer used for scoring. `teamCode` for
    *  single-answer bets (winner, runner_up); `teams` for list-answer bets
-   *  (dark_horse, reverse_dark_horse). */
+   *  (dark_horse, reverse_dark_horse). `teams` may legitimately be an empty
+   *  array (e.g. reverse_dark_horse when no favourite was eliminated). */
   resolution?: { teamCode?: string; teams?: string[] };
+  /** Whether the bet type has actually been resolved — drives whether the
+   *  correct/incorrect badge renders. Must come from bet-type status, not be
+   *  inferred from resolution content, since an empty `teams: []` is a valid
+   *  resolved answer. */
+  isResolved?: boolean;
   /** Points the user actually earned (read from the bet record). */
   earnedPoints?: number | null;
 }
@@ -46,6 +52,7 @@ export function TeamPicker({
   pointsByTeam,
   tournamentKind = "WC_2026",
   resolution,
+  isResolved: isResolvedProp = false,
   earnedPoints,
 }: TeamPickerProps) {
   const router = useRouter();
@@ -96,9 +103,7 @@ export function TeamPicker({
 
   if (isLocked) {
     const pts = selectedTeam ? pointsByTeam?.[selectedTeam.code] : undefined;
-    const isResolved = !!resolution && (
-      resolution.teamCode != null || (resolution.teams?.length ?? 0) > 0
-    );
+    const isResolved = isResolvedProp;
     const wasCorrect =
       isResolved && selectedTeam
         ? resolution!.teamCode != null

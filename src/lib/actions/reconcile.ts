@@ -347,7 +347,9 @@ async function resolveGroupPredictions(
   const winners: Record<string, string> = {};
   for (const g of standings) {
     if (!g.group) continue;
-    const letter = g.group.replace("GROUP_", "");
+    // The feed has returned both "GROUP_A" and "Group A" formats — strip either
+    // prefix so the key always lands on the bare letter that scoring expects.
+    const letter = g.group.replace(/^GROUP[_\s]?/i, "");
     const code = fdTlaToCode(g.table[0]?.team?.tla);
     if (code) winners[letter] = code;
   }

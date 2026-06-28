@@ -363,6 +363,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
                 pointsByTeam={teamPointsMap[bt.subType]}
                 tournamentKind={tournament.kind}
                 resolution={bt.resolution as { teamCode?: string; teams?: string[] } | undefined}
+                isResolved={bt.effectiveStatus === "RESOLVED"}
                 earnedPoints={currentBet?.totalPoints ?? null}
               />
             );
