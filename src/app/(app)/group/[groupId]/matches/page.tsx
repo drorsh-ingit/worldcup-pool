@@ -98,26 +98,9 @@ export default async function MatchesPage({ params, searchParams }: MatchesPageP
       }));
     }
 
-    // Knockout: split into exactly First Leg / Second Leg by finding the largest date gap
-    const uniqueDates = [...new Set(filteredMatches.map((m) =>
-      new Date(m.kickoffAt).toISOString().split("T")[0]
-    ))].sort();
-
-    if (uniqueDates.length <= 1) return [{ label: "Matches", matches: filteredMatches }];
-
-    let splitAt = uniqueDates[1];
-    let maxGap = 0;
-    for (let i = 1; i < uniqueDates.length; i++) {
-      const gap = new Date(uniqueDates[i]).getTime() - new Date(uniqueDates[i - 1]).getTime();
-      if (gap > maxGap) { maxGap = gap; splitAt = uniqueDates[i]; }
-    }
-
-    const leg1 = filteredMatches.filter((m) => new Date(m.kickoffAt).toISOString().split("T")[0] < splitAt);
-    const leg2 = filteredMatches.filter((m) => new Date(m.kickoffAt).toISOString().split("T")[0] >= splitAt);
-    const groups: MatchGroup[] = [];
-    if (leg1.length > 0) groups.push({ label: "First Leg", matches: leg1 });
-    if (leg2.length > 0) groups.push({ label: "Second Leg", matches: leg2 });
-    return groups;
+    // Knockout rounds are single-leg in the World Cup — show all matches of the
+    // round in one group (no "legs").
+    return [{ label: phaseLabel(activePhase), matches: filteredMatches }];
   }
 
   const groups = buildGroups();
