@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { scoreBets, scoreBracketPerPick, scoreSemifinalistsPerPick, calculatePoints } from "@/lib/scoring";
 import { resolveGroupSettings } from "@/lib/settings";
 import { progressTournament } from "@/lib/actions/progression";
-import { knockoutWinnerTeamId } from "@/lib/tournament-engine";
+import { knockoutWinnerTeamId, compareByBracketSlot } from "@/lib/tournament-engine";
 import { z } from "zod";
 
 async function requireAdmin(groupId: string) {
@@ -122,16 +122,18 @@ export async function scoreProgressiveTournamentBets(groupId: string, tournament
       orderBy: { kickoffAt: "asc" },
     });
     const derivedWinners: Record<string, string> = {};
+    // Fallback running index per phase, used only for legacy rows that lack a bracketSlot.
     const phaseIndexMap: Record<string, number> = {};
-    for (const m of knockoutMatches) {
+    for (const m of [...knockoutMatches].sort(compareByBracketSlot)) {
       const phase = m.phase;
       const idx = phaseIndexMap[phase] ?? 0;
       phaseIndexMap[phase] = idx + 1;
+      const slot = m.bracketSlot ?? idx;
       if (m.status === "COMPLETED") {
         const winnerId = knockoutWinnerTeamId(m);
         const winnerCode =
           winnerId === m.homeTeamId ? m.homeTeam.code : winnerId === m.awayTeamId ? m.awayTeam.code : null;
-        if (winnerCode) derivedWinners[`${phase}-${idx}`] = winnerCode;
+        if (winnerCode) derivedWinners[`${phase}-${slot}`] = winnerCode;
       }
     }
     // Also fold in admin-set resolution.winners for any slots not covered by match data

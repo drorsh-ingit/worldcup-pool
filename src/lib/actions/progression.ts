@@ -14,6 +14,7 @@ import {
   createNextRoundMatches,
   syncPhaseBetLocks,
   knockoutWinnerTeamId,
+  compareByBracketSlot,
 } from "@/lib/tournament-engine";
 import { Prisma } from "@prisma/client";
 
@@ -330,6 +331,7 @@ async function autoResolveBracket(
     homeTeamId: string;
     awayTeamId: string;
     kickoffAt: Date;
+    bracketSlot: number | null;
     actualHomeScore: number | null;
     actualAwayScore: number | null;
   }>,
@@ -344,12 +346,13 @@ async function autoResolveBracket(
   for (const phase of KNOCKOUT_PHASES) {
     const phaseMatches = matches
       .filter((m) => m.phase === phase && m.status === "COMPLETED")
-      .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
+      .sort(compareByBracketSlot);
     phaseMatches.forEach((m, i) => {
+      const slot = m.bracketSlot ?? i;
       const winnerId = knockoutWinnerTeamId(m);
       if (!winnerId) return;
       const winnerCode = teams.find((t) => t.id === winnerId)?.code;
-      if (winnerCode) winners[`${phase}-${i}`] = winnerCode;
+      if (winnerCode) winners[`${phase}-${slot}`] = winnerCode;
     });
   }
 

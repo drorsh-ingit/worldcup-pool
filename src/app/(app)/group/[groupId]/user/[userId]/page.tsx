@@ -301,6 +301,7 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
                   phase: m.phase,
                   status: m.status,
                   kickoffAt: m.kickoffAt,
+                  bracketSlot: m.bracketSlot,
                   actualHomeScore: m.actualHomeScore,
                   actualAwayScore: m.actualAwayScore,
                 }))}

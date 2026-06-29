@@ -216,14 +216,19 @@ export default async function BetsPage({ params }: BetsPageProps) {
       for (const phase of BRACKET_PHASES) {
         const phaseMatches = tournament.matches
           .filter((m) => m.phase === phase)
-          .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
+          .sort((a, b) =>
+            a.bracketSlot != null && b.bracketSlot != null
+              ? a.bracketSlot - b.bracketSlot
+              : new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime()
+          );
         phaseMatches.forEach((m, i) => {
+          const slot = m.bracketSlot ?? i;
           if (
             m.status === "COMPLETED" &&
             m.actualHomeScore != null &&
             m.actualAwayScore != null
           ) {
-            effectiveWinners[`${phase}-${i}`] =
+            effectiveWinners[`${phase}-${slot}`] =
               m.actualHomeScore >= m.actualAwayScore
                 ? m.homeTeam.code
                 : m.awayTeam.code;
@@ -454,6 +459,7 @@ export default async function BetsPage({ params }: BetsPageProps) {
                   phase: m.phase,
                   status: m.status,
                   kickoffAt: m.kickoffAt,
+                  bracketSlot: m.bracketSlot,
                   actualHomeScore: m.actualHomeScore,
                   actualAwayScore: m.actualAwayScore,
                 }))}

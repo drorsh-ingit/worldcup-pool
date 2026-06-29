@@ -18,8 +18,29 @@ interface BracketMatch {
   phase: string;
   status: string;
   kickoffAt: Date | string;
+  bracketSlot: number | null;
   actualHomeScore: number | null;
   actualAwayScore: number | null;
+}
+
+/**
+ * Canonical bracket-order comparator (mirrors tournament-engine.compareByBracketSlot, kept
+ * local so this client component doesn't pull in server-only code): by bracketSlot when both
+ * present, else by kickoffAt. kickoff order is chronological, NOT bracket-ordered.
+ */
+function byBracketSlot(a: BracketMatch, b: BracketMatch): number {
+  if (a.bracketSlot != null && b.bracketSlot != null) return a.bracketSlot - b.bracketSlot;
+  return new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime();
+}
+
+/** Index a phase's matches by their bracket slot (0..n-1), falling back to sorted position for legacy rows. */
+function matchesBySlot(matches: BracketMatch[], phase: string): Map<number, BracketMatch> {
+  const map = new Map<number, BracketMatch>();
+  [...matches.filter((m) => m.phase === phase)].sort(byBracketSlot).forEach((m, i) => {
+    const slot = m.bracketSlot ?? i;
+    if (!map.has(slot)) map.set(slot, m);
+  });
+  return map;
 }
 
 interface BracketPickerProps {
@@ -82,16 +103,17 @@ function buildSlots(
   // R32 is the base round — slots always come from real matches so the user can see
   // who is actually playing before picking. R16 and beyond always derive from the
   // user's picks so the bracket always shows their prediction path, not reality.
-  const r32Matches = matches
-    .filter((m) => m.phase === "R32")
-    .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
+  // Matches are placed by their bracketSlot (the source of truth for pairing), NOT by
+  // kickoff order, which is chronological and would scramble the bracket.
+  const r32BySlot = matchesBySlot(matches, "R32");
 
   for (const phase of PHASE_ORDER) {
+    const realBySlot = phase === "R32" ? r32BySlot : matchesBySlot(matches, phase);
     for (let i = 0; i < PHASE_COUNTS[phase]; i++) {
       const key = `${phase}-${i}`;
 
       if (phase === "R32") {
-        const real = r32Matches[i];
+        const real = realBySlot.get(i);
         if (real) {
           slots[key] = {
             key, phase, index: i,
@@ -108,10 +130,7 @@ function buildSlots(
         }
       } else {
         // R16+: use real match data when available so scores/completion show
-        const realMatches = matches
-          .filter((m) => m.phase === phase)
-          .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
-        const real = realMatches[i];
+        const real = realBySlot.get(i);
         if (real) {
           slots[key] = {
             key, phase, index: i,
@@ -210,18 +229,15 @@ export function BracketPicker({
   // ✓/✗ as games finish, falling back to admin-set resolution.winners.
   const actualWinners: Record<string, string> = {};
   for (const phase of PHASE_ORDER) {
-    const phaseMatches = matches
-      .filter((m) => m.phase === phase)
-      .sort(
-        (a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime()
-      );
+    const phaseMatches = [...matches.filter((m) => m.phase === phase)].sort(byBracketSlot);
     phaseMatches.forEach((m, i) => {
+      const slot = m.bracketSlot ?? i;
       if (
         m.status === "COMPLETED" &&
         m.actualHomeScore != null &&
         m.actualAwayScore != null
       ) {
-        actualWinners[`${phase}-${i}`] =
+        actualWinners[`${phase}-${slot}`] =
           m.actualHomeScore >= m.actualAwayScore
             ? m.homeTeam.code
             : m.awayTeam.code;

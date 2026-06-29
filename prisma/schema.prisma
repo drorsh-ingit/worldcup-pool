@@ -151,6 +151,7 @@ model Match {
   multiplier     Float       @default(1.0)  // knockout multiplier
   externalId     String?                    // football-data.org match ID for live scores
   winnerTeamId   String?                    // KO winner incl. penalties (from feed score.winner); null = derive from score
+  bracketSlot    Int?                       // KO-only: position in the bracket (0-indexed within phase) — winner of slot 2k and slot 2k+1 meet in the next phase's slot k. Null for GROUP matches. Source of truth for bracket pairing; kickoffAt is NOT reliable for this (real-world kickoff order doesn't follow bracket order).
 
   tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   homeTeam   Team       @relation("HomeTeam", fields: [homeTeamId], references: [id])

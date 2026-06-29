@@ -337,6 +337,46 @@ export const R32_MATCHUPS: Array<{ home: string; away: string }> = [
 ];
 
 /**
+ * Realized 2026 R32 bracket, in canonical bracket-slot order (index 0–15).
+ *
+ * Captured once from the official FIFA bracket. This is the SOURCE OF TRUTH for which
+ * R32 fixture sits in which bracket slot — winners of slot 2k and 2k+1 meet at the next
+ * round's slot k. It must NOT be inferred from kickoffAt: the real FIFA match numbers
+ * (73–88) are chronological, not bracket-ordered, so a kickoff sort scrambles the pairing.
+ *
+ * Each entry is the unordered pair of team codes for that slot. Used to stamp Match.bracketSlot
+ * when fixtures are created from the live feed (whose home/away orientation and kickoff order
+ * don't follow bracket order). The simulation path uses R32_MATCHUPS index order instead.
+ */
+export const R32_BRACKET_ORDER: ReadonlyArray<readonly [string, string]> = [
+  ["GER", "PAR"], // slot 0
+  ["FRA", "SWE"], // slot 1
+  ["RSA", "CAN"], // slot 2
+  ["NED", "MAR"], // slot 3
+  ["POR", "CRO"], // slot 4
+  ["ESP", "AUT"], // slot 5
+  ["USA", "BIH"], // slot 6
+  ["BEL", "SEN"], // slot 7
+  ["BRA", "JPN"], // slot 8
+  ["CIV", "NOR"], // slot 9
+  ["MEX", "ECU"], // slot 10
+  ["ENG", "COD"], // slot 11
+  ["ARG", "CPV"], // slot 12
+  ["AUS", "EGY"], // slot 13
+  ["SUI", "ALG"], // slot 14
+  ["COL", "GHA"], // slot 15
+];
+
+/** Bracket slot (0–15) for a realized R32 fixture by its two team codes, or null if not found. */
+export function r32BracketSlot(codeA: string, codeB: string): number | null {
+  for (let i = 0; i < R32_BRACKET_ORDER.length; i++) {
+    const [h, a] = R32_BRACKET_ORDER[i];
+    if ((h === codeA && a === codeB) || (h === codeB && a === codeA)) return i;
+  }
+  return null;
+}
+
+/**
  * Knockout kickoff times. Each base is the actual UTC kickoff of the first match
  * of the round per the official FIFA 2026 schedule. The matchIndex calc estimates
  * subsequent matches in the round, but only the base (matchIndex=0) is currently

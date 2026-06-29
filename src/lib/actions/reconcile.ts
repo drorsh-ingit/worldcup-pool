@@ -36,7 +36,7 @@ import { fdTlaToCode } from "@/lib/wc-team-map";
 import { fetchEspnKnockoutFixtures } from "@/lib/espn-live";
 import { WC2026_TEAMS } from "@/lib/data/wc2026";
 import { scoreBets } from "@/lib/scoring";
-import { knockoutWinnerTeamId, syncPhaseBetLocks } from "@/lib/tournament-engine";
+import { knockoutWinnerTeamId, syncPhaseBetLocks, stampBracketSlots, compareByBracketSlot } from "@/lib/tournament-engine";
 import { recalculateLeaderboard, scoreProgressiveTournamentBets } from "@/lib/actions/results";
 import { snapshotOddsForBetType } from "@/lib/actions/refresh-odds";
 
@@ -208,6 +208,10 @@ export async function reconcileTournament(
       }
     }
   }
+
+  // ── 1b. Stamp bracketSlot on every KO fixture (source of truth for bracket pairing). ──
+  // Self-healing: corrects any rows created before bracketSlot existed or with a stale slot.
+  await stampBracketSlots(tournamentId);
 
   // ── 2. Score per-game bets for matches that just completed ──
   for (const matchId of newlyCompleted) {
@@ -466,7 +470,7 @@ async function resolveBracket(
   groupId: string,
   tournamentId: string,
   betTypes: Array<{ id: string; subType: string; status: string }>,
-  matches: Array<MatchWithTeams & { phase: string; kickoffAt: Date }>,
+  matches: Array<MatchWithTeams & { phase: string; kickoffAt: Date; bracketSlot: number | null }>,
   teams: Array<{ id: string; code: string }>
 ) {
   const bt = betTypes.find((b) => b.subType === "bracket");
@@ -477,11 +481,12 @@ async function resolveBracket(
   for (const phase of PHASES) {
     const phaseMatches = matches
       .filter((m) => m.phase === phase && m.status === "COMPLETED")
-      .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
+      .sort(compareByBracketSlot);
     phaseMatches.forEach((m, i) => {
+      const slot = m.bracketSlot ?? i;
       const winnerId = knockoutWinnerTeamId({ ...m, actualHomeScore: null, actualAwayScore: null });
       const code = teams.find((t) => t.id === winnerId)?.code;
-      if (code) winners[`${phase}-${i}`] = code;
+      if (code) winners[`${phase}-${slot}`] = code;
     });
   }
   if (Object.keys(winners).length === 0) return;

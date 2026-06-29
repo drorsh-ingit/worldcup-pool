@@ -4,7 +4,7 @@
  */
 
 import { db } from "@/lib/db";
-import { R32_MATCHUPS, knockoutKickoff } from "@/lib/data/wc2026";
+import { R32_MATCHUPS, knockoutKickoff, r32BracketSlot } from "@/lib/data/wc2026";
 import type { MatchPhase } from "@prisma/client";
 
 export type TeamStanding = {
@@ -28,6 +28,7 @@ type MatchWithTeams = {
   phase: string;
   groupLetter: string | null;
   kickoffAt: Date;
+  bracketSlot: number | null;
   actualHomeScore: number | null;
   actualAwayScore: number | null;
   status: string;
@@ -144,16 +145,11 @@ export function isGroupStageComplete(matches: MatchWithTeams[]): boolean {
 }
 
 /**
- * Create R32 knockout matches based on group standings.
- * Returns the created match IDs.
+ * Build the placeholder → teamId lookup ("1A" → group A winner, "3_0" → best 3rd place, etc.)
+ * used to resolve R32_MATCHUPS against actual standings.
  */
-export async function createR32Matches(
-  tournamentId: string,
-  standings: Record<string, TeamStanding[]>
-): Promise<string[]> {
+function buildR32Lookup(standings: Record<string, TeamStanding[]>): Record<string, string> {
   const third = bestThirdPlaceTeams(standings);
-
-  // Build lookup: "1A" → teamId, "2B" → teamId, "3_0" → first best 3rd, etc.
   const lookup: Record<string, string> = {};
   for (const [letter, group] of Object.entries(standings)) {
     if (group[0]) lookup[`1${letter}`] = group[0].teamId;
@@ -162,6 +158,45 @@ export async function createR32Matches(
   for (let i = 0; i < third.length; i++) {
     lookup[`3_${i}`] = third[i].teamId;
   }
+  return lookup;
+}
+
+/**
+ * Find the bracketSlot for an R16+ fixture from the bracketSlot of the previous round's
+ * match whose winner is one of this fixture's two teams. Winner of prev slot 2k and 2k+1
+ * meet at slot k — so the result is always floor(prevSlot / 2).
+ */
+export function findNextRoundBracketSlot(
+  homeTeamId: string,
+  awayTeamId: string,
+  prevPhaseMatches: Array<{
+    bracketSlot: number | null;
+    winnerTeamId: string | null;
+    homeTeamId: string;
+    awayTeamId: string;
+    actualHomeScore: number | null;
+    actualAwayScore: number | null;
+  }>
+): number | null {
+  for (const m of prevPhaseMatches) {
+    if (m.bracketSlot == null) continue;
+    const winnerId = knockoutWinnerTeamId(m);
+    if (winnerId === homeTeamId || winnerId === awayTeamId) {
+      return Math.floor(m.bracketSlot / 2);
+    }
+  }
+  return null;
+}
+
+/**
+ * Create R32 knockout matches based on group standings.
+ * Returns the created match IDs.
+ */
+export async function createR32Matches(
+  tournamentId: string,
+  standings: Record<string, TeamStanding[]>
+): Promise<string[]> {
+  const lookup = buildR32Lookup(standings);
 
   const matchIds: string[] = [];
   for (let i = 0; i < R32_MATCHUPS.length; i++) {
@@ -181,6 +216,7 @@ export async function createR32Matches(
         kickoffAt: knockoutKickoff("R32", i),
         multiplier: 1.2,
         status: "UPCOMING",
+        bracketSlot: i,
       },
     });
     matchIds.push(match.id);
@@ -207,6 +243,19 @@ export function knockoutWinnerTeamId(m: {
 }
 
 /**
+ * Canonical bracket-order comparator for knockout matches: by bracketSlot when both have it,
+ * else by kickoffAt. bracketSlot is the source of truth for pairing (kickoff order is
+ * chronological, not bracket-ordered); kickoff is only the fallback for legacy/unstamped rows.
+ */
+export function compareByBracketSlot(
+  a: { bracketSlot: number | null; kickoffAt: Date | string },
+  b: { bracketSlot: number | null; kickoffAt: Date | string }
+): number {
+  if (a.bracketSlot != null && b.bracketSlot != null) return a.bracketSlot - b.bracketSlot;
+  return new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime();
+}
+
+/**
  * Get winners from completed knockout matches of a given phase.
  * Returns team IDs in match order (for bracket pairing in next round).
  */
@@ -216,7 +265,7 @@ export function getKnockoutWinners(
 ): string[] {
   const phaseMatches = matches
     .filter((m) => m.phase === phase && m.status === "COMPLETED")
-    .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
+    .sort(compareByBracketSlot);
 
   return phaseMatches.map((m) => {
     if (m.actualHomeScore == null || m.actualAwayScore == null) return "";
@@ -282,6 +331,7 @@ export async function createNextRoundMatches(
         kickoffAt: knockoutKickoff(nextPhase, Math.floor(i / 2)),
         multiplier: PHASE_MULTIPLIER[nextPhase] ?? 1.0,
         status: "UPCOMING",
+        bracketSlot: Math.floor(i / 2),
       },
     });
     matchIds.push(match.id);
@@ -289,6 +339,49 @@ export async function createNextRoundMatches(
 
   return matchIds;
 }
+
+/**
+ * Self-healing pass that stamps Match.bracketSlot on every knockout fixture of a tournament.
+ * R32 slots come from the realized bracket table (by team codes); each later round derives its
+ * slot from the feeding match (floor(prevSlot/2)). Idempotent — only writes when the value
+ * changes. Safe to run on every reconcile tick; also used by the one-time backfill.
+ */
+export async function stampBracketSlots(tournamentId: string): Promise<void> {
+  const matches = await db.match.findMany({
+    where: { tournamentId, phase: { in: ["R32", "R16", "QF", "SF", "FINAL"] } },
+    include: { homeTeam: true, awayTeam: true },
+  });
+
+  // Work on a local copy of bracketSlot so later rounds see freshly-derived R32/R16 slots.
+  const local = new Map(matches.map((m) => [m.id, m.bracketSlot as number | null]));
+
+  for (const phase of ["R32", "R16", "QF", "SF", "FINAL"] as const) {
+    const phaseMatches = matches.filter((m) => m.phase === phase);
+    for (const m of phaseMatches) {
+      let slot: number | null;
+      if (phase === "R32") {
+        slot = r32BracketSlot(m.homeTeam.code, m.awayTeam.code);
+      } else {
+        const prevPhase = PREV_KO_PHASE[phase];
+        const prev = matches
+          .filter((p) => p.phase === prevPhase)
+          .map((p) => ({ ...p, bracketSlot: local.get(p.id) ?? null }));
+        slot = findNextRoundBracketSlot(m.homeTeamId, m.awayTeamId, prev);
+      }
+      local.set(m.id, slot);
+      if (slot != null && slot !== m.bracketSlot) {
+        await db.match.update({ where: { id: m.id }, data: { bracketSlot: slot } });
+      }
+    }
+  }
+}
+
+const PREV_KO_PHASE: Record<string, string> = {
+  R16: "R32",
+  QF: "R16",
+  SF: "QF",
+  FINAL: "SF",
+};
 
 /**
  * Sync each phase-locked bet type's locksAt to the actual first match of its lock
