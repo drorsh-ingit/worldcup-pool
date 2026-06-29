@@ -415,12 +415,19 @@ export async function syncPhaseBetLocks(tournamentId: string): Promise<void> {
     select: { id: true, openTrigger: true, locksAt: true },
   });
 
+  const now = new Date();
   for (const bt of betTypes) {
     if (!bt.openTrigger || !(bt.openTrigger in OPEN_TRIGGER_TO_LOCK_PHASE)) continue;
     const lockPhase = OPEN_TRIGGER_TO_LOCK_PHASE[bt.openTrigger as LockTriggerKey];
     const target = phaseFirstKickoff[lockPhase];
     if (!target) continue;
     if (bt.locksAt && bt.locksAt.getTime() === target.getTime()) continue;
+    // openBetType clears locksAt to null when an admin manually (re)opens a bet type. If the
+    // natural lock moment has already passed and locksAt is still null, that's a deliberate
+    // override (e.g. reopening a bracket after its phase kicked off) — don't fight it by
+    // re-locking on the next sync. A bet type being synced for the first time still gets its
+    // locksAt set normally as long as the lock moment is still in the future.
+    if (bt.locksAt == null && target.getTime() <= now.getTime()) continue;
     await db.betType.update({ where: { id: bt.id }, data: { locksAt: target } });
   }
 }
