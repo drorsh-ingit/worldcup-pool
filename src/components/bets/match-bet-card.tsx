@@ -360,7 +360,7 @@ export function MatchBetCard({
                 </span>
                 {wentToExtraTime && (
                   <span className="text-xs tabular-nums font-medium text-neutral-400">
-                    {`90': ${actualHome90}–${actualAway90}`}
+                    {`90' score: ${actualHome90}–${actualAway90}`}
                   </span>
                 )}
               </>
