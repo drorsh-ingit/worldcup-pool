@@ -166,7 +166,12 @@ export function MatchBetCard({
     isCompleted &&
     currentCorrectScore?.homeScore === actualHome90 &&
     currentCorrectScore?.awayScore === actualAway90;
-  const wentToExtraTime = isCompleted && (actualHome90 !== match.actualHomeScore || actualAway90 !== match.actualAwayScore);
+  const hasPenalties = match.penaltyHomeScore != null && match.penaltyAwayScore != null;
+  // A match went to extra time if either the 120' score differs from the 90' score, or it
+  // was decided on penalties (a shootout only happens after ET). In both cases we surface
+  // the 90' score so it's clear what the score was at the end of regulation.
+  const wentToExtraTime =
+    isCompleted && (hasPenalties || actualHome90 !== match.actualHomeScore || actualAway90 !== match.actualAwayScore);
 
   const homeWinPts = outcomePoints?.["home"];
   const drawPts = outcomePoints?.["draw"];
@@ -342,19 +347,23 @@ export function MatchBetCard({
             />
           </div>
           {/* Secondary info below score */}
-          <div style={{ minHeight: 20 }} className="flex items-center justify-center">
+          <div style={{ minHeight: 20 }} className="flex flex-col items-center justify-center leading-tight">
             {isCompleted ? (
-              <span className={cn(
-                "text-xs tabular-nums font-medium",
-                scoreCorrect ? "text-emerald-600 font-semibold" : "text-neutral-500"
-              )}>
-                Final: {match.actualHomeScore}–{match.actualAwayScore}
-                {match.penaltyHomeScore != null && match.penaltyAwayScore != null
-                  ? ` (${match.penaltyHomeScore}–${match.penaltyAwayScore} pens)`
-                  : ""}
-                {wentToExtraTime ? ` (90': ${actualHome90}–${actualAway90})` : ""}
-                {scoreCorrect ? " ✓" : ""}
-              </span>
+              <>
+                <span className={cn(
+                  "text-xs tabular-nums font-medium",
+                  scoreCorrect ? "text-emerald-600 font-semibold" : "text-neutral-500"
+                )}>
+                  Final: {match.actualHomeScore}–{match.actualAwayScore}
+                  {hasPenalties ? ` (${match.penaltyHomeScore}–${match.penaltyAwayScore} pens)` : ""}
+                  {scoreCorrect ? " ✓" : ""}
+                </span>
+                {wentToExtraTime && (
+                  <span className="text-xs tabular-nums font-medium text-neutral-400">
+                    {`90': ${actualHome90}–${actualAway90}`}
+                  </span>
+                )}
+              </>
             ) : hasValidScore && scorePts != null ? (
               <span className="text-sm font-semibold text-neutral-600 tabular-nums">+{scorePts.toFixed(1)} pts if exact</span>
             ) : null}
