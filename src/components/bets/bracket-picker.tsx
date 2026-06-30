@@ -21,6 +21,11 @@ interface BracketMatch {
   bracketSlot: number | null;
   actualHomeScore: number | null;
   actualAwayScore: number | null;
+  penaltyHomeScore: number | null;
+  penaltyAwayScore: number | null;
+  homeTeamId: string;
+  awayTeamId: string;
+  winnerTeamId: string | null;
 }
 
 /**
@@ -90,6 +95,8 @@ interface Slot {
   status?: string;
   homeScore?: number | null;
   awayScore?: number | null;
+  homePenaltyScore?: number | null;
+  awayPenaltyScore?: number | null;
   isReal: boolean;
 }
 
@@ -123,6 +130,8 @@ function buildSlots(
             status: real.status,
             homeScore: real.actualHomeScore,
             awayScore: real.actualAwayScore,
+            homePenaltyScore: real.penaltyHomeScore,
+            awayPenaltyScore: real.penaltyAwayScore,
             isReal: true,
           };
         } else {
@@ -140,6 +149,8 @@ function buildSlots(
             status: real.status,
             homeScore: real.actualHomeScore,
             awayScore: real.actualAwayScore,
+            homePenaltyScore: real.penaltyHomeScore,
+            awayPenaltyScore: real.penaltyAwayScore,
             isReal: true,
           };
         } else {
@@ -237,10 +248,17 @@ export function BracketPicker({
         m.actualHomeScore != null &&
         m.actualAwayScore != null
       ) {
+        // Respect the penalty-shootout winner (winnerTeamId) when the regulation/ET
+        // score is level; fall back to the score only when no winner is recorded.
+        // Mirrors knockoutWinnerTeamId (tournament-engine.ts).
         actualWinners[`${phase}-${slot}`] =
-          m.actualHomeScore >= m.actualAwayScore
-            ? m.homeTeam.code
-            : m.awayTeam.code;
+          m.winnerTeamId === m.awayTeamId
+            ? m.awayTeam.code
+            : m.winnerTeamId === m.homeTeamId
+              ? m.homeTeam.code
+              : m.actualHomeScore >= m.actualAwayScore
+                ? m.homeTeam.code
+                : m.awayTeam.code;
       }
     });
   }
@@ -461,9 +479,9 @@ function BracketSlotCard({
 }) {
   const pointsFor = (code: string): number | undefined =>
     pointsByPickKey?.[`${slot.phase}|${code}`];
-  const teams: Array<{ team: BracketTeam | undefined; score: number | null | undefined }> = [
-    { team: slot.homeTeam, score: slot.homeScore },
-    { team: slot.awayTeam, score: slot.awayScore },
+  const teams: Array<{ team: BracketTeam | undefined; score: number | null | undefined; penaltyScore: number | null | undefined }> = [
+    { team: slot.homeTeam, score: slot.homeScore, penaltyScore: slot.homePenaltyScore },
+    { team: slot.awayTeam, score: slot.awayScore, penaltyScore: slot.awayPenaltyScore },
   ];
 
   const hasBothTeams = !!slot.homeTeam && !!slot.awayTeam;
@@ -475,7 +493,7 @@ function BracketSlotCard({
         hasBothTeams ? "border-neutral-200" : "border-dashed border-neutral-200"
       )}
     >
-      {teams.map(({ team, score }, i) => {
+      {teams.map(({ team, score, penaltyScore }, i) => {
         if (!team) {
           return (
             <div
@@ -598,11 +616,15 @@ function BracketSlotCard({
             {isCompleted && score != null && (
               <span
                 className={cn(
-                  "text-xs font-bold tabular-nums w-4 text-center",
+                  "text-xs font-bold tabular-nums text-center",
+                  penaltyScore == null ? "w-4" : "",
                   isActualWinner ? "text-neutral-900" : "text-neutral-400"
                 )}
               >
                 {score}
+                {penaltyScore != null && (
+                  <span className="font-medium text-neutral-400"> ({penaltyScore})</span>
+                )}
               </span>
             )}
           </button>

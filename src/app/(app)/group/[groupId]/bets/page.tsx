@@ -228,10 +228,17 @@ export default async function BetsPage({ params }: BetsPageProps) {
             m.actualHomeScore != null &&
             m.actualAwayScore != null
           ) {
+            // Respect the penalty-shootout winner (winnerTeamId) when the
+            // regulation/ET score is level; fall back to the score only when no
+            // winner is recorded (simulated/legacy rows). Mirrors knockoutWinnerTeamId.
             effectiveWinners[`${phase}-${slot}`] =
-              m.actualHomeScore >= m.actualAwayScore
-                ? m.homeTeam.code
-                : m.awayTeam.code;
+              m.winnerTeamId === m.awayTeamId
+                ? m.awayTeam.code
+                : m.winnerTeamId === m.homeTeamId
+                  ? m.homeTeam.code
+                  : m.actualHomeScore >= m.actualAwayScore
+                    ? m.homeTeam.code
+                    : m.awayTeam.code;
           }
         });
       }
@@ -462,6 +469,11 @@ export default async function BetsPage({ params }: BetsPageProps) {
                   bracketSlot: m.bracketSlot,
                   actualHomeScore: m.actualHomeScore,
                   actualAwayScore: m.actualAwayScore,
+                  penaltyHomeScore: m.penaltyHomeScore,
+                  penaltyAwayScore: m.penaltyAwayScore,
+                  homeTeamId: m.homeTeamId,
+                  awayTeamId: m.awayTeamId,
+                  winnerTeamId: m.winnerTeamId,
                 }))}
               currentPrediction={currentBet?.prediction as { picks?: Record<string, string> } | undefined}
               resolution={bt.resolution as { winners?: Record<string, string> } | undefined}

@@ -309,6 +309,8 @@ async function applyResult(m: MatchWithTeams, fd: FDMatch): Promise<boolean> {
       actualAwayScore: ourHomeIsFeedHome ? reg.away : reg.home,
       actualHomeScore90: ninety ? (ourHomeIsFeedHome ? ninety.home : ninety.away) : null,
       actualAwayScore90: ninety ? (ourHomeIsFeedHome ? ninety.away : ninety.home) : null,
+      penaltyHomeScore: fd.score.penalties ? (ourHomeIsFeedHome ? fd.score.penalties.home : fd.score.penalties.away) : null,
+      penaltyAwayScore: fd.score.penalties ? (ourHomeIsFeedHome ? fd.score.penalties.away : fd.score.penalties.home) : null,
       winnerTeamId,
       status: "COMPLETED",
     },

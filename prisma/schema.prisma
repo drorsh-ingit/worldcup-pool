@@ -145,6 +145,8 @@ model Match {
   actualAwayScore Int?
   actualHomeScore90 Int?                    // 90'-only score; differs from actualHomeScore only if the match went to ET. Used to score match_winner/correct_score bets.
   actualAwayScore90 Int?
+  penaltyHomeScore Int?                      // Penalty shootout score (KO only); null when no shootout. Display-only — never affects scoring; winnerTeamId is the source of truth for advancement.
+  penaltyAwayScore Int?
   status         MatchStatus @default(UPCOMING)
   oddsData       Json        @default("{}") // { homeWin, draw, awayWin, correctScores: {...} }
   oddsLockedAt   DateTime?                  // when set, odds are frozen and match is open for betting

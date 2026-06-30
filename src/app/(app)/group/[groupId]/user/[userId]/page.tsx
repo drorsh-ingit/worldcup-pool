@@ -304,6 +304,11 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
                   bracketSlot: m.bracketSlot,
                   actualHomeScore: m.actualHomeScore,
                   actualAwayScore: m.actualAwayScore,
+                  penaltyHomeScore: m.penaltyHomeScore,
+                  penaltyAwayScore: m.penaltyAwayScore,
+                  homeTeamId: m.homeTeamId,
+                  awayTeamId: m.awayTeamId,
+                  winnerTeamId: m.winnerTeamId,
                 }))}
               currentPrediction={currentBet?.prediction as { picks?: Record<string, string> } | undefined}
               resolution={bt.resolution as { winners?: Record<string, string> } | undefined}
