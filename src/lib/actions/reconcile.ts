@@ -187,20 +187,29 @@ export async function reconcileTournament(
     ) {
       const home = teamByCode.get(homeCode)!;
       const away = teamByCode.get(awayCode)!;
-      const row = await db.match.create({
-        data: {
-          tournamentId,
-          homeTeamId: home.id,
-          awayTeamId: away.id,
-          phase,
-          matchday: 1,
-          groupLetter: null,
-          kickoffAt: new Date(fd.utcDate),
-          multiplier: PHASE_MULTIPLIER[phase] ?? 1.0,
-          externalId: String(fd.id),
-          status: "UPCOMING",
-        },
-      });
+      let row;
+      try {
+        row = await db.match.create({
+          data: {
+            tournamentId,
+            homeTeamId: home.id,
+            awayTeamId: away.id,
+            phase,
+            matchday: 1,
+            groupLetter: null,
+            kickoffAt: new Date(fd.utcDate),
+            multiplier: PHASE_MULTIPLIER[phase] ?? 1.0,
+            externalId: String(fd.id),
+            status: "UPCOMING",
+          },
+        });
+      } catch (e) {
+        // A concurrent reconcile (another viewer's on-demand trigger) already created this
+        // fixture — the @@unique([tournamentId, externalId]) backstop rejected the dup.
+        // Skip: that run, or the next tick, applies its result.
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") continue;
+        throw e;
+      }
       created++;
       if (fd.status === "FINISHED") {
         const withTeams = { ...row, homeTeam: home, awayTeam: away };

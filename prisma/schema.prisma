@@ -160,6 +160,11 @@ model Match {
   awayTeam   Team       @relation("AwayTeam", fields: [awayTeamId], references: [id])
   bets       Bet[]
 
+  // One match row per feed fixture. Backstops the reconciler's read-then-create against
+  // concurrent runs (multiple viewers can each trigger an on-demand reconcile) inserting
+  // duplicate knockout fixtures. NULL externalId rows (if any) are unconstrained — Postgres
+  // treats NULLs as distinct.
+  @@unique([tournamentId, externalId])
   @@map("matches")
 }
 
