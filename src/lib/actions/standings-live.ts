@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { fetchLiveMatch, type FDMatch } from "@/lib/football-data";
@@ -7,6 +8,23 @@ import { fetchEspnLiveMatch } from "@/lib/espn-live";
 import { calculatePoints } from "@/lib/scoring";
 import { deriveMatchOdds, deriveScoreOdds } from "@/lib/match-odds";
 import { resolveGroupSettings, DEFAULT_GROUP_SETTINGS } from "@/lib/settings";
+import { reconcileTournament } from "@/lib/actions/reconcile";
+
+// On-demand reconcile debounce. The live poll runs every ~20–60s per viewer; when it
+// notices the feed has marked an in-play match FINISHED but our DB hasn't resolved it yet,
+// it kicks a single-tournament reconcile so results land within a poll cycle instead of
+// waiting on the hourly GitHub cron. This guard stops concurrent viewers (and back-to-back
+// polls) from stampeding the same reconcile — one trigger per tournament per window is
+// plenty, since reconcileTournament is idempotent and the cron remains the backstop.
+const RECONCILE_TRIGGER_DEBOUNCE_MS = 60_000;
+const lastReconcileTrigger = new Map<string, number>();
+
+function shouldTriggerReconcile(tournamentId: string): boolean {
+  const last = lastReconcileTrigger.get(tournamentId) ?? 0;
+  if (Date.now() - last < RECONCILE_TRIGGER_DEBOUNCE_MS) return false;
+  lastReconcileTrigger.set(tournamentId, Date.now());
+  return true;
+}
 
 export interface LiveDeltasResult {
   deltas: Record<string, number>;
@@ -86,6 +104,12 @@ export async function getLiveStandingsDeltas(groupId: string): Promise<LiveDelta
         // ignore, fall through to ESPN
       }
 
+      // The feed has marked this match FINISHED but our row is still un-COMPLETED (the query
+      // window only holds non-COMPLETED matches). Flag it so we can kick an on-demand
+      // reconcile below instead of waiting on the cron. A finished match contributes no live
+      // delta anyway, so we stop processing it here.
+      if (fdMatch?.status === "FINISHED") return { finished: true as const };
+
       let home: number | null = null;
       let away: number | null = null;
 
@@ -114,7 +138,7 @@ export async function getLiveStandingsDeltas(groupId: string): Promise<LiveDelta
   let inPlayCount = 0;
 
   for (const entry of liveData) {
-    if (!entry) continue;
+    if (!entry || "finished" in entry) continue;
     inPlayCount++;
     const { match, home, away } = entry;
     const liveOutcome = home > away ? "home" : away > home ? "away" : "draw";
@@ -160,6 +184,21 @@ export async function getLiveStandingsDeltas(groupId: string): Promise<LiveDelta
       if (!matchDeltas[match.id]) matchDeltas[match.id] = {};
       matchDeltas[match.id][bet.userId] = (matchDeltas[match.id][bet.userId] ?? 0) + pts.totalPoints;
     }
+  }
+
+  // A match the feed has finished but we haven't resolved yet → trigger an on-demand,
+  // single-tournament reconcile so results/leaderboard land within this poll cycle rather
+  // than on the next (hourly) cron tick. Runs via `after()` so it never delays the live
+  // response, and is idempotent + debounced so concurrent viewers don't stampede it.
+  const hasFinishedUnresolved = liveData.some((e) => e != null && "finished" in e);
+  if (hasFinishedUnresolved && shouldTriggerReconcile(tournament.id)) {
+    after(async () => {
+      try {
+        await reconcileTournament(groupId, tournament.id);
+      } catch (err) {
+        console.error(`[live-deltas] on-demand reconcile failed for ${tournament.id}:`, err);
+      }
+    });
   }
 
   const result: LiveDeltasResult = { deltas, matchDeltas, inPlayCount };
