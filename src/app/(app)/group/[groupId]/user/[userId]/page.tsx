@@ -426,6 +426,8 @@ export default async function UserBetsPage({ params }: UserBetsPageProps) {
                           actualAwayScore: match.actualAwayScore,
                           actualHomeScore90: match.actualHomeScore90,
                           actualAwayScore90: match.actualAwayScore90,
+                          penaltyHomeScore: match.penaltyHomeScore,
+                          penaltyAwayScore: match.penaltyAwayScore,
                         }}
                         href={`/group/${groupId}/match/${match.id}`}
                         effectiveNow={effectiveNow}

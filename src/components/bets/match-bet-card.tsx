@@ -29,6 +29,9 @@ interface MatchBetCardProps {
      *  went to extra time. match_winner/correct_score correctness is judged on this. */
     actualHomeScore90: number | null;
     actualAwayScore90: number | null;
+    /** Penalty shootout score; null when the match wasn't decided on penalties. Display-only. */
+    penaltyHomeScore: number | null;
+    penaltyAwayScore: number | null;
   };
   matchWinnerBetTypeId: string | null;
   correctScoreBetTypeId: string | null;
@@ -346,6 +349,9 @@ export function MatchBetCard({
                 scoreCorrect ? "text-emerald-600 font-semibold" : "text-neutral-500"
               )}>
                 Final: {match.actualHomeScore}–{match.actualAwayScore}
+                {match.penaltyHomeScore != null && match.penaltyAwayScore != null
+                  ? ` (${match.penaltyHomeScore}–${match.penaltyAwayScore} pens)`
+                  : ""}
                 {wentToExtraTime ? ` (90': ${actualHome90}–${actualAway90})` : ""}
                 {scoreCorrect ? " ✓" : ""}
               </span>
