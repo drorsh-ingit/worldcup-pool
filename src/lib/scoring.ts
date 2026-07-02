@@ -154,7 +154,8 @@ export async function scoreBets(
   groupId: string,
   tournamentId: string,
   matchId: string | null,
-  betTypeId?: string
+  betTypeId?: string,
+  opts?: { rescore?: boolean }
 ) {
   const group = await db.group.findUnique({ where: { id: groupId } });
   const settings = resolveGroupSettings(group?.settings);
@@ -175,8 +176,8 @@ export async function scoreBets(
     if (!match || match.actualHomeScore == null || match.actualAwayScore == null) return;
 
     // match_winner/correct_score are judged on the 90'-only result, even for knockout
-    // matches that went to extra time. Falls back to the final score for matches scored
-    // before actualHomeScore90 existed (manual/feed paths now always populate it).
+    // matches that went to extra time. Falls back to the final score only for legacy rows
+    // scored before actualHomeScore90 existed (the completion path now always populates it).
     const actualHome = match.actualHomeScore90 ?? match.actualHomeScore;
     const actualAway = match.actualAwayScore90 ?? match.actualAwayScore;
 
@@ -186,8 +187,11 @@ export async function scoreBets(
     });
 
     for (const bt of perGameBetTypes) {
+      // Normally we only grade not-yet-scored bets. When a completed match is HEALED (the
+      // feed corrected its 90'/winner), pass rescore to re-grade already-scored bets too —
+      // writes are absolute, so this is idempotent.
       const bets = await db.bet.findMany({
-        where: { betTypeId: bt.id, matchId, scoredAt: null },
+        where: { betTypeId: bt.id, matchId, ...(opts?.rescore ? {} : { scoredAt: null }) },
       });
 
       for (const bet of bets) {

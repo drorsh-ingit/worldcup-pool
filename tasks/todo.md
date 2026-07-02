@@ -1,5 +1,16 @@
 # World Cup Pool — Build Backlog
 
+## Robust finished-match result handling (in progress)
+Bug: BEL–SEN (R32) ET 90'=2–2 / 120'=3–2; DB stored `actualHomeScore90=null` → scored on
+3–2 (120') not 2–2 (90'), UI hid the ET. Causes: write-once/never-heal, 4 duplicated
+writers, fragile `regularTime ?? fullTime`, ambiguous `score90 ?? scoreFt` fallback.
+- [ ] `football-data.ts`: `deriveMatchResult(fd)` → complete result or null (gate completion); drop regulationScore/ninetyMinuteScore/fdWinnerCode
+- [ ] `match-results.ts` (new): shared `applyMatchResult` — orientation-safe, idempotent, self-healing → `{ completed, scoringChanged }`
+- [ ] `scoring.ts`: `scoreBets` `{ rescore }` to re-grade already-scored per-game bets
+- [ ] `reconcile.ts` + `live-scores.ts`: route completion through `applyMatchResult`; rescore on completed OR scoringChanged
+- [ ] rewrite `football-data.test.ts` for `deriveMatchResult`; tsc + tests green
+- [ ] deploy, trigger reconcile to heal live data, verify BEL–SEN = 2–2 @ 90'
+
 ## Completed
 - [x] Phase 1: Auth, groups, dashboard, leaderboard, user predictions
 - [x] Phase 2: Tournament core (data, actions, scoring, admin, bets, matches)

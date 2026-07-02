@@ -3,10 +3,11 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { fetchWCSchedule, fetchCLSchedule, fetchLiveMatch, regulationScore, ninetyMinuteScore, fdWinnerCode, type FDMatch } from "@/lib/football-data";
+import { fetchWCSchedule, fetchCLSchedule, fetchLiveMatch, type FDMatch } from "@/lib/football-data";
 import { fdTlaToCode } from "@/lib/wc-team-map";
 import { scoreBets } from "@/lib/scoring";
 import { recalculateLeaderboard, scoreProgressiveTournamentBets } from "@/lib/actions/results";
+import { applyMatchResult } from "@/lib/actions/match-results";
 import { fetchEspnLiveMatch } from "@/lib/espn-live";
 
 async function requireAdmin(groupId: string) {
@@ -88,8 +89,8 @@ export async function getLiveMatchScore(
 
   // ESPN is the primary live-display source — observed faster than fd-org's
   // free-tier feed at both kickoff and final whistle. fd-org remains the
-  // authoritative completion source for knockouts (penalty-aware scoring via
-  // regulationScore + via-pens advancer detection in autoCompleteMatch).
+  // authoritative completion source for knockouts (penalty-aware 90'/120'/winner
+  // via deriveMatchResult + applyMatchResult in autoCompleteMatch).
   const espn = await fetchEspnLiveMatch(
     match.homeTeam.code,
     match.awayTeam.code,
@@ -162,8 +163,8 @@ export async function getLiveMatchScore(
     );
   }
 
-  // KO finished auto-complete via fd-org — keeps regulationScore + via-pens
-  // advancer detection authoritative for matches that can go to a shootout.
+  // KO finished auto-complete via fd-org — keeps the pens-aware 90'/120'/winner
+  // derivation authoritative for matches that can go to a shootout.
   if (fdMatch?.status === "FINISHED" && match.status !== "COMPLETED") {
     await autoCompleteMatch(groupId, matchId, match.tournamentId, fdMatch);
   }
@@ -204,52 +205,23 @@ async function autoCompleteGroupMatchFromEspn(
   revalidatePath(`/group/${groupId}`);
 }
 
-/** Map a finished FD match's winner (penalties included) to our team id. */
-function resolveWinnerTeamId(
-  fd: FDMatch,
-  home: { id: string; code: string },
-  away: { id: string; code: string }
-): string | null {
-  const winnerCode = fdWinnerCode(fd, home.code, away.code);
-  if (winnerCode === home.code) return home.id;
-  if (winnerCode === away.code) return away.id;
-  return null;
-}
-
 async function autoCompleteMatch(
   groupId: string,
   matchId: string,
   tournamentId: string,
   fd: FDMatch
 ) {
-  // Guard against concurrent calls; load teams to resolve the winner.
   const current = await db.match.findUnique({
     where: { id: matchId },
     include: { homeTeam: true, awayTeam: true },
   });
-  if (!current || current.status === "COMPLETED") return;
+  if (!current) return;
 
-  // Store the pens-excluded 90'/120' score; winnerTeamId carries the actual advancer.
-  const reg = regulationScore(fd);
-  if (!reg) return;
-  const ninety = ninetyMinuteScore(fd);
-  const winnerTeamId = resolveWinnerTeamId(fd, current.homeTeam, current.awayTeam);
+  // Single source of truth for the four values + gated completion + self-healing.
+  const r = await applyMatchResult(current, fd);
+  if (!r.scoringChanged) return;
 
-  await db.match.update({
-    where: { id: matchId },
-    data: {
-      actualHomeScore: reg.home,
-      actualAwayScore: reg.away,
-      actualHomeScore90: ninety?.home ?? null,
-      actualAwayScore90: ninety?.away ?? null,
-      penaltyHomeScore: fd.score.penalties?.home ?? null,
-      penaltyAwayScore: fd.score.penalties?.away ?? null,
-      winnerTeamId,
-      status: "COMPLETED",
-    },
-  });
-
-  await scoreBets(groupId, tournamentId, matchId);
+  await scoreBets(groupId, tournamentId, matchId, undefined, { rescore: true });
   await scoreProgressiveTournamentBets(groupId, tournamentId);
   await recalculateLeaderboard(groupId, tournamentId);
   revalidatePath(`/group/${groupId}`);
@@ -360,30 +332,18 @@ export async function syncCompetitionResults(
 
     if (!fdMatch || fdMatch.status !== "FINISHED") continue;
 
-    // Pens-excluded 90'/120' score for bracket display; winnerTeamId for progression;
-    // 90'-only score for match_winner/correct_score bet scoring.
-    const reg = regulationScore(fdMatch);
-    if (!reg) continue;
-    const ninety = ninetyMinuteScore(fdMatch);
-    const winnerTeamId = resolveWinnerTeamId(fdMatch, dbMatch.homeTeam, dbMatch.awayTeam);
+    // Persist the resolved externalId when it came from the fuzzy fallback, so future
+    // syncs match directly.
+    if (dbMatch.externalId !== String(fdMatch.id)) {
+      await db.match.update({ where: { id: dbMatch.id }, data: { externalId: String(fdMatch.id) } });
+    }
 
-    await db.match.update({
-      where: { id: dbMatch.id },
-      data: {
-        actualHomeScore: reg.home,
-        actualAwayScore: reg.away,
-        actualHomeScore90: ninety?.home ?? null,
-        actualAwayScore90: ninety?.away ?? null,
-        penaltyHomeScore: fdMatch.score.penalties?.home ?? null,
-        penaltyAwayScore: fdMatch.score.penalties?.away ?? null,
-        winnerTeamId,
-        status: "COMPLETED",
-        externalId: String(fdMatch.id),
-      },
-    });
-
-    await scoreBets(groupId, tournament.id, dbMatch.id);
-    updated++;
+    // Single source of truth for the four values + gated completion.
+    const r = await applyMatchResult(dbMatch, fdMatch);
+    if (r.scoringChanged) {
+      await scoreBets(groupId, tournament.id, dbMatch.id, undefined, { rescore: true });
+      updated++;
+    }
   }
 
   if (updated > 0) {

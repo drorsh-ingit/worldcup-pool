@@ -8,9 +8,10 @@
  * real knockout fixtures (correct FIFA seeding), and resolves every tournament bet from
  * feed truth. Idempotent — safe to run on a short interval.
  *
- * Source of truth split:
- *   - Bracket/progression display → stored 90'/120' score (penalties excluded), via regulationScore().
- *   - match_winner/correct_score bets → 90'-only score, via ninetyMinuteScore().
+ * Source of truth split (all four facts derived once by deriveMatchResult, written by
+ * applyMatchResult — idempotent + self-healing, so a late feed correction repairs itself):
+ *   - Bracket/progression display → stored 90'/120' score (penalties excluded).
+ *   - match_winner/correct_score bets → 90'-only score.
  *   - Progression  → who actually advanced, via score.winner → Match.winnerTeamId.
  *   - Group winners→ /standings position 1; advancers → who is actually in the R32 fixtures
  *                    (sidesteps the best-third-place tiebreak entirely).
@@ -25,13 +26,11 @@ import {
   fetchWCSchedule,
   fetchWCStandings,
   fetchWCScorers,
-  regulationScore,
-  ninetyMinuteScore,
-  fdWinnerCode,
   type FDMatch,
   type FDStandingGroup,
   type FDScorer,
 } from "@/lib/football-data";
+import { applyMatchResult } from "@/lib/actions/match-results";
 import { fdTlaToCode } from "@/lib/wc-team-map";
 import { fetchEspnKnockoutFixtures } from "@/lib/espn-live";
 import { WC2026_TEAMS } from "@/lib/data/wc2026";
@@ -112,7 +111,8 @@ export async function reconcileTournament(
   );
 
   let created = 0;
-  const newlyCompleted: string[] = [];
+  // Matches whose 90'/winner newly landed or were healed this tick → (re)score their bets.
+  const toScore = new Set<string>();
   // Mapped, known participant codes per knockout phase (from the feed fixtures).
   const phaseTeamCodes: Record<string, Set<string>> = {};
 
@@ -174,7 +174,8 @@ export async function reconcileTournament(
     const existing = byExternalId.get(String(fd.id));
 
     if (existing) {
-      if (await applyResult(existing, fd)) newlyCompleted.push(existing.id);
+      const r = await applyMatchResult(existing, fd);
+      if (r.scoringChanged) toScore.add(existing.id);
       continue;
     }
 
@@ -211,10 +212,8 @@ export async function reconcileTournament(
         throw e;
       }
       created++;
-      if (fd.status === "FINISHED") {
-        const withTeams = { ...row, homeTeam: home, awayTeam: away };
-        if (await applyResult(withTeams, fd)) newlyCompleted.push(row.id);
-      }
+      const r = await applyMatchResult({ ...row, homeTeam: home, awayTeam: away }, fd);
+      if (r.scoringChanged) toScore.add(row.id);
     }
   }
 
@@ -222,9 +221,10 @@ export async function reconcileTournament(
   // Self-healing: corrects any rows created before bracketSlot existed or with a stale slot.
   await stampBracketSlots(tournamentId);
 
-  // ── 2. Score per-game bets for matches that just completed ──
-  for (const matchId of newlyCompleted) {
-    await scoreBets(groupId, tournamentId, matchId);
+  // ── 2. Score per-game bets for matches that just completed or were healed ──
+  // rescore=true so a healed match (corrected 90'/winner) re-grades already-scored bets.
+  for (const matchId of toScore) {
+    await scoreBets(groupId, tournamentId, matchId, undefined, { rescore: true });
   }
 
   // ── 3. Live bracket + semifinalist scoring from match data (uses winnerTeamId) ──
@@ -276,7 +276,7 @@ export async function reconcileTournament(
   await syncPhaseBetLocks(tournamentId);
   await recalculateLeaderboard(groupId, tournamentId);
 
-  return { completed: newlyCompleted.length, created };
+  return { completed: toScore.size, created };
 }
 
 type MatchWithTeams = {
@@ -288,44 +288,6 @@ type MatchWithTeams = {
   homeTeam: { id: string; code: string };
   awayTeam: { id: string; code: string };
 };
-
-/** Write a finished match's pens-excluded score + actual winner. Returns true if it newly completed. */
-async function applyResult(m: MatchWithTeams, fd: FDMatch): Promise<boolean> {
-  if (m.status === "COMPLETED") return false;
-  if (fd.status !== "FINISHED") return false;
-
-  const reg = regulationScore(fd);
-  if (!reg) return false;
-  const ninety = ninetyMinuteScore(fd);
-
-  const winnerCode = fdWinnerCode(fd, m.homeTeam.code, m.awayTeam.code);
-  const winnerTeamId =
-    winnerCode === m.homeTeam.code ? m.homeTeamId
-    : winnerCode === m.awayTeam.code ? m.awayTeamId
-    : null;
-
-  // `reg` is in the feed's home/away orientation. A fixture we created from ESPN may carry
-  // the opposite orientation, so map the score to our row by matching the feed's home team
-  // by code — never by position — so scores can't get flipped. (No-op for feed-created and
-  // seeded rows, where our home always equals the feed's home.)
-  const fdHomeCode = fdTlaToCode(fd.homeTeam?.tla);
-  const ourHomeIsFeedHome = fdHomeCode == null || fdHomeCode === m.homeTeam.code;
-
-  await db.match.update({
-    where: { id: m.id },
-    data: {
-      actualHomeScore: ourHomeIsFeedHome ? reg.home : reg.away,
-      actualAwayScore: ourHomeIsFeedHome ? reg.away : reg.home,
-      actualHomeScore90: ninety ? (ourHomeIsFeedHome ? ninety.home : ninety.away) : null,
-      actualAwayScore90: ninety ? (ourHomeIsFeedHome ? ninety.away : ninety.home) : null,
-      penaltyHomeScore: fd.score.penalties ? (ourHomeIsFeedHome ? fd.score.penalties.home : fd.score.penalties.away) : null,
-      penaltyAwayScore: fd.score.penalties ? (ourHomeIsFeedHome ? fd.score.penalties.away : fd.score.penalties.home) : null,
-      winnerTeamId,
-      status: "COMPLETED",
-    },
-  });
-  return true;
-}
 
 /**
  * Open each timeline bet the moment the feed has fully published the round it concerns

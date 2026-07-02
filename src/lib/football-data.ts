@@ -35,53 +35,72 @@ export interface FDMatch {
   };
 }
 
-type ScorePair = { home: number; away: number };
+export type ScorePair = { home: number; away: number };
 
 /**
- * The score that bets are scored on: regulation (90') for group, 90'/120' for knockout,
- * always EXCLUDING the penalty shootout.
+ * The four canonical facts about a finished match, in the FEED's home/away orientation.
+ * Callers map to their own orientation by team code (an ESPN-created fixture may be reversed).
  *
- * Verified against the v4 feed: for a PENALTY_SHOOTOUT match `fullTime` INCLUDES the
- * shootout (e.g. a 1–1 ET draw decided 4–2 on pens reports fullTime 5–3), so we must
- * reconstruct from regularTime + extraTime. For REGULAR and EXTRA_TIME matches the
- * shootout never happened, so `fullTime` is already the 90'/120' result.
+ *   - score90:  the 90-minute result — the ONLY score bets are graded on.
+ *   - scoreFt:  end-of-match score excluding penalties (= 90' for a regular match, 120'
+ *               for one that went to extra time). Display "Final".
+ *   - pens:     penalty shootout score, or null.
+ *   - winner:   who actually advanced (penalties included).
+ *   - wentToExtraTime: true if the match went past 90'.
  */
-export function regulationScore(fd: FDMatch): ScorePair | null {
+export interface MatchResult {
+  score90: ScorePair;
+  scoreFt: ScorePair;
+  pens: ScorePair | null;
+  winner: "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null;
+  wentToExtraTime: boolean;
+}
+
+const pair = (p: { home: number | null; away: number | null } | undefined): ScorePair | null =>
+  p && p.home != null && p.away != null ? { home: p.home, away: p.away } : null;
+
+/**
+ * Derive the complete, coherent result for a finished match — or `null` when the feed is
+ * FINISHED but its score breakdown hasn't settled yet (common in the seconds after the
+ * final whistle: `regularTime` may arrive as `{home:null,away:null}` before it's filled).
+ *
+ * Returning `null` is deliberate: it tells the caller to WAIT and retry rather than freeze
+ * an incomplete completion. This is the single guard that keeps a match from being marked
+ * COMPLETED without a real 90' score (the bug that mis-scored BEL–SEN on its 120' result).
+ *
+ * v4 feed facts this encodes:
+ *   - PENALTY_SHOOTOUT: `fullTime` INCLUDES the shootout, so reconstruct FT from reg+ET.
+ *   - EXTRA_TIME:       `fullTime` is the 120' result; `regularTime` is the 90'.
+ *   - REGULAR:          `fullTime` is the 90' result; `regularTime` is usually absent.
+ */
+export function deriveMatchResult(fd: FDMatch): MatchResult | null {
+  if (fd.status !== "FINISHED") return null;
   const s = fd.score;
+  const wentPast90 = s.duration === "EXTRA_TIME" || s.duration === "PENALTY_SHOOTOUT";
+
+  // 90' score: regularTime when it carries real values; otherwise fullTime, but ONLY for a
+  // plain match (a match that went past 90' without a populated regularTime is not ready).
+  const reg = pair(s.regularTime);
+  const ft = pair(s.fullTime);
+  const score90 = reg ?? (wentPast90 ? null : ft);
+  if (!score90) return null; // breakdown not ready — retry next tick
+
+  // FT excluding penalties.
+  let scoreFt: ScorePair;
   if (s.duration === "PENALTY_SHOOTOUT") {
-    const reg = s.regularTime;
-    if (!reg || reg.home == null || reg.away == null) return null;
-    const etH = s.extraTime?.home ?? 0;
-    const etA = s.extraTime?.away ?? 0;
-    return { home: reg.home + etH, away: reg.away + etA };
+    scoreFt = { home: score90.home + (s.extraTime?.home ?? 0), away: score90.away + (s.extraTime?.away ?? 0) };
+  } else {
+    if (!ft) return null;
+    scoreFt = ft;
   }
-  if (s.fullTime.home == null || s.fullTime.away == null) return null;
-  return { home: s.fullTime.home, away: s.fullTime.away };
-}
 
-/**
- * The 90-minute-only score, even when the match continued into extra time/penalties.
- * `regularTime` is only present on the feed once a match goes past 90', so for plain
- * REGULAR-duration matches we fall back to `fullTime`, which already is the 90' score.
- */
-export function ninetyMinuteScore(fd: FDMatch): ScorePair | null {
-  const reg = fd.score.regularTime ?? fd.score.fullTime;
-  if (reg.home == null || reg.away == null) return null;
-  return { home: reg.home, away: reg.away };
-}
-
-/**
- * The team that actually advanced (penalties included), mapped to one of the two
- * supplied team codes. Returns null for a true draw (group stage) or unknown winner.
- */
-export function fdWinnerCode(
-  fd: FDMatch,
-  homeCode: string,
-  awayCode: string
-): string | null {
-  if (fd.score.winner === "HOME_TEAM") return homeCode;
-  if (fd.score.winner === "AWAY_TEAM") return awayCode;
-  return null;
+  return {
+    score90,
+    scoreFt,
+    pens: pair(s.penalties),
+    winner: s.winner,
+    wentToExtraTime: wentPast90 || score90.home !== scoreFt.home || score90.away !== scoreFt.away,
+  };
 }
 
 const _cache = new Map<string, { data: unknown; at: number }>();
