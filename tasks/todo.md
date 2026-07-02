@@ -1,15 +1,25 @@
 # World Cup Pool — Build Backlog
 
-## Robust finished-match result handling (in progress)
+## Robust finished-match result handling (DONE — commit b7377a2)
 Bug: BEL–SEN (R32) ET 90'=2–2 / 120'=3–2; DB stored `actualHomeScore90=null` → scored on
 3–2 (120') not 2–2 (90'), UI hid the ET. Causes: write-once/never-heal, 4 duplicated
 writers, fragile `regularTime ?? fullTime`, ambiguous `score90 ?? scoreFt` fallback.
-- [ ] `football-data.ts`: `deriveMatchResult(fd)` → complete result or null (gate completion); drop regulationScore/ninetyMinuteScore/fdWinnerCode
-- [ ] `match-results.ts` (new): shared `applyMatchResult` — orientation-safe, idempotent, self-healing → `{ completed, scoringChanged }`
-- [ ] `scoring.ts`: `scoreBets` `{ rescore }` to re-grade already-scored per-game bets
-- [ ] `reconcile.ts` + `live-scores.ts`: route completion through `applyMatchResult`; rescore on completed OR scoringChanged
-- [ ] rewrite `football-data.test.ts` for `deriveMatchResult`; tsc + tests green
-- [ ] deploy, trigger reconcile to heal live data, verify BEL–SEN = 2–2 @ 90'
+- [x] `football-data.ts`: `deriveMatchResult(fd)` → complete result or null (gate completion); dropped regulationScore/ninetyMinuteScore/fdWinnerCode
+- [x] `match-results.ts` (new): shared `applyMatchResult` — orientation-safe, idempotent, self-healing → `{ completed, scoringChanged }`
+- [x] `scoring.ts`: `scoreBets` `{ rescore }` to re-grade already-scored per-game bets
+- [x] `reconcile.ts` + `live-scores.ts`: route completion through `applyMatchResult`; rescore on completed OR scoringChanged
+- [x] rewrote `football-data.test.ts` for `deriveMatchResult` (incl. BEL–SEN + settle-window); tsc + build + 15 tests green
+- [x] deployed; healed all 4 pools via reconcileTournament against prod DB
+
+### Review
+- Root cause was structural (write-once completion + 4 writers), not a one-off. Fixed by a
+  single gated, self-healing derivation/writer. Completion now waits for a coherent 90'.
+- Live repair verified: all 4 BEL–SEN rows now 90'=2–2 / FT=3–2 / winner BEL; group null-90'
+  count 0; BEL–SEN match_winner re-graded (draw ×5 correct, home ×2 wrong) — points on 90'.
+- UI needs no change: with 90' always populated, `wentToExtraTime` is reliable, so the card
+  shows Final 3–2 + "90' score 2–2" correctly.
+- Note: `revalidatePath` in results.ts warns (doesn't throw) outside request scope, so the
+  standalone heal completed; kept per-pool try/catch + explicit recalculateLeaderboard anyway.
 
 ## Completed
 - [x] Phase 1: Auth, groups, dashboard, leaderboard, user predictions
